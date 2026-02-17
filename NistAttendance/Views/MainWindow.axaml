@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NistAttendance.ViewModels"
+        xmlns:views="using:NistAttendance.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="NistAttendance.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="NIST Attendance Management System"
+        Width="1000" Height="700"
+        MinWidth="800" MinHeight="500">
+
+    <DockPanel>
+        <!-- Top Toolbar -->
+        <Border DockPanel.Dock="Top" Background="#FAFAFA" BorderBrush="#E0E0E0"
+                BorderThickness="0,0,0,1" Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- App Title -->
+                <TextBlock Grid.Column="0" Text="Attendance Management"
+                           FontSize="16" FontWeight="Bold" VerticalAlignment="Center"
+                           Foreground="#333333"/>
+
+                <!-- Toolbar Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button Content="+ Entry" Command="{Binding AddEntryCommand}"
+                            Padding="12,6" ToolTip.Tip="Add new attendance entry"/>
+                    <Button Content="+ Holiday" Command="{Binding AddHolidayCommand}"
+                            Padding="12,6" ToolTip.Tip="Add a holiday"/>
+                    <Button Content="Edit" Command="{Binding EditEntryCommand}"
+                            Padding="12,6" ToolTip.Tip="Edit selected entry"/>
+                    <Button Content="Delete" Command="{Binding DeleteEntryCommand}"
+                            Padding="12,6" ToolTip.Tip="Delete selected entry"/>
+                    <Border Width="1" Background="#E0E0E0" Margin="4,2"/>
+                    <Button Content="Import Excel" Command="{Binding ImportExcelCommand}"
+                            Padding="12,6" ToolTip.Tip="Import from Excel file"/>
+                    <Button Content="Export Excel" Command="{Binding ExportExcelCommand}"
+                            Padding="12,6" ToolTip.Tip="Export to Excel file"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#F5F5F5" BorderBrush="#E0E0E0"
+                BorderThickness="0,1,0,0" Padding="12,6">
+            <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#666666"/>
+        </Border>
+
+        <!-- Dashboard Content -->
+        <Border Padding="16">
+            <views:DashboardView DataContext="{Binding Dashboard}"/>
+        </Border>
+    </DockPanel>
+</Window>

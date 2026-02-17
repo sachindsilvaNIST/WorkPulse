@@ -1,0 +1,94 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NistAttendance.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="480"
+        x:Class="NistAttendance.Views.AttendanceEntryDialog"
+        x:DataType="vm:AttendanceEntryViewModel"
+        Title="{Binding WindowTitle}"
+        Width="420" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="20">
+        <StackPanel Spacing="14">
+            <!-- Date Picker -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Date" FontWeight="SemiBold"/>
+                <DatePicker SelectedDate="{Binding SelectedDate}" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+
+            <!-- Day Type -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Type" FontWeight="SemiBold"/>
+                <ComboBox x:Name="DayTypeCombo" SelectedIndex="0" HorizontalAlignment="Stretch">
+                    <ComboBoxItem Content="Work Day"/>
+                    <ComboBoxItem Content="Holiday"/>
+                    <ComboBoxItem Content="Rest Day"/>
+                    <ComboBoxItem Content="Absent"/>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Holiday Name (visible only for non-work days) -->
+            <StackPanel Spacing="4" IsVisible="{Binding !IsWorkDay}">
+                <TextBlock Text="Holiday Name" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding HolidayName}" Watermark="e.g., NEW YEAR HOLIDAY"/>
+            </StackPanel>
+
+            <!-- Login Time (visible only for work days) -->
+            <StackPanel Spacing="4" IsVisible="{Binding IsWorkDay}">
+                <TextBlock Text="Login Time" FontWeight="SemiBold"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding LoginHour}" Minimum="0" Maximum="23"
+                                   FormatString="00" Width="80"/>
+                    <TextBlock Text=":" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"/>
+                    <NumericUpDown Value="{Binding LoginMinute}" Minimum="0" Maximum="59"
+                                   FormatString="00" Width="80"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Logout Time (visible only for work days) -->
+            <StackPanel Spacing="4" IsVisible="{Binding IsWorkDay}">
+                <TextBlock Text="Logout Time" FontWeight="SemiBold"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumericUpDown Value="{Binding LogoutHour}" Minimum="0" Maximum="23"
+                                   FormatString="00" Width="80"/>
+                    <TextBlock Text=":" VerticalAlignment="Center" FontSize="18" FontWeight="Bold"/>
+                    <NumericUpDown Value="{Binding LogoutMinute}" Minimum="0" Maximum="59"
+                                   FormatString="00" Width="80"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Overtime Display -->
+            <Border Background="#FFF3E0" Padding="12" CornerRadius="4" IsVisible="{Binding IsWorkDay}">
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="Overtime:" FontWeight="SemiBold"/>
+                    <TextBlock FontWeight="Bold">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} Hr {1} Min">
+                                <Binding Path="OvertimeHours"/>
+                                <Binding Path="OvertimeMinutes"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock Text="{Binding IsOvertime}" Foreground="Gray" FontStyle="Italic"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Notes -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Notes" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding Notes}" Watermark="Optional notes..." AcceptsReturn="False"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="20,8" MinWidth="80"/>
+                <Button Content="Save" Command="{Binding SaveCommand}"
+                        Classes="accent" Padding="20,8" MinWidth="80" FontWeight="Bold"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
