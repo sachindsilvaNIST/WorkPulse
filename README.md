@@ -116,7 +116,6 @@ NistAttendance/bin/Release/net8.0/win-x64/publish/NistAttendance.exe
 ```
 
 
-
 ### Windows Users
 
 1. Create a folder: `C:\Program Files\NistAttendance\`
