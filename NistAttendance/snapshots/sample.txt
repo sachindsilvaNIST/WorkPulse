@@ -1,0 +1,35 @@
+Key	Hex	Usage
+GlassPrimaryColor	#0078D4	Primary accent (Microsoft Blue)
+GlassSecondaryColor	#106EBE	Secondary accent
+GlassBackgroundColor	#F3F3F3	Window/app background
+GlassPanelColor	#FFFFFF	Panel/card backgrounds
+GlassBorderColor	#E0E0E0	Borders, dividers
+GlassTextColor	#1A1A1A	Primary text
+GlassSubtleTextColor	#666666	Labels, secondary text
+GlassSuccessColor	#107C10	Success/confirm buttons (green)
+GlassWarningColor	#FF8C00	Warnings (orange)
+GlassErrorColor	#D13438	Error/delete/cancel buttons (red)
+GlassAppleBlueColor	#007AFF	Apple Blue (Add App, Add Issue buttons)
+GlassAppleGreenColor	#34C759	Apple Green
+GlassAppleRedColor	#FF3B30	Apple Red
+GlassAppleLightGrayColor	#E5E5EA	Apple Light Gray
+Hover Colors
+Key	Hex	Usage
+GlassAppleBlueHoverColor	#4DA3FF	Blue button hover
+GlassAppleGreenHoverColor	#7ADB8F	Green button hover
+GlassAppleRedHoverColor	#FF7A73	Red button hover
+GlassAppleLightGrayHoverColor	#F2F2F5	Gray button hover
+GlassSuccessHoverColor	#4CAF4C	Success button hover
+Special Brushes
+Key	Hex	Usage
+GlassPanelTranslucentBrush	#F5FFFFFF	Semi-transparent toolbar
+Dialog-Only Colors (hardcoded in ExportPreviewWindow & AppUpdateDialog)
+Hex	Usage
+#F5F5F7	Dialog window background
+#FAFAFA	Dialog title/footer background
+#107C10 / #0b5c0b	Confirm button normal/hover
+#D13438 / #a02528	Cancel button normal/hover
+#80000000	Loading overlay (50% black)
+#CCFFFFFF	Dialog spinner overlay (80% white)
+#FFF3CD	Alert icon background (yellow)
+#856404	Alert icon foreground (dark yellow)

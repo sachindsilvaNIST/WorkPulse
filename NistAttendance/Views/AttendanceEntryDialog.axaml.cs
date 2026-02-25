@@ -9,6 +9,15 @@ public partial class AttendanceEntryDialog : Window
     public AttendanceEntryDialog()
     {
         InitializeComponent();
+
+        // Populate DayType combo
+        DayTypeCombo.Items.Clear();
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Work Day" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Annual Paid Leave: 年休" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Unpaid Leave: 休み" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Public Holiday: 休日" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Weekend: 土・日曜日" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Absent" });
     }
 
     public AttendanceEntryDialog(AttendanceEntryViewModel viewModel) : this()
@@ -16,27 +25,46 @@ public partial class AttendanceEntryDialog : Window
         DataContext = viewModel;
         viewModel.CloseAction = Close;
 
-        // Set initial combo box selection based on view model
+        // Set initial DayType combo selection
         DayTypeCombo.SelectedIndex = viewModel.DayType switch
         {
             DayType.WorkDay => 0,
-            DayType.Holiday => 1,
-            DayType.RestDay => 2,
-            DayType.Absent => 3,
+            DayType.AnnualPaidLeave => 1,
+            DayType.UnpaidLeave => 2,
+            DayType.PublicHoliday => 3,
+            DayType.Weekend => 4,
+            DayType.Absent => 5,
             _ => 0
         };
 
-        // Sync combo box changes back to view model
+        // Sync DayType combo changes to ViewModel
         DayTypeCombo.SelectionChanged += (_, _) =>
         {
             viewModel.DayType = DayTypeCombo.SelectedIndex switch
             {
                 0 => DayType.WorkDay,
-                1 => DayType.Holiday,
-                2 => DayType.RestDay,
-                3 => DayType.Absent,
+                1 => DayType.AnnualPaidLeave,
+                2 => DayType.UnpaidLeave,
+                3 => DayType.PublicHoliday,
+                4 => DayType.Weekend,
+                5 => DayType.Absent,
                 _ => DayType.WorkDay
             };
+        };
+
+        // Set initial OT selection
+        if (viewModel.OvertimeSelection >= 0)
+        {
+            OtCombo.SelectedIndex = viewModel.OvertimeSelection == 1 ? 0 : 1; // 0=Yes, 1=No in combo
+        }
+
+        // Sync OT combo changes
+        OtCombo.SelectionChanged += (_, _) =>
+        {
+            if (OtCombo.SelectedIndex == 0)
+                viewModel.OvertimeSelection = 1; // Yes
+            else if (OtCombo.SelectedIndex == 1)
+                viewModel.OvertimeSelection = 0; // No
         };
     }
 }

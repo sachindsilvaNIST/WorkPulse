@@ -1,14 +1,20 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NistAttendance.ViewModels"
+             xmlns:conv="using:NistAttendance.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
              x:Class="NistAttendance.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
 
+    <UserControl.Resources>
+        <conv:OvertimeFlagToBackgroundConverter x:Key="OtBgConverter"/>
+        <conv:OvertimeFlagToForegroundConverter x:Key="OtFgConverter"/>
+    </UserControl.Resources>
+
     <DockPanel>
-        <!-- Month Navigation + Quick Actions -->
+        <!-- Month Navigation + Edit Mode Indicator + Save -->
         <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
             <!-- Month Navigation -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -20,12 +26,23 @@
                         FontSize="16" Padding="8,4" ToolTip.Tip="Next Month"/>
             </StackPanel>
 
-            <!-- Quick Actions -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                <Button Content="Login Now" Command="{Binding LoginNowCommand}"
-                        Classes="accent" Padding="16,8" FontWeight="Bold"/>
-                <Button Content="Logout Now" Command="{Binding LogoutNowCommand}"
-                        Classes="accent" Padding="16,8" FontWeight="Bold"/>
+            <!-- Edit Mode Indicator + Save Button -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <!-- Edit Mode Badge -->
+                <Border IsVisible="{Binding IsEditMode}"
+                        Padding="12,4" CornerRadius="4">
+                    <Border.Background>
+                        <SolidColorBrush Color="#FFF3E0"/>
+                    </Border.Background>
+                    <TextBlock Text="EDIT MODE" FontWeight="Bold" Foreground="#FF8C00" FontSize="13"/>
+                </Border>
+
+                <!-- Save Button (visible in edit mode) -->
+                <Button Content="Save" Command="{Binding SaveAllChangesCommand}"
+                        IsVisible="{Binding IsEditMode}"
+                        Padding="16,6" FontWeight="Bold"
+                        Background="#107C10" Foreground="White"
+                        ToolTip.Tip="Save all changes to disk"/>
             </StackPanel>
         </Grid>
 
@@ -33,27 +50,28 @@
         <Border DockPanel.Dock="Bottom" Background="#F5F5F5" Padding="16" CornerRadius="6" Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal" Spacing="48">
                 <StackPanel>
-                    <TextBlock Text="Work Days" FontSize="12" Foreground="Gray"/>
-                    <TextBlock Text="{Binding TotalWorkDays}" FontSize="24" FontWeight="Bold" Foreground="#2196F3"/>
+                    <TextBlock Text="Work Days" FontSize="12" Foreground="#666666"/>
+                    <TextBlock Text="{Binding TotalWorkDays}" FontSize="24" FontWeight="Bold" Foreground="#0078D4"/>
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="Overtime Count" FontSize="12" Foreground="Gray"/>
-                    <TextBlock Text="{Binding OvertimeCount}" FontSize="24" FontWeight="Bold" Foreground="#FF9800"/>
+                    <TextBlock Text="Overtime Count" FontSize="12" Foreground="#666666"/>
+                    <TextBlock Text="{Binding OvertimeCount}" FontSize="24" FontWeight="Bold" Foreground="#FF8C00"/>
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="Total Overtime" FontSize="12" Foreground="Gray"/>
-                    <TextBlock Text="{Binding TotalOvertimeDuration}" FontSize="24" FontWeight="Bold" Foreground="#F44336"/>
+                    <TextBlock Text="Total Overtime" FontSize="12" Foreground="#666666"/>
+                    <TextBlock Text="{Binding TotalOvertimeDuration}" FontSize="24" FontWeight="Bold" Foreground="#D13438"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
         <!-- Attendance DataGrid -->
-        <DataGrid ItemsSource="{Binding Records}"
+        <DataGrid x:Name="AttendanceGrid"
+                  ItemsSource="{Binding Records}"
                   SelectedItem="{Binding SelectedRecord}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserSortColumns="False"
-                  CanUserResizeColumns="True"
+                  CanUserResizeColumns="False"
                   GridLinesVisibility="Horizontal"
                   BorderThickness="1"
                   BorderBrush="#E0E0E0"
@@ -63,15 +81,28 @@
                   FontSize="14"
                   RowHeight="36">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="DAY" Binding="{Binding DayAbbreviation}" Width="60"
-                                    FontWeight="SemiBold"/>
-                <DataGridTextColumn Header="DATE" Binding="{Binding Date}" Width="110"/>
-                <DataGridTextColumn Header="LOGIN" Binding="{Binding LoginDisplay}" Width="100"/>
-                <DataGridTextColumn Header="LOGOUT" Binding="{Binding LogoutDisplay}" Width="100"/>
-                <DataGridTextColumn Header="OT Hr" Binding="{Binding OvertimeHoursDisplay}" Width="65"/>
-                <DataGridTextColumn Header="OT Min" Binding="{Binding OvertimeMinutesDisplay}" Width="65"/>
-                <DataGridTextColumn Header="OT" Binding="{Binding OvertimeFlag}" Width="55"/>
-                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                <DataGridTextColumn Header="DAY" Binding="{Binding DayAbbreviation}" Width="70"
+                                    FontWeight="SemiBold" IsReadOnly="True"/>
+                <DataGridTextColumn Header="DATE" Binding="{Binding Date}" Width="120"
+                                    IsReadOnly="True"/>
+                <DataGridTextColumn Header="LOGIN" Binding="{Binding LoginDisplay}" Width="120"/>
+                <DataGridTextColumn Header="LOGOUT" Binding="{Binding LogoutDisplay}" Width="110"/>
+                <DataGridTextColumn Header="Overtime Hours" Binding="{Binding OvertimeHoursDisplay}" Width="145"/>
+                <DataGridTextColumn Header="Overtime Minutes" Binding="{Binding OvertimeMinutesDisplay}" Width="145"/>
+                <DataGridTemplateColumn Header="Overtime" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Background="{Binding OvertimeFlag, Converter={StaticResource OtBgConverter}}"
+                                    CornerRadius="3" Margin="2,2" Padding="8,0"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <TextBlock Text="{Binding OvertimeFlag}"
+                                           Foreground="{Binding OvertimeFlag, Converter={StaticResource OtFgConverter}}"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                                           FontWeight="Bold"/>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>

@@ -17,17 +17,33 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     [ObservableProperty]
     private string? _holidayName;
 
+    // Login defaults to 8:20
     [ObservableProperty]
     private int _loginHour = 8;
 
     [ObservableProperty]
     private int _loginMinute = 20;
 
+    // Logout defaults to 17:25 (24h)
     [ObservableProperty]
     private int _logoutHour = 17;
 
     [ObservableProperty]
     private int _logoutMinute = 25;
+
+    // Overtime dropdown: -1 = not selected, 0 = No, 1 = Yes
+    [ObservableProperty]
+    private int _overtimeSelection = -1;
+
+    [ObservableProperty]
+    private bool _showOvertimeTimePicker;
+
+    // Overtime end time (when user chose Yes) - 24h format
+    [ObservableProperty]
+    private int _otEndHour = 21;
+
+    [ObservableProperty]
+    private int _otEndMinute = 0;
 
     [ObservableProperty]
     private int _overtimeHours;
@@ -39,13 +55,25 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     private bool _isOvertime;
 
     [ObservableProperty]
-    private string? _notes;
+    private bool _isOvertimeDecided;
 
     [ObservableProperty]
     private bool _isWorkDay = true;
 
     [ObservableProperty]
+    private bool _showHolidayName;
+
+    [ObservableProperty]
     private string _windowTitle = "Add Attendance";
+
+    [ObservableProperty]
+    private string _overtimeResultText = "";
+
+    [ObservableProperty]
+    private string _validationError = "";
+
+    [ObservableProperty]
+    private bool _hasValidationError;
 
     public bool DialogResult { get; private set; }
     public Action? CloseAction { get; set; }
@@ -60,6 +88,7 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         DayType = record.DayType;
         HolidayName = record.HolidayName;
         IsWorkDay = record.DayType == DayType.WorkDay;
+        ShowHolidayName = record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday;
 
         if (record.LoginTime.HasValue)
         {
@@ -73,10 +102,26 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             LogoutMinute = record.LogoutTime.Value.Minute;
         }
 
-        OvertimeHours = record.OvertimeHours;
-        OvertimeMinutes = record.OvertimeMinutes;
-        IsOvertime = record.IsOvertime;
-        Notes = record.Notes;
+        if (record.IsOvertimeDecided)
+        {
+            OvertimeSelection = record.IsOvertime ? 1 : 0;
+            IsOvertimeDecided = true;
+
+            if (record.IsOvertime)
+            {
+                if (record.LogoutTime.HasValue)
+                {
+                    OtEndHour = record.LogoutTime.Value.Hour;
+                    OtEndMinute = record.LogoutTime.Value.Minute;
+                }
+                ShowOvertimeTimePicker = true;
+                OvertimeHours = record.OvertimeHours;
+                OvertimeMinutes = record.OvertimeMinutes;
+                IsOvertime = true;
+                OvertimeResultText = $"Overtime: {record.OvertimeHours} Hr {record.OvertimeMinutes} Min";
+            }
+        }
+
         WindowTitle = $"Edit - {record.Date:yyyy-MM-dd}";
     }
 
@@ -87,8 +132,8 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         {
             Date = date,
             DayType = DayType,
-            HolidayName = DayType == DayType.Holiday ? HolidayName : null,
-            Notes = Notes
+            HolidayName = DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday
+                ? HolidayName : null
         };
 
         if (DayType == DayType.WorkDay)
@@ -96,10 +141,10 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             record.LoginTime = new TimeOnly(LoginHour, LoginMinute);
             record.LogoutTime = new TimeOnly(LogoutHour, LogoutMinute);
 
-            var (isOt, hrs, mins) = OvertimeCalculator.Calculate(record.LoginTime, record.LogoutTime);
-            record.IsOvertime = isOt;
-            record.OvertimeHours = hrs;
-            record.OvertimeMinutes = mins;
+            record.IsOvertimeDecided = IsOvertimeDecided;
+            record.IsOvertime = IsOvertime;
+            record.OvertimeHours = OvertimeHours;
+            record.OvertimeMinutes = OvertimeMinutes;
         }
 
         return record;
@@ -108,26 +153,75 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     partial void OnDayTypeChanged(DayType value)
     {
         IsWorkDay = value == DayType.WorkDay;
+        ShowHolidayName = value is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday;
     }
 
-    partial void OnLogoutHourChanged(int value) => RecalculateOvertime();
-    partial void OnLogoutMinuteChanged(int value) => RecalculateOvertime();
-
-    private void RecalculateOvertime()
+    partial void OnOvertimeSelectionChanged(int value)
     {
-        if (DayType != DayType.WorkDay) return;
+        // Clear validation error when user makes a selection
+        HasValidationError = false;
+        ValidationError = "";
 
-        var login = new TimeOnly(LoginHour, LoginMinute);
-        var logout = new TimeOnly(LogoutHour, LogoutMinute);
-        var (isOt, hrs, mins) = OvertimeCalculator.Calculate(login, logout);
+        if (value == 1) // Yes
+        {
+            ShowOvertimeTimePicker = true;
+            IsOvertimeDecided = false; // Not decided until Confirm is clicked
+        }
+        else if (value == 0) // No
+        {
+            ShowOvertimeTimePicker = false;
+            IsOvertime = false;
+            IsOvertimeDecided = true;
+            OvertimeHours = 0;
+            OvertimeMinutes = 0;
+            OvertimeResultText = "No overtime";
+        }
+    }
+
+    [RelayCommand]
+    private void ConfirmOvertime()
+    {
+        var otEndTime = new TimeOnly(OtEndHour, OtEndMinute);
+        var loginTime = new TimeOnly(LoginHour, LoginMinute);
+
+        var (isOt, hrs, mins) = OvertimeCalculator.Calculate(loginTime, otEndTime);
         IsOvertime = isOt;
+        IsOvertimeDecided = true;
         OvertimeHours = hrs;
         OvertimeMinutes = mins;
+
+        LogoutHour = OtEndHour;
+        LogoutMinute = OtEndMinute;
+
+        if (isOt)
+            OvertimeResultText = $"Overtime: {hrs} Hr {mins} Min";
+        else
+            OvertimeResultText = "End time is within standard hours (no OT).";
+    }
+
+    [RelayCommand]
+    private void CancelOvertime()
+    {
+        ShowOvertimeTimePicker = false;
+        OvertimeSelection = -1;
+        IsOvertimeDecided = false;
+        IsOvertime = false;
+        OvertimeHours = 0;
+        OvertimeMinutes = 0;
+        OvertimeResultText = "";
     }
 
     [RelayCommand]
     private void Save()
     {
+        // Validate: Work day must have Overtime selected
+        if (DayType == DayType.WorkDay && OvertimeSelection == -1)
+        {
+            HasValidationError = true;
+            ValidationError = "Please select Yes or No for Overtime before saving.";
+            return;
+        }
+
         DialogResult = true;
         CloseAction?.Invoke();
     }

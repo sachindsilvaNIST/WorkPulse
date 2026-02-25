@@ -82,3 +82,4 @@
 /home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/obj/Debug/net8.0/NistAttendance.pdb
 /home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/obj/Debug/net8.0/NistAttendance.genruntimeconfig.cache
 /home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/obj/Debug/net8.0/ref/NistAttendance.dll
+/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/obj/Debug/net8.0/NistAttendance.sourcelink.json

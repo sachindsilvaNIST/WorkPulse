@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -47,6 +48,29 @@ public partial class MainWindowViewModel : ViewModelBase
         await Dashboard.InitializeAsync();
     }
 
+    // Returns true if the app can close, false if user should stay
+    public async Task<bool> CanCloseAsync()
+    {
+        if (Dashboard.HasPendingOvertimeRecords())
+        {
+            var pendingRecords = Dashboard.GetPendingOvertimeRecords();
+            var dateList = string.Join("\n",
+                pendingRecords.Select(r => $"  - {r.Date:yyyy-MM-dd} ({r.DayAbbreviation})"));
+
+            var message = $"The following records have the Overtime field left blank:\n\n"
+                + dateList
+                + "\n\nPlease update the Overtime field before closing.";
+
+            if (ShowConfirmDialog != null)
+            {
+                // Returns true = "Go Back", false = "Close Anyway"
+                var goBack = await ShowConfirmDialog("OT Field Incomplete", message);
+                return !goBack;
+            }
+        }
+        return true;
+    }
+
     [RelayCommand]
     private async Task ImportExcel()
     {
@@ -80,8 +104,6 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    
-
     [RelayCommand]
     private async Task ExportExcel()
     {
@@ -111,6 +133,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddEntry()
     {
+        if (!Dashboard.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
         var entryVm = new AttendanceEntryViewModel();
 
         if (ShowEditDialog != null && await ShowEditDialog(entryVm))
@@ -122,10 +150,20 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task EditEntry()
+    private async Task EditSelectedEntry()
     {
+        if (!Dashboard.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
         var selected = Dashboard.SelectedRecord;
-        if (selected == null) return;
+        if (selected == null)
+        {
+            StatusMessage = "Select a row to edit.";
+            return;
+        }
 
         var entryVm = new AttendanceEntryViewModel();
         entryVm.LoadFromRecord(selected);
@@ -141,8 +179,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteEntry()
     {
+        if (!Dashboard.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
         var selected = Dashboard.SelectedRecord;
-        if (selected == null) return;
+        if (selected == null)
+        {
+            StatusMessage = "Select a row to delete.";
+            return;
+        }
 
         if (ShowConfirmDialog != null)
         {
@@ -157,17 +205,23 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddHoliday()
     {
+        if (!Dashboard.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
         var entryVm = new AttendanceEntryViewModel
         {
-            DayType = DayType.Holiday,
-            WindowTitle = "Add Holiday"
+            DayType = DayType.PublicHoliday,
+            WindowTitle = "Add Holiday / Leave"
         };
 
         if (ShowEditDialog != null && await ShowEditDialog(entryVm))
         {
             var record = entryVm.ToRecord();
             await Dashboard.SaveRecord(record);
-            StatusMessage = $"Added holiday: {record.HolidayName} on {record.Date}";
+            StatusMessage = $"Added {record.DayType}: {record.HolidayName ?? record.LoginDisplay} on {record.Date}";
         }
     }
 }

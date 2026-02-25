@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -41,6 +42,15 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private AttendanceRecord? _selectedRecord;
 
+    [ObservableProperty]
+    private bool _isEditMode;
+
+    [ObservableProperty]
+    private string _editModeButtonText = "Edit";
+
+    [ObservableProperty]
+    private bool _hasUnsavedChanges;
+
     private MonthlyData? _currentMonthData;
 
     public DashboardViewModel(IDataService dataService)
@@ -53,6 +63,16 @@ public partial class DashboardViewModel : ViewModelBase
     public async Task InitializeAsync()
     {
         await LoadMonthAsync();
+    }
+
+    [RelayCommand]
+    private void ToggleEditMode()
+    {
+        IsEditMode = !IsEditMode;
+        EditModeButtonText = IsEditMode ? "Done" : "Edit";
+        StatusMessage = IsEditMode
+            ? "EDIT MODE - Double-click cells to edit. Click Save when finished."
+            : "View mode.";
     }
 
     [RelayCommand]
@@ -80,60 +100,30 @@ public partial class DashboardViewModel : ViewModelBase
         await LoadMonthAsync();
     }
 
-    [RelayCommand]
-    private async Task LoginNow()
+    // Called when inline cell editing completes
+    public void MarkDirty()
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var now = new TimeOnly(DateTime.Now.Hour, DateTime.Now.Minute);
-
-        EnsureCurrentMonth(today);
-
-        var record = _currentMonthData!.Records.FirstOrDefault(r => r.Date == today);
-        if (record == null)
-        {
-            record = new AttendanceRecord
-            {
-                Date = today,
-                DayType = DayType.WorkDay,
-                LoginTime = now
-            };
-            _currentMonthData.Records.Add(record);
-        }
-        else
-        {
-            record.LoginTime = now;
-        }
-
-        await SaveAndRefresh();
-        StatusMessage = $"Login recorded at {now:H:mm}";
+        HasUnsavedChanges = true;
+        StatusMessage = "You have unsaved changes. Click Save to persist.";
     }
 
+    // Sync in-memory records back to MonthlyData and save to disk
     [RelayCommand]
-    private async Task LogoutNow()
+    private async Task SaveAllChanges()
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var now = new TimeOnly(DateTime.Now.Hour, DateTime.Now.Minute);
+        if (_currentMonthData == null) return;
 
-        EnsureCurrentMonth(today);
+        // Sync ObservableCollection back to model
+        _currentMonthData.Records = Records.OrderBy(r => r.Date).ToList();
+        await _dataService.SaveMonthAsync(_currentMonthData);
 
-        var record = _currentMonthData!.Records.FirstOrDefault(r => r.Date == today);
-        if (record == null)
-        {
-            StatusMessage = "No login record for today. Please login first.";
-            return;
-        }
+        HasUnsavedChanges = false;
+        RefreshSummary();
 
-        record.LogoutTime = now;
-
-        // Auto-calculate overtime
-        var (isOt, hrs, mins) = OvertimeCalculator.Calculate(record.LoginTime, record.LogoutTime);
-        record.IsOvertime = isOt;
-        record.OvertimeHours = hrs;
-        record.OvertimeMinutes = mins;
-
-        await SaveAndRefresh();
-        StatusMessage = $"Logout recorded at {now:H:mm}" +
-            (isOt ? $" (OT: {hrs}h {mins}m)" : "");
+        // Exit edit mode after saving
+        IsEditMode = false;
+        EditModeButtonText = "Edit";
+        StatusMessage = "All changes saved.";
     }
 
     public async Task SaveRecord(AttendanceRecord record)
@@ -161,6 +151,17 @@ public partial class DashboardViewModel : ViewModelBase
             await SaveAndRefresh();
             StatusMessage = $"Deleted record for {record.Date}";
         }
+    }
+
+    public bool HasPendingOvertimeRecords()
+    {
+        return _currentMonthData?.Records.Any(r => r.IsOvertimePending) ?? false;
+    }
+
+    public List<AttendanceRecord> GetPendingOvertimeRecords()
+    {
+        return _currentMonthData?.Records.Where(r => r.IsOvertimePending).ToList()
+            ?? new List<AttendanceRecord>();
     }
 
     private void EnsureCurrentMonth(DateOnly date)
@@ -197,6 +198,7 @@ public partial class DashboardViewModel : ViewModelBase
             };
         }
 
+        HasUnsavedChanges = false;
         RefreshDisplay();
     }
 
@@ -208,6 +210,7 @@ public partial class DashboardViewModel : ViewModelBase
 
         await _dataService.SaveMonthAsync(data);
         MonthYearDisplay = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(SelectedMonth).ToUpper()} {SelectedYear}";
+        HasUnsavedChanges = false;
         RefreshDisplay();
     }
 
@@ -218,6 +221,7 @@ public partial class DashboardViewModel : ViewModelBase
             _currentMonthData.Records = _currentMonthData.Records.OrderBy(r => r.Date).ToList();
             await _dataService.SaveMonthAsync(_currentMonthData);
         }
+        HasUnsavedChanges = false;
         RefreshDisplay();
     }
 
@@ -225,7 +229,11 @@ public partial class DashboardViewModel : ViewModelBase
     {
         Records = new ObservableCollection<AttendanceRecord>(
             _currentMonthData?.Records.OrderBy(r => r.Date) ?? Enumerable.Empty<AttendanceRecord>());
+        RefreshSummary();
+    }
 
+    private void RefreshSummary()
+    {
         TotalWorkDays = _currentMonthData?.TotalWorkDays ?? 0;
         OvertimeCount = _currentMonthData?.OvertimeCount ?? 0;
         TotalOvertimeDuration = _currentMonthData?.TotalOvertimeDisplay ?? "0 Hr 0 Min";

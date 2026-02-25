@@ -173,30 +173,35 @@ public class ExcelImportService : IExcelImportService
         var dayText = cellC.GetString().Trim().ToUpper();
         var loginText = cellE.GetString().Trim();
 
-        // Check for rest day (Saturday with 休)
-        if (loginText == "休" || loginText.Contains("休"))
+        // Check for weekend/rest day (Saturday/Sunday with 休 or 土・日曜日)
+        if (loginText == "休" || loginText.Contains("休") || loginText.Contains("土・日曜日"))
         {
             if (cellD.DataType == XLDataType.DateTime)
             {
                 return new AttendanceRecord
                 {
                     Date = DateOnly.FromDateTime(cellD.GetDateTime()),
-                    DayType = DayType.RestDay
+                    DayType = DayType.Weekend
                 };
             }
             return null;
         }
 
-        // Check for holiday (text in column C that's not a day abbreviation and spans merged cells)
+        // Check for holiday/leave (text in column C that's not a day abbreviation)
         if (!string.IsNullOrEmpty(dayText) && !DayAbbreviations.Contains(dayText)
             && !dayText.Contains("OVERTIME") && !dayText.Contains("COUNT")
             && !dayText.Contains("TOTAL"))
         {
-            // This is a holiday row - but we need a date
-            // Look in surrounding rows for date context, or use the merged range info
+            // Determine leave type from text
+            var dayType = DayType.PublicHoliday;
+            if (dayText.Contains("年休"))
+                dayType = DayType.AnnualPaidLeave;
+            else if (dayText.Contains("休み"))
+                dayType = DayType.UnpaidLeave;
+
             return new AttendanceRecord
             {
-                DayType = DayType.Holiday,
+                DayType = dayType,
                 HolidayName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(dayText.ToLower()),
                 Date = GuessHolidayDate(ws, row)
             };
@@ -243,6 +248,7 @@ public class ExcelImportService : IExcelImportService
 
         var otFlag = cellK.GetString().Trim().ToUpper();
         record.IsOvertime = otFlag == "YES";
+        record.IsOvertimeDecided = otFlag == "YES" || otFlag == "NO";
 
         return record;
     }

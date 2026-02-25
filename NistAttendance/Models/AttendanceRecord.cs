@@ -20,7 +20,8 @@ public class AttendanceRecord
     public int OvertimeMinutes { get; set; }
     public bool IsOvertime { get; set; }
 
-    public string? Notes { get; set; }
+    // Tracks whether the user has explicitly set the OT field (Yes or No)
+    public bool IsOvertimeDecided { get; set; }
 
     [JsonIgnore]
     public string DayAbbreviation => DayOfWeek switch
@@ -36,11 +37,18 @@ public class AttendanceRecord
     };
 
     [JsonIgnore]
-    public string LoginDisplay => DayType == DayType.WorkDay && LoginTime.HasValue
-        ? LoginTime.Value.ToString("H:mm")
-        : DayType == DayType.Holiday ? HolidayName ?? "HOLIDAY"
-        : DayType == DayType.RestDay ? "休"
-        : "";
+    public bool IsNonWorkDay => DayType != DayType.WorkDay;
+
+    [JsonIgnore]
+    public string LoginDisplay => DayType switch
+    {
+        DayType.WorkDay when LoginTime.HasValue => LoginTime.Value.ToString("H:mm"),
+        DayType.AnnualPaidLeave => HolidayName ?? "年休",
+        DayType.UnpaidLeave => HolidayName ?? "休み",
+        DayType.PublicHoliday => HolidayName ?? "休日",
+        DayType.Weekend => "土・日曜日",
+        _ => ""
+    };
 
     [JsonIgnore]
     public string LogoutDisplay => DayType == DayType.WorkDay && LogoutTime.HasValue
@@ -48,13 +56,24 @@ public class AttendanceRecord
         : "";
 
     [JsonIgnore]
-    public string OvertimeHoursDisplay => IsOvertime ? OvertimeHours.ToString() : "";
+    public string OvertimeHoursDisplay =>
+        DayType != DayType.WorkDay || !IsOvertimeDecided ? ""
+        : IsOvertime ? OvertimeHours.ToString()
+        : "N/A";
 
     [JsonIgnore]
-    public string OvertimeMinutesDisplay => IsOvertime ? OvertimeMinutes.ToString() : "";
+    public string OvertimeMinutesDisplay =>
+        DayType != DayType.WorkDay || !IsOvertimeDecided ? ""
+        : IsOvertime ? OvertimeMinutes.ToString()
+        : "N/A";
 
     [JsonIgnore]
-    public string OvertimeFlag => DayType == DayType.WorkDay && LoginTime.HasValue
-        ? (IsOvertime ? "YES" : "NO")
-        : "";
+    public string OvertimeFlag =>
+        DayType != DayType.WorkDay ? ""
+        : !IsOvertimeDecided ? ""
+        : IsOvertime ? "YES" : "NO";
+
+    [JsonIgnore]
+    public bool IsOvertimePending =>
+        DayType == DayType.WorkDay && LoginTime.HasValue && LogoutTime.HasValue && !IsOvertimeDecided;
 }

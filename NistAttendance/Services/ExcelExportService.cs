@@ -28,7 +28,7 @@ public class ExcelExportService : IExcelExportService
         ws.Cell("E3").Value = "LOGIN";
         ws.Cell("F3").Value = "LOGOUT";
         ws.Range("G3:J3").Merge().Value = "OVERTIME DURATION";
-        ws.Cell("K3").Value = "OT";
+        ws.Cell("K3").Value = "Overtime";
 
         var headerRange = ws.Range("C3:K3");
         headerRange.Style.Font.Bold = true;
@@ -40,7 +40,6 @@ public class ExcelExportService : IExcelExportService
         {
             int monthStartRow = currentRow;
 
-            // Group records by week
             var weekGroups = GroupByWeek(monthData.Records);
 
             foreach (var week in weekGroups)
@@ -50,11 +49,9 @@ public class ExcelExportService : IExcelExportService
                     WriteRecordRow(ws, currentRow, record);
                     currentRow++;
                 }
-                // Blank row between weeks
                 currentRow++;
             }
 
-            // Merge column B for the month label
             if (currentRow > monthStartRow)
             {
                 var monthRange = ws.Range(monthStartRow, 2, currentRow - 1, 2);
@@ -93,7 +90,7 @@ public class ExcelExportService : IExcelExportService
         ws.Column(8).Width = 4;
         ws.Column(9).Width = 5;
         ws.Column(10).Width = 4;
-        ws.Column(11).Width = 5;
+        ws.Column(11).Width = 10;
 
         workbook.SaveAs(filePath);
         return Task.CompletedTask;
@@ -101,20 +98,38 @@ public class ExcelExportService : IExcelExportService
 
     private void WriteRecordRow(IXLWorksheet ws, int row, AttendanceRecord record)
     {
-        if (record.DayType == DayType.Holiday)
+        // Handle non-work day types
+        if (record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday)
         {
-            ws.Range(row, 3, row, 11).Merge().Value = record.HolidayName ?? "HOLIDAY";
+            var label = record.DayType switch
+            {
+                DayType.AnnualPaidLeave => record.HolidayName ?? "年休",
+                DayType.UnpaidLeave => record.HolidayName ?? "休み",
+                DayType.PublicHoliday => record.HolidayName ?? "休日",
+                _ => "HOLIDAY"
+            };
+            ws.Range(row, 3, row, 11).Merge().Value = label;
             ws.Range(row, 3, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             ws.Range(row, 3, row, 11).Style.Font.Italic = true;
             return;
         }
 
-        if (record.DayType == DayType.RestDay)
+        if (record.DayType == DayType.Weekend)
         {
             ws.Cell(row, 3).Value = record.DayAbbreviation;
             ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
             ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
-            ws.Range(row, 5, row, 11).Merge().Value = "休";
+            ws.Range(row, 5, row, 11).Merge().Value = "土・日曜日";
+            ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            return;
+        }
+
+        if (record.DayType == DayType.Absent)
+        {
+            ws.Cell(row, 3).Value = record.DayAbbreviation;
+            ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
+            ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
+            ws.Range(row, 5, row, 11).Merge().Value = "ABSENT";
             ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             return;
         }
@@ -146,7 +161,26 @@ public class ExcelExportService : IExcelExportService
             ws.Cell(row, 9).Value = record.OvertimeMinutes;
         }
         ws.Cell(row, 10).Value = "Min";
-        ws.Cell(row, 11).Value = record.IsOvertime ? "YES" : "NO";
+
+        // Overtime flag with coloring
+        var otCell = ws.Cell(row, 11);
+        if (record.IsOvertimeDecided)
+        {
+            otCell.Value = record.IsOvertime ? "YES" : "NO";
+            otCell.Style.Font.Bold = true;
+            otCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            if (record.IsOvertime)
+            {
+                otCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#107C10");
+                otCell.Style.Font.FontColor = XLColor.White;
+            }
+            else
+            {
+                otCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#D13438");
+                otCell.Style.Font.FontColor = XLColor.White;
+            }
+        }
     }
 
     private static List<List<AttendanceRecord>> GroupByWeek(List<AttendanceRecord> records)
@@ -160,7 +194,6 @@ public class ExcelExportService : IExcelExportService
             if (prev != null)
             {
                 var daysBetween = record.Date.DayNumber - prev.Date.DayNumber;
-                // New week if gap > 2 days (weekend gap) or if it's a Monday after other days
                 if (daysBetween > 2 || (record.DayOfWeek == DayOfWeek.Monday && prev.DayOfWeek != DayOfWeek.Monday))
                 {
                     if (currentWeek.Count > 0)

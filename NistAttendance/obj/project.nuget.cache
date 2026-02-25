@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "l7CVwGudgj8=",
+  "dgSpecHash": "+Y+Ra6KKRjQ=",
   "success": true,
   "projectFilePath": "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/NistAttendance.csproj",
   "expectedPackageFiles": [
@@ -32,6 +32,7 @@
     "/home/sankyo/.nuget/packages/harfbuzzsharp.nativeassets.webassembly/8.3.1.1/harfbuzzsharp.nativeassets.webassembly.8.3.1.1.nupkg.sha512",
     "/home/sankyo/.nuget/packages/harfbuzzsharp.nativeassets.win32/8.3.1.1/harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg.sha512",
     "/home/sankyo/.nuget/packages/microcom.runtime/0.11.0/microcom.runtime.0.11.0.nupkg.sha512",
+    "/home/sankyo/.nuget/packages/microsoft.net.illink.tasks/8.0.23/microsoft.net.illink.tasks.8.0.23.nupkg.sha512",
     "/home/sankyo/.nuget/packages/rbush.signed/4.0.0/rbush.signed.4.0.0.nupkg.sha512",
     "/home/sankyo/.nuget/packages/sixlabors.fonts/1.0.0/sixlabors.fonts.1.0.0.nupkg.sha512",
     "/home/sankyo/.nuget/packages/skiasharp/2.88.9/skiasharp.2.88.9.nupkg.sha512",
@@ -41,7 +42,10 @@
     "/home/sankyo/.nuget/packages/skiasharp.nativeassets.win32/2.88.9/skiasharp.nativeassets.win32.2.88.9.nupkg.sha512",
     "/home/sankyo/.nuget/packages/system.io.packaging/8.0.1/system.io.packaging.8.0.1.nupkg.sha512",
     "/home/sankyo/.nuget/packages/system.io.pipelines/8.0.0/system.io.pipelines.8.0.0.nupkg.sha512",
-    "/home/sankyo/.nuget/packages/tmds.dbus.protocol/0.21.2/tmds.dbus.protocol.0.21.2.nupkg.sha512"
+    "/home/sankyo/.nuget/packages/tmds.dbus.protocol/0.21.2/tmds.dbus.protocol.0.21.2.nupkg.sha512",
+    "/home/sankyo/.nuget/packages/microsoft.netcore.app.runtime.win-x64/8.0.23/microsoft.netcore.app.runtime.win-x64.8.0.23.nupkg.sha512",
+    "/home/sankyo/.nuget/packages/microsoft.aspnetcore.app.runtime.win-x64/8.0.23/microsoft.aspnetcore.app.runtime.win-x64.8.0.23.nupkg.sha512",
+    "/home/sankyo/.nuget/packages/microsoft.netcore.app.host.win-x64/8.0.23/microsoft.netcore.app.host.win-x64.8.0.23.nupkg.sha512"
   ],
   "logs": []
 }
