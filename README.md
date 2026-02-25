@@ -100,6 +100,21 @@ update-desktop-database ~/.local/share/applications/
 
 4. Open the app from the application launcher by searching **`NIST Attendance`**
 
+## Ubuntu (Build + Install)
+```bash
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/NistAttendance.csproj" -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true && sudo cp "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/bin/Release/net8.0/linux-x64/publish/NistAttendance" /opt/nist-attendance/NistAttendance
+```
+
+## Windows EXE: (Build)
+```bash
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/NistAttendance.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+### Windows EXE Output Location:
+```bash
+NistAttendance/bin/Release/net8.0/win-x64/publish/NistAttendance.exe
+```
+
 
 
 ### Windows Users

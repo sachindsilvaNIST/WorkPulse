@@ -81,12 +81,12 @@
                   FontSize="14"
                   RowHeight="36">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="DAY" Binding="{Binding DayAbbreviation}" Width="70"
+                <DataGridTextColumn Header="Day" Binding="{Binding DayAbbreviation}" Width="70"
                                     FontWeight="SemiBold" IsReadOnly="True"/>
-                <DataGridTextColumn Header="DATE" Binding="{Binding Date}" Width="120"
+                <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120"
                                     IsReadOnly="True"/>
-                <DataGridTextColumn Header="LOGIN" Binding="{Binding LoginDisplay}" Width="120"/>
-                <DataGridTextColumn Header="LOGOUT" Binding="{Binding LogoutDisplay}" Width="110"/>
+                <DataGridTextColumn Header="Login" Binding="{Binding LoginDisplay}" Width="120"/>
+                <DataGridTextColumn Header="Logout" Binding="{Binding LogoutDisplay}" Width="110"/>
                 <DataGridTextColumn Header="Overtime Hours" Binding="{Binding OvertimeHoursDisplay}" Width="145"/>
                 <DataGridTextColumn Header="Overtime Minutes" Binding="{Binding OvertimeMinutesDisplay}" Width="145"/>
                 <DataGridTemplateColumn Header="Overtime" Width="*">

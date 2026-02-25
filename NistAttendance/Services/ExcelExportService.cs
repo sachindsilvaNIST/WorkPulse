@@ -108,9 +108,12 @@ public class ExcelExportService : IExcelExportService
                 DayType.PublicHoliday => record.HolidayName ?? "休日",
                 _ => "HOLIDAY"
             };
-            ws.Range(row, 3, row, 11).Merge().Value = label;
-            ws.Range(row, 3, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            ws.Range(row, 3, row, 11).Style.Font.Italic = true;
+            ws.Cell(row, 3).Value = record.DayAbbreviation;
+            ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
+            ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
+            ws.Range(row, 5, row, 11).Merge().Value = label;
+            ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Range(row, 5, row, 11).Style.Font.Italic = true;
             return;
         }
 
@@ -119,17 +122,7 @@ public class ExcelExportService : IExcelExportService
             ws.Cell(row, 3).Value = record.DayAbbreviation;
             ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
             ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
-            ws.Range(row, 5, row, 11).Merge().Value = "土・日曜日";
-            ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            return;
-        }
-
-        if (record.DayType == DayType.Absent)
-        {
-            ws.Cell(row, 3).Value = record.DayAbbreviation;
-            ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
-            ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
-            ws.Range(row, 5, row, 11).Merge().Value = "ABSENT";
+            ws.Range(row, 5, row, 11).Merge().Value = "---";
             ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             return;
         }

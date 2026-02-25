@@ -46,7 +46,7 @@ public class AttendanceRecord
         DayType.AnnualPaidLeave => HolidayName ?? "年休",
         DayType.UnpaidLeave => HolidayName ?? "休み",
         DayType.PublicHoliday => HolidayName ?? "休日",
-        DayType.Weekend => "土・日曜日",
+        DayType.Weekend => HolidayName ?? "---",
         _ => ""
     };
 

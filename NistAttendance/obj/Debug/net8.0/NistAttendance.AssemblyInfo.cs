@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NistAttendance")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7d41555d175acf27d293dcf04e7b9564acc80c37")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d1fa0f60469912f1d3d053011f7dca985fcd480b")]
 [assembly: System.Reflection.AssemblyProductAttribute("NistAttendance")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NistAttendance")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
