@@ -62,12 +62,12 @@ cd NISTAttendanceManagementSystem
 
 3. Build for `Ubuntu` 
 ```bash
-dotnet publish NistAttendance/NistAttendance.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish NistWorkspace/NistWorkspace.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 4. Build for `Windows`
 ```bash
-dotnet publish NistAttendance/NistAttendance.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish NistWorkspace/NistWorkspace.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 ## `Deployment on Local Machine [Ubuntu / Windows]`
@@ -81,11 +81,11 @@ sudo mkdir -p /opt/nist-attendance
 ```
 
 ```bash
-sudo cp NistAttendance/bin/Release/net8.0/linux-x64/publish/NistAttendance /opt/nist-attendance/
+sudo cp NistWorkspace/bin/Release/net8.0/linux-x64/publish/NistWorkspace /opt/nist-attendance/
 ```
 
 ```bash
-sudo chmod +x /opt/nist-attendance/NistAttendance
+sudo chmod +x /opt/nist-attendance/NistWorkspace
 ```
 
 2. Create a desktop entry for the application launcher:
@@ -98,36 +98,36 @@ nano ~/.local/share/applications/nist-attendance.desktop
 update-desktop-database ~/.local/share/applications/
 ```
 
-4. Open the app from the application launcher by searching **`NIST Attendance`**
+4. Open the app from the application launcher by searching **`NIST Workspace`**
 
 ## Ubuntu (Build + Install)
 ```bash
-dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/NistAttendance.csproj" -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true && sudo cp "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/bin/Release/net8.0/linux-x64/publish/NistAttendance" /opt/nist-attendance/NistAttendance
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/NistWorkspace.csproj" -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true && sudo cp "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/bin/Release/net8.0/linux-x64/publish/NistWorkspace" /opt/nist-attendance/NistWorkspace
 ```
 
 ## Windows EXE: (Build)
 ```bash
-dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistAttendance/NistAttendance.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/NistWorkspace.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 ### Windows EXE Output Location:
 ```bash
-NistAttendance/bin/Release/net8.0/win-x64/publish/NistAttendance.exe
+NistWorkspace/bin/Release/net8.0/win-x64/publish/NistWorkspace.exe
 ```
 
 
 ### Windows Users
 
-1. Create a folder: `C:\Program Files\NistAttendance\`
+1. Create a folder: `C:\Program Files\NistWorkspace\`
 
-2. Copy `NistAttendance.exe` from `NistAttendance/bin/Release/net8.0/win-x64/publish` into it
+2. Copy `NistWorkspace.exe` from `NistWorkspace/bin/Release/net8.0/win-x64/publish` into it
 
 3. Create a Desktop Shortcut:
     - Right-click `Desktop -> New -> Shortcut`
-    - Target: `C:\Program Files\NistAttendance\NistAttendance.exe`
-    - Name: **`NIST Attendance`**
+    - Target: `C:\Program Files\NistWorkspace\NistWorkspace.exe`
+    - Name: **`NIST Workspace`**
 
-4. *(Optional)* Pin to `Start Menu`: Open Start Menu, search **`NIST Attendance`**, right-click -> `Pin to Start`
+4. *(Optional)* Pin to `Start Menu`: Open Start Menu, search **`NIST Workspace`**, right-click -> `Pin to Start`
 
 | Note: Both build are self-contained. No `.NET` runtime installation is required on the target machine.
 
@@ -136,6 +136,6 @@ NistAttendance/bin/Release/net8.0/win-x64/publish/NistAttendance.exe
 
 Attendance data is stored as JSON (JavaScript Object Notation) files (one file per month) at:
 
-* **Ubuntu**: `~/.local/share/NistAttendance/`
-* **Windows**: `%LOCALAPPDATA%/NistAttendance/`
+* **Ubuntu**: `~/.local/share/NistWorkspace/`
+* **Windows**: `%LOCALAPPDATA%/NistWorkspace/`
 

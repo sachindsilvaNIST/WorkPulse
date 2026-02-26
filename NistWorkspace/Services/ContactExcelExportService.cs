@@ -12,22 +12,24 @@ public class ContactExcelExportService
         using var workbook = new XLWorkbook();
         var ws = workbook.AddWorksheet("Contact Book");
 
+        int colCount = 8;
+
         // Title row
-        ws.Range(1, 1, 1, 6).Merge().Value = "NIST Contact Book";
-        ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
-        ws.Range(1, 1, 1, 6).Style.Font.FontSize = 14;
-        ws.Range(1, 1, 1, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        ws.Range(1, 1, 1, colCount).Merge().Value = "NIST Contact Book";
+        ws.Range(1, 1, 1, colCount).Style.Font.Bold = true;
+        ws.Range(1, 1, 1, colCount).Style.Font.FontSize = 14;
+        ws.Range(1, 1, 1, colCount).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         // Header row
         int headerRow = 3;
-        var headers = new[] { "Affiliation", "性 (Family Name)", "名 (Given Name)", "部名 (Department)", "Email ID", "Side Notes" };
+        var headers = new[] { "Affiliation", "性 (Family Name)", "名 (Given Name)", "部名 (Department)", "Email ID", "Intercom", "Contact Number", "Side Notes" };
 
         for (int i = 0; i < headers.Length; i++)
         {
             ws.Cell(headerRow, i + 1).Value = headers[i];
         }
 
-        var headerRange = ws.Range(headerRow, 1, headerRow, 6);
+        var headerRange = ws.Range(headerRow, 1, headerRow, colCount);
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Font.FontColor = XLColor.White;
         headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#0078D4");
@@ -43,12 +45,14 @@ public class ContactExcelExportService
             ws.Cell(row, 3).Value = contact.GivenName;
             ws.Cell(row, 4).Value = contact.Department;
             ws.Cell(row, 5).Value = contact.Email;
-            ws.Cell(row, 6).Value = contact.Notes;
+            ws.Cell(row, 6).Value = contact.Intercom;
+            ws.Cell(row, 7).Value = contact.ContactNumber;
+            ws.Cell(row, 8).Value = contact.Notes;
 
             // Alternate row shading
             if (row % 2 == 0)
             {
-                ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#F0F6FF");
+                ws.Range(row, 1, row, colCount).Style.Fill.BackgroundColor = XLColor.FromHtml("#F0F6FF");
             }
 
             row++;
@@ -60,7 +64,7 @@ public class ContactExcelExportService
         ws.Cell(row, 1).Style.Font.Bold = true;
 
         // Auto-fit column widths
-        ws.Columns(1, 6).AdjustToContents();
+        ws.Columns(1, colCount).AdjustToContents();
 
         // Minimum column widths
         if (ws.Column(1).Width < 15) ws.Column(1).Width = 15;

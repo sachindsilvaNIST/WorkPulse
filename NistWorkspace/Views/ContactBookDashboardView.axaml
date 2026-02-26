@@ -54,34 +54,112 @@
                 <DataGridTemplateColumn Header="Affiliation" Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Affiliation}" TextWrapping="Wrap"
-                                       VerticalAlignment="Center" Padding="8,6"/>
+                            <SelectableTextBlock Text="{Binding Affiliation}" TextWrapping="Wrap"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Family Name (性)" Binding="{Binding FamilyName}" Width="155"/>
-                <DataGridTextColumn Header="Given Name (名)" Binding="{Binding GivenName}" Width="155"/>
+                <DataGridTemplateColumn Header="Family Name (性)" Width="155">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding FamilyName}"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Given Name (名)" Width="155">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding GivenName}"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Department (部名)" Width="220">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Department}" TextWrapping="Wrap"
-                                       VerticalAlignment="Center" Padding="8,6"/>
+                            <SelectableTextBlock Text="{Binding Department}" TextWrapping="Wrap"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Email" Width="260">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Email}" TextWrapping="Wrap"
-                                       VerticalAlignment="Center" Padding="8,6"/>
+                            <SelectableTextBlock Text="{Binding Email}" TextWrapping="Wrap"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Intercom" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding Intercom}"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Contact Number" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding ContactNumber}"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Notes" Width="*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Notes}" TextWrapping="Wrap"
-                                       VerticalAlignment="Center" Padding="8,6"/>
+                            <SelectableTextBlock Text="{Binding Notes}" TextWrapping="Wrap"
+                                                 VerticalAlignment="Center" Padding="8,6">
+                                <SelectableTextBlock.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy" Click="CopyCell_Click" InputGesture="Ctrl+C"/>
+                                    </ContextMenu>
+                                </SelectableTextBlock.ContextMenu>
+                            </SelectableTextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

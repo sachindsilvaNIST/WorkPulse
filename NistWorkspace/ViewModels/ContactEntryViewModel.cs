@@ -24,6 +24,12 @@ public partial class ContactEntryViewModel : ViewModelBase
     private string _email = "";
 
     [ObservableProperty]
+    private string _intercom = "";
+
+    [ObservableProperty]
+    private string _contactNumber = "";
+
+    [ObservableProperty]
     private string _notes = "";
 
     [ObservableProperty]
@@ -41,6 +47,8 @@ public partial class ContactEntryViewModel : ViewModelBase
     public List<string> GivenNameSuggestions { get; set; } = new();
     public List<string> DepartmentSuggestions { get; set; } = new();
     public List<string> EmailSuggestions { get; set; } = new();
+    public List<string> IntercomSuggestions { get; set; } = new();
+    public List<string> ContactNumberSuggestions { get; set; } = new();
     public List<string> NotesSuggestions { get; set; } = new();
 
     public string? EditingId { get; private set; }
@@ -55,6 +63,8 @@ public partial class ContactEntryViewModel : ViewModelBase
         GivenName = record.GivenName;
         Department = record.Department;
         Email = record.Email;
+        Intercom = record.Intercom;
+        ContactNumber = record.ContactNumber;
         Notes = record.Notes;
         WindowTitle = $"Edit - {record.FullName}";
     }
@@ -69,6 +79,8 @@ public partial class ContactEntryViewModel : ViewModelBase
             GivenName = GivenName.Trim(),
             Department = Department.Trim(),
             Email = Email.Trim(),
+            Intercom = Intercom.Trim(),
+            ContactNumber = ContactNumber.Trim(),
             Notes = Notes.Trim()
         };
     }

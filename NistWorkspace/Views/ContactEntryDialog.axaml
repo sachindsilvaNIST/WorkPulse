@@ -7,7 +7,7 @@
         x:Class="NistAttendance.Views.ContactEntryDialog"
         x:DataType="vm:ContactEntryViewModel"
         Title="{Binding WindowTitle}"
-        Width="450" Height="520"
+        Width="450" Height="680"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False">
@@ -72,6 +72,28 @@
                                  ItemsSource="{Binding EmailSuggestions}"
                                  FilterMode="Contains"
                                  Watermark="email@example.com"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Intercom -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Intercom" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Intercom}"
+                                 ItemsSource="{Binding IntercomSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="e.g. 3456"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Contact Number -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Contact Number" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding ContactNumber}"
+                                 ItemsSource="{Binding ContactNumberSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="e.g. 090-1234-5678"
                                  MinimumPrefixLength="1"
                                  Padding="10,6" CornerRadius="4"/>
             </StackPanel>

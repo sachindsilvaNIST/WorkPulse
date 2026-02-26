@@ -11,6 +11,8 @@ public class ContactRecord
     public string GivenName { get; set; } = "";
     public string Department { get; set; } = "";
     public string Email { get; set; } = "";
+    public string Intercom { get; set; } = "";
+    public string ContactNumber { get; set; } = "";
     public string Notes { get; set; } = "";
 
     [JsonIgnore]
@@ -18,6 +20,6 @@ public class ContactRecord
 
     [JsonIgnore]
     public string SearchText =>
-        $"{Affiliation} {FamilyName} {GivenName} {Department} {Email} {Notes}"
+        $"{Affiliation} {FamilyName} {GivenName} {Department} {Email} {Intercom} {ContactNumber} {Notes}"
             .ToLowerInvariant();
 }

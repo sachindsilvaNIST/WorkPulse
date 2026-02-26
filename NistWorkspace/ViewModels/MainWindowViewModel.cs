@@ -438,6 +438,8 @@ public partial class MainWindowViewModel : ViewModelBase
         entryVm.GivenNameSuggestions = _contactBookVm.GetDistinctValues(c => c.GivenName);
         entryVm.DepartmentSuggestions = _contactBookVm.GetDistinctValues(c => c.Department);
         entryVm.EmailSuggestions = _contactBookVm.GetDistinctValues(c => c.Email);
+        entryVm.IntercomSuggestions = _contactBookVm.GetDistinctValues(c => c.Intercom);
+        entryVm.ContactNumberSuggestions = _contactBookVm.GetDistinctValues(c => c.ContactNumber);
         entryVm.NotesSuggestions = _contactBookVm.GetDistinctValues(c => c.Notes);
     }
 }
