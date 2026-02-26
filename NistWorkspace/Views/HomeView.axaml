@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NistAttendance.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="NistAttendance.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+
+    <Border Background="White">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="32">
+            <!-- App Title -->
+            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="NIST Workspace"
+                           FontSize="32" FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="#333333"/>
+                <TextBlock Text="Select a module to get started"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Foreground="#888888"/>
+            </StackPanel>
+
+            <!-- Navigation Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="24" HorizontalAlignment="Center">
+                <!-- Attendance Dashboard -->
+                <Button Command="{Binding GoToAttendanceCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Manage daily attendance, overtime, and monthly reports">
+                    <Border Background="#0078D4" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="Attendance" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Track login, logout, overtime&#x0a;and monthly reports"
+                                       FontSize="12" Foreground="#D0E8FF"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Contact Book -->
+                <Button Command="{Binding GoToContactBookCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Manage team contacts, departments, and email directory">
+                    <Border Background="#107C10" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="Contact" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Book" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Search contacts, departments&#x0a;and email directory"
+                                       FontSize="12" Foreground="#C8E6C8"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

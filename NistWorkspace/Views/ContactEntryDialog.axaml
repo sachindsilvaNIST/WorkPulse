@@ -1,0 +1,78 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NistAttendance.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="520"
+        x:Class="NistAttendance.Views.ContactEntryDialog"
+        x:DataType="vm:ContactEntryViewModel"
+        Title="{Binding WindowTitle}"
+        Width="450" Height="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="20">
+        <StackPanel Spacing="14">
+            <!-- Validation Error -->
+            <Border Background="#FDECEA" Padding="12" CornerRadius="4"
+                    IsVisible="{Binding HasValidationError}">
+                <TextBlock Text="{Binding ValidationError}" FontWeight="SemiBold"
+                           Foreground="#D13438"/>
+            </Border>
+
+            <!-- Affiliation -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Affiliation" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Affiliation}" Watermark="e.g. CRD General Manager"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Family Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Family Name (性)" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding FamilyName}" Watermark="Surname"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Given Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Given Name (名)" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding GivenName}" Watermark="First name"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Department -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Department (部名)" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Department}" Watermark="Department name"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Email -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Email ID" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Email}" Watermark="email@example.com"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Notes -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Side Notes" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Notes}" Watermark="Optional notes"
+                         Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Spacing="8" Margin="0,8,0,0">
+                <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        Padding="16,6"
+                        Background="#E5E5EA" Foreground="#1A1A1A"/>
+                <Button Content="Save" Command="{Binding SaveCommand}"
+                        Padding="16,6" FontWeight="Bold"
+                        Background="#107C10" Foreground="White"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
