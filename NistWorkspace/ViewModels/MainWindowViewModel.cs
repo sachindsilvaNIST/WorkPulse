@@ -78,6 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             case "attendance":
                 _dashboardVm ??= new DashboardViewModel(_dataService);
+                OnPropertyChanged(nameof(AttendanceDashboard));
                 CurrentView = _dashboardVm;
                 CurrentViewName = "attendance";
                 StatusMessage = _dashboardVm.StatusMessage;
@@ -86,6 +87,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             case "contacts":
                 _contactBookVm ??= new ContactBookDashboardViewModel(_contactDataService);
+                OnPropertyChanged(nameof(ContactBookDashboard));
                 CurrentView = _contactBookVm;
                 CurrentViewName = "contacts";
                 StatusMessage = _contactBookVm.StatusMessage;
@@ -392,6 +394,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         var entryVm = new ContactEntryViewModel();
+        PopulateContactSuggestions(entryVm);
 
         if (ShowContactEditDialog != null && await ShowContactEditDialog(entryVm))
         {
@@ -417,6 +420,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         var entryVm = new ContactEntryViewModel();
+        PopulateContactSuggestions(entryVm);
         entryVm.LoadFromRecord(selected);
 
         if (ShowContactEditDialog != null && await ShowContactEditDialog(entryVm))
@@ -424,5 +428,16 @@ public partial class MainWindowViewModel : ViewModelBase
             var record = entryVm.ToRecord();
             await _contactBookVm.UpdateContact(record);
         }
+    }
+
+    private void PopulateContactSuggestions(ContactEntryViewModel entryVm)
+    {
+        if (_contactBookVm == null) return;
+        entryVm.AffiliationSuggestions = _contactBookVm.GetDistinctValues(c => c.Affiliation);
+        entryVm.FamilyNameSuggestions = _contactBookVm.GetDistinctValues(c => c.FamilyName);
+        entryVm.GivenNameSuggestions = _contactBookVm.GetDistinctValues(c => c.GivenName);
+        entryVm.DepartmentSuggestions = _contactBookVm.GetDistinctValues(c => c.Department);
+        entryVm.EmailSuggestions = _contactBookVm.GetDistinctValues(c => c.Email);
+        entryVm.NotesSuggestions = _contactBookVm.GetDistinctValues(c => c.Notes);
     }
 }

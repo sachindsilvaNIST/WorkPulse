@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NistAttendance.Models;
@@ -33,6 +34,14 @@ public partial class ContactEntryViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _hasValidationError;
+
+    // Autocomplete suggestion lists
+    public List<string> AffiliationSuggestions { get; set; } = new();
+    public List<string> FamilyNameSuggestions { get; set; } = new();
+    public List<string> GivenNameSuggestions { get; set; } = new();
+    public List<string> DepartmentSuggestions { get; set; } = new();
+    public List<string> EmailSuggestions { get; set; } = new();
+    public List<string> NotesSuggestions { get; set; } = new();
 
     public string? EditingId { get; private set; }
     public bool DialogResult { get; private set; }

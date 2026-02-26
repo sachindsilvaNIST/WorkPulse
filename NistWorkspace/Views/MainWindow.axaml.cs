@@ -53,6 +53,7 @@ public partial class MainWindow : Window
         var attendanceToolbar = this.FindControl<StackPanel>("AttendanceToolbar");
         var contactsToolbar = this.FindControl<StackPanel>("ContactsToolbar");
         var importExportToolbar = this.FindControl<StackPanel>("ImportExportToolbar");
+        var importExcelBtn = this.FindControl<Button>("ImportExcelBtn");
         var toolbarBorder = this.FindControl<Border>("ToolbarBorder");
         var sectionTitle = this.FindControl<TextBlock>("SectionTitle");
 
@@ -64,6 +65,7 @@ public partial class MainWindow : Window
         if (attendanceToolbar != null) attendanceToolbar.IsVisible = isAttendance;
         if (contactsToolbar != null) contactsToolbar.IsVisible = isContacts;
         if (importExportToolbar != null) importExportToolbar.IsVisible = !isHome;
+        if (importExcelBtn != null) importExcelBtn.IsVisible = isAttendance;
 
         if (sectionTitle != null)
         {

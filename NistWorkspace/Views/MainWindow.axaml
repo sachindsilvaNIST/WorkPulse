@@ -103,10 +103,11 @@
                                 IsVisible="{Binding ContactBookDashboard.IsEditMode, FallbackValue=False}"/>
                     </StackPanel>
 
-                    <!-- ===== SHARED: Import / Export (visible on both dashboards) ===== -->
+                    <!-- ===== Import / Export ===== -->
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 x:Name="ImportExportToolbar" IsVisible="False">
-                        <Button Content="Import Excel" Command="{Binding ImportExcelCommand}"
+                        <Button x:Name="ImportExcelBtn"
+                                Content="Import Excel" Command="{Binding ImportExcelCommand}"
                                 Padding="12,6"
                                 Background="#FF8C00" Foreground="White"
                                 ToolTip.Tip="Import from Excel file"/>

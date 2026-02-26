@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -123,6 +124,14 @@ public partial class ContactBookDashboardViewModel : ViewModelBase
 
     public List<ContactRecord> GetAllContacts()
         => _data?.Contacts.OrderBy(c => c.FamilyName).ToList() ?? new List<ContactRecord>();
+
+    public List<string> GetDistinctValues(Func<ContactRecord, string> selector)
+        => (_data?.Contacts ?? Enumerable.Empty<ContactRecord>())
+            .Select(selector)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct()
+            .OrderBy(v => v)
+            .ToList();
 
     private async Task SaveAndRefresh()
     {
