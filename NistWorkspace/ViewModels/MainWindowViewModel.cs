@@ -21,6 +21,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ContactExcelImportService _contactExcelImportService;
     private readonly ContactExcelExportService _contactExcelExportService;
 
+    // File search service
+    private readonly IFileIndexService _fileIndexService;
+
     // Navigation
     [ObservableProperty]
     private ViewModelBase _currentView;
@@ -34,10 +37,12 @@ public partial class MainWindowViewModel : ViewModelBase
     // Cached ViewModels
     private DashboardViewModel? _dashboardVm;
     private ContactBookDashboardViewModel? _contactBookVm;
+    private FileSearchViewModel? _fileSearchVm;
 
     // Accessors for closing logic
     public DashboardViewModel? AttendanceDashboard => _dashboardVm;
     public ContactBookDashboardViewModel? ContactBookDashboard => _contactBookVm;
+    public FileSearchViewModel? FileSearchDashboard => _fileSearchVm;
 
     // Dialog callbacks
     public Func<Task<string?>>? ShowOpenFileDialog { get; set; }
@@ -54,6 +59,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _contactDataService = new JsonContactDataService();
         _contactExcelImportService = new ContactExcelImportService();
         _contactExcelExportService = new ContactExcelExportService();
+        _fileIndexService = new FileIndexService();
 
         _currentView = new HomeViewModel(NavigateTo);
     }
@@ -92,6 +98,15 @@ public partial class MainWindowViewModel : ViewModelBase
                 CurrentViewName = "contacts";
                 StatusMessage = _contactBookVm.StatusMessage;
                 _ = _contactBookVm.InitializeAsync();
+                break;
+
+            case "search":
+                _fileSearchVm ??= new FileSearchViewModel(_fileIndexService);
+                OnPropertyChanged(nameof(FileSearchDashboard));
+                CurrentView = _fileSearchVm;
+                CurrentViewName = "search";
+                StatusMessage = _fileSearchVm.StatusMessage;
+                _ = _fileSearchVm.InitializeAsync();
                 break;
         }
     }

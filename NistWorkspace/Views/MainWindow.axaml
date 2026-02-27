@@ -106,6 +106,21 @@
         <Style Selector="Button.btn-warning:pointerover">
             <Setter Property="Foreground" Value="#FF8C00"/>
         </Style>
+
+        <!-- ===== Purple (#8B5CF6) buttons ===== -->
+        <Style Selector="Button.btn-purple /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-purple:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style Selector="Button.btn-purple:pointerover">
+            <Setter Property="Foreground" Value="#8B5CF6"/>
+        </Style>
     </Window.Styles>
 
     <DockPanel>
@@ -202,6 +217,22 @@
 
                         <Border Width="1" Background="#E0E0E0" Margin="4,2"
                                 IsVisible="{Binding ContactBookDashboard.IsEditMode, FallbackValue=False}"/>
+                    </StackPanel>
+
+                    <!-- ===== FILE SEARCH TOOLBAR ===== -->
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                x:Name="FileSearchToolbar" IsVisible="False">
+                        <Button Classes="btn-purple" Content="Update Database"
+                                Command="{Binding FileSearchDashboard.RefreshIndexCommand}"
+                                Padding="12,6"
+                                Background="#8B5CF6" Foreground="White"
+                                ToolTip.Tip="Load file database from system locate (or scan filesystem)"/>
+                        <Button Classes="btn-danger" Content="Cancel"
+                                Command="{Binding FileSearchDashboard.CancelIndexingCommand}"
+                                IsVisible="{Binding FileSearchDashboard.IsIndexing, FallbackValue=False}"
+                                Padding="12,6"
+                                Background="#D13438" Foreground="White"
+                                ToolTip.Tip="Cancel indexing"/>
                     </StackPanel>
 
                     <!-- ===== Import / Export ===== -->

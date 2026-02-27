@@ -64,6 +64,27 @@
                         </StackPanel>
                     </Border>
                 </Button>
+
+                <!-- File Search -->
+                <Button Command="{Binding GoToFileSearchCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Search files across the entire filesystem instantly">
+                    <Border Background="#8B5CF6" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="File" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Search" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Find any file instantly&#x0a;across the filesystem"
+                                       FontSize="12" Foreground="#DDD6FE"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
             </StackPanel>
         </StackPanel>
     </Border>

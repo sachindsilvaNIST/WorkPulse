@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     {
         var attendanceToolbar = this.FindControl<StackPanel>("AttendanceToolbar");
         var contactsToolbar = this.FindControl<StackPanel>("ContactsToolbar");
+        var fileSearchToolbar = this.FindControl<StackPanel>("FileSearchToolbar");
         var importExportToolbar = this.FindControl<StackPanel>("ImportExportToolbar");
         var importExcelBtn = this.FindControl<Button>("ImportExcelBtn");
         var toolbarBorder = this.FindControl<Border>("ToolbarBorder");
@@ -60,11 +61,13 @@ public partial class MainWindow : Window
         bool isHome = viewName == "home";
         bool isAttendance = viewName == "attendance";
         bool isContacts = viewName == "contacts";
+        bool isSearch = viewName == "search";
 
         if (toolbarBorder != null) toolbarBorder.IsVisible = !isHome;
         if (attendanceToolbar != null) attendanceToolbar.IsVisible = isAttendance;
         if (contactsToolbar != null) contactsToolbar.IsVisible = isContacts;
-        if (importExportToolbar != null) importExportToolbar.IsVisible = !isHome;
+        if (fileSearchToolbar != null) fileSearchToolbar.IsVisible = isSearch;
+        if (importExportToolbar != null) importExportToolbar.IsVisible = isAttendance || isContacts;
         if (importExcelBtn != null) importExcelBtn.IsVisible = isAttendance;
 
         if (sectionTitle != null)
@@ -73,6 +76,7 @@ public partial class MainWindow : Window
             {
                 "attendance" => "Attendance Management",
                 "contacts" => "Contact Book",
+                "search" => "File Search",
                 _ => ""
             };
         }

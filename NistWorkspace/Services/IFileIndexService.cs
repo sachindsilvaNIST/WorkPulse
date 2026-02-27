@@ -1,0 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using NistAttendance.Models;
+
+namespace NistAttendance.Services;
+
+public interface IFileIndexService
+{
+    Task<FileIndexData?> LoadIndexAsync();
+    Task SaveIndexAsync(FileIndexData data);
+    Task<FileIndexData> BuildIndexAsync(
+        IProgress<(int filesFound, int dirsScanned)> progress,
+        CancellationToken cancellationToken = default);
+    List<FileIndexEntry> Search(IReadOnlyList<FileIndexEntry> entries, string query, int maxResults = 10000);
+}

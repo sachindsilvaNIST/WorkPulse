@@ -17,4 +17,7 @@ public partial class HomeViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoToContactBook() => _navigate("contacts");
+
+    [RelayCommand]
+    private void GoToFileSearch() => _navigate("search");
 }
