@@ -50,6 +50,21 @@
                   HeadersVisibility="Column"
                   SelectionMode="Single"
                   FontSize="14">
+            <DataGrid.Styles>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Style>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#InvalidVisualElement">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell TextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell SelectableTextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Affiliation" Width="200">
                     <DataGridTemplateColumn.CellTemplate>

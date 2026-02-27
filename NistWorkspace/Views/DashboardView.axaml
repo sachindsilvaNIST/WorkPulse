@@ -80,6 +80,21 @@
                   SelectionMode="Single"
                   FontSize="14"
                   RowHeight="36">
+            <DataGrid.Styles>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Style>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#InvalidVisualElement">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell TextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell SelectableTextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Day" Binding="{Binding DayAbbreviation}" Width="70"
                                     FontWeight="SemiBold" IsReadOnly="True"/>
