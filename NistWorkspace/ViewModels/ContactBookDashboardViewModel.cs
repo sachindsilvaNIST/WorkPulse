@@ -27,6 +27,9 @@ public partial class ContactBookDashboardViewModel : ViewModelBase
     private int _totalContacts;
 
     [ObservableProperty]
+    private bool _hasNoSearchResults;
+
+    [ObservableProperty]
     private string _statusMessage = "Ready";
 
     [ObservableProperty]
@@ -69,6 +72,13 @@ public partial class ContactBookDashboardViewModel : ViewModelBase
                     .OrderBy(c => c.FamilyName));
         }
         TotalContacts = FilteredContacts.Count;
+        HasNoSearchResults = FilteredContacts.Count == 0 && !string.IsNullOrWhiteSpace(SearchText);
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = "";
     }
 
     [RelayCommand]

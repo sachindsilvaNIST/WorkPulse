@@ -15,17 +15,18 @@
         <Style Selector="Button.btn-blue /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-blue:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#007AFF"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-blue:pointerover">
             <Setter Property="Foreground" Value="#007AFF"/>
+        </Style>
+        <Style Selector="Button.btn-blue PathIcon">
+            <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.btn-blue:pointerover PathIcon">
             <Setter Property="Foreground" Value="#007AFF"/>
@@ -35,14 +36,12 @@
         <Style Selector="Button.btn-primary /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#0078D4"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-primary:pointerover">
             <Setter Property="Foreground" Value="#0078D4"/>
@@ -52,14 +51,12 @@
         <Style Selector="Button.btn-green /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-green:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#107C10"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-green:pointerover">
             <Setter Property="Foreground" Value="#107C10"/>
@@ -69,14 +66,12 @@
         <Style Selector="Button.btn-info /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-info:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#106EBE"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-info:pointerover">
             <Setter Property="Foreground" Value="#106EBE"/>
@@ -86,14 +81,12 @@
         <Style Selector="Button.btn-danger /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#D13438"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-danger:pointerover">
             <Setter Property="Foreground" Value="#D13438"/>
@@ -103,14 +96,12 @@
         <Style Selector="Button.btn-warning /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button.btn-warning:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#FF8C00"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
         <Style Selector="Button.btn-warning:pointerover">
             <Setter Property="Foreground" Value="#FF8C00"/>
@@ -132,8 +123,7 @@
                             Background="#007AFF" Foreground="White"
                             ToolTip.Tip="Back to Home">
                         <PathIcon Data="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
-                                  Width="18" Height="18"
-                                  Foreground="White"/>
+                                  Width="18" Height="18"/>
                     </Button>
                     <TextBlock x:Name="SectionTitle" Text="Attendance Management"
                                FontSize="16" FontWeight="Bold" VerticalAlignment="Center"
