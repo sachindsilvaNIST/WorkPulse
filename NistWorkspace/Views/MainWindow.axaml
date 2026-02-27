@@ -20,10 +20,14 @@
                 <!-- Home Button + Section Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
                             VerticalAlignment="Center">
-                    <Button Content="Home" Command="{Binding GoHomeCommand}"
-                            Padding="10,5" FontWeight="SemiBold"
-                            Background="#6E6E6E" Foreground="White"
-                            ToolTip.Tip="Back to Home"/>
+                    <Button Command="{Binding GoHomeCommand}"
+                            Padding="10,5"
+                            Background="#007AFF" Foreground="White"
+                            ToolTip.Tip="Back to Home">
+                        <PathIcon Data="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
+                                  Width="18" Height="18"
+                                  Foreground="White"/>
+                    </Button>
                     <TextBlock x:Name="SectionTitle" Text="Attendance Management"
                                FontSize="16" FontWeight="Bold" VerticalAlignment="Center"
                                Foreground="#333333"/>
