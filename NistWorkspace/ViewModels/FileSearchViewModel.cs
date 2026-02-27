@@ -60,20 +60,9 @@ public partial class FileSearchViewModel : ViewModelBase
 
     public async Task InitializeAsync()
     {
-        StatusMessage = "Loading index...";
-
-        var existingIndex = await _indexService.LoadIndexAsync();
-        if (existingIndex != null && existingIndex.Entries.Count > 0)
-        {
-            _indexEntries = existingIndex.Entries;
-            TotalIndexedFiles = existingIndex.TotalFiles;
-            IndexTimestamp = $"Indexed: {existingIndex.IndexedAt:yyyy-MM-dd HH:mm} ({existingIndex.TotalFiles:N0} files in {existingIndex.IndexDurationSeconds:F1}s)";
-            StatusMessage = $"Index loaded: {existingIndex.TotalFiles:N0} files. Start typing to search.";
-        }
-        else
-        {
-            StatusMessage = "No database loaded. Click 'Update Database' to load.";
-        }
+        // Always auto-build from locate (fast, 2-5s) — no need for JSON cache
+        // For Windows (no locate), try loading saved JSON first, else build from traversal
+        await RefreshIndex();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -159,8 +148,12 @@ public partial class FileSearchViewModel : ViewModelBase
                 ? $"Indexed: {data.TotalFiles:N0} files, {data.TotalDirectories:N0} directories in {data.IndexDurationSeconds:F1}s"
                 : $"Loaded: {data.TotalFiles:N0} files in {data.IndexDurationSeconds:F1}s";
 
-            // Save to disk in background (non-blocking)
-            _ = _indexService.SaveIndexAsync(data);
+            // Only save JSON for filesystem traversal (Windows/no-locate fallback)
+            // When locate is available, it IS the persistent database — no need to duplicate as 4GB JSON
+            if (!_indexService.UsedLocate)
+            {
+                _ = Task.Run(() => _indexService.SaveIndexAsync(data));
+            }
 
             if (!string.IsNullOrWhiteSpace(SearchText))
             {

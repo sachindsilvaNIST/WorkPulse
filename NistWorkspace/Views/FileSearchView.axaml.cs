@@ -38,7 +38,7 @@ public partial class FileSearchView : UserControl
     {
         if (DataContext is FileSearchViewModel vm && vm.SelectedResult != null)
         {
-            await OpenFileAsync(vm.SelectedResult.FullPath);
+            await OpenFolderAsync(vm.SelectedResult.DirectoryPath);
         }
     }
 

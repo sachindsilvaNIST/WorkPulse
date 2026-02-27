@@ -71,6 +71,9 @@ public class FileIndexService : IFileIndexService
         }
     }
 
+    /// <summary>Whether the last build used locate (no need to persist — locate IS the database).</summary>
+    public bool UsedLocate { get; private set; }
+
     public Task<FileIndexData> BuildIndexAsync(
         IProgress<(int filesFound, int dirsScanned)> progress,
         CancellationToken cancellationToken = default)
@@ -82,6 +85,7 @@ public class FileIndexService : IFileIndexService
         }
 
         // Windows or other: filesystem traversal
+        UsedLocate = false;
         return BuildFromTraversalAsync(progress, cancellationToken);
     }
 
@@ -97,9 +101,11 @@ public class FileIndexService : IFileIndexService
         if (locatePath == null)
         {
             // locate not installed — fall back to traversal
+            UsedLocate = false;
             return await BuildFromTraversalAsync(progress, cancellationToken);
         }
 
+        UsedLocate = true;
         var sw = Stopwatch.StartNew();
         var entries = new List<FileIndexEntry>();
         int lineCount = 0;
@@ -305,11 +311,24 @@ public class FileIndexService : IFileIndexService
         if (string.IsNullOrWhiteSpace(query))
             return new List<FileIndexEntry>();
 
+        // Split query into keywords for multi-keyword AND matching
+        var keywords = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
         var results = new List<FileIndexEntry>();
 
         for (int i = 0; i < entries.Count && results.Count < maxResults; i++)
         {
-            if (entries[i].FileName.Contains(query, StringComparison.OrdinalIgnoreCase))
+            var fileName = entries[i].FileName;
+            bool allMatch = true;
+            for (int k = 0; k < keywords.Length; k++)
+            {
+                if (!fileName.Contains(keywords[k], StringComparison.OrdinalIgnoreCase))
+                {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch)
             {
                 results.Add(entries[i]);
             }

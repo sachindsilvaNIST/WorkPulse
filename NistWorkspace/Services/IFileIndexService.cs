@@ -8,6 +8,8 @@ namespace NistAttendance.Services;
 
 public interface IFileIndexService
 {
+    /// <summary>Whether the last build used locate (no JSON persistence needed).</summary>
+    bool UsedLocate { get; }
     Task<FileIndexData?> LoadIndexAsync();
     Task SaveIndexAsync(FileIndexData data);
     Task<FileIndexData> BuildIndexAsync(
