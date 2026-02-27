@@ -38,7 +38,7 @@
                 </Border>
 
                 <!-- Save Button (visible in edit mode) -->
-                <Button Content="Save" Command="{Binding SaveAllChangesCommand}"
+                <Button Classes="btn-green" Content="Save" Command="{Binding SaveAllChangesCommand}"
                         IsVisible="{Binding IsEditMode}"
                         Padding="16,6" FontWeight="Bold"
                         Background="#107C10" Foreground="White"

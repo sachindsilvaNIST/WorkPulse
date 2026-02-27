@@ -10,6 +10,113 @@
         Width="1500" Height="900"
         MinWidth="800" MinHeight="500">
 
+    <Window.Styles>
+        <!-- ===== Apple Blue (#007AFF) buttons ===== -->
+        <Style Selector="Button.btn-blue /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-blue:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#007AFF"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-blue:pointerover">
+            <Setter Property="Foreground" Value="#007AFF"/>
+        </Style>
+        <Style Selector="Button.btn-blue:pointerover PathIcon">
+            <Setter Property="Foreground" Value="#007AFF"/>
+        </Style>
+
+        <!-- ===== Primary Blue (#0078D4) buttons ===== -->
+        <Style Selector="Button.btn-primary /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-primary:pointerover">
+            <Setter Property="Foreground" Value="#0078D4"/>
+        </Style>
+
+        <!-- ===== Green (#107C10) buttons ===== -->
+        <Style Selector="Button.btn-green /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-green:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#107C10"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-green:pointerover">
+            <Setter Property="Foreground" Value="#107C10"/>
+        </Style>
+
+        <!-- ===== Info Blue (#106EBE) buttons ===== -->
+        <Style Selector="Button.btn-info /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-info:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#106EBE"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-info:pointerover">
+            <Setter Property="Foreground" Value="#106EBE"/>
+        </Style>
+
+        <!-- ===== Danger Red (#D13438) buttons ===== -->
+        <Style Selector="Button.btn-danger /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D13438"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-danger:pointerover">
+            <Setter Property="Foreground" Value="#D13438"/>
+        </Style>
+
+        <!-- ===== Warning Orange (#FF8C00) buttons ===== -->
+        <Style Selector="Button.btn-warning /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.btn-warning:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF8C00"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.btn-warning:pointerover">
+            <Setter Property="Foreground" Value="#FF8C00"/>
+        </Style>
+    </Window.Styles>
+
     <DockPanel>
         <!-- Top Toolbar (hidden on Home screen) -->
         <Border DockPanel.Dock="Top" Background="#FAFAFA" BorderBrush="#E0E0E0"
@@ -20,7 +127,7 @@
                 <!-- Home Button + Section Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
                             VerticalAlignment="Center">
-                    <Button Command="{Binding GoHomeCommand}"
+                    <Button Classes="btn-blue" Command="{Binding GoHomeCommand}"
                             Padding="10,5"
                             Background="#007AFF" Foreground="White"
                             ToolTip.Tip="Back to Home">
@@ -40,7 +147,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 x:Name="AttendanceToolbar" IsVisible="False">
                         <!-- Edit Mode Toggle -->
-                        <Button Content="{Binding AttendanceDashboard.EditModeButtonText, FallbackValue=Edit}"
+                        <Button Classes="btn-primary" Content="{Binding AttendanceDashboard.EditModeButtonText, FallbackValue=Edit}"
                                 Command="{Binding AttendanceDashboard.ToggleEditModeCommand}"
                                 Padding="14,6" FontWeight="Bold"
                                 Background="#0078D4" Foreground="White"
@@ -49,22 +156,22 @@
                         <Border Width="1" Background="#E0E0E0" Margin="4,2"/>
 
                         <!-- CRUD buttons (visible only in Edit Mode) -->
-                        <Button Content="+ Entry" Command="{Binding AddEntryCommand}"
+                        <Button Classes="btn-blue" Content="+ Entry" Command="{Binding AddEntryCommand}"
                                 IsVisible="{Binding AttendanceDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#007AFF" Foreground="White"
                                 ToolTip.Tip="Add new attendance entry"/>
-                        <Button Content="+ Holiday" Command="{Binding AddHolidayCommand}"
+                        <Button Classes="btn-green" Content="+ Holiday" Command="{Binding AddHolidayCommand}"
                                 IsVisible="{Binding AttendanceDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#107C10" Foreground="White"
                                 ToolTip.Tip="Add a holiday"/>
-                        <Button Content="Edit Row" Command="{Binding EditSelectedEntryCommand}"
+                        <Button Classes="btn-info" Content="Edit Row" Command="{Binding EditSelectedEntryCommand}"
                                 IsVisible="{Binding AttendanceDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#106EBE" Foreground="White"
                                 ToolTip.Tip="Edit selected entry"/>
-                        <Button Content="Delete" Command="{Binding DeleteEntryCommand}"
+                        <Button Classes="btn-danger" Content="Delete" Command="{Binding DeleteEntryCommand}"
                                 IsVisible="{Binding AttendanceDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#D13438" Foreground="White"
@@ -78,7 +185,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 x:Name="ContactsToolbar" IsVisible="False">
                         <!-- Edit Mode Toggle -->
-                        <Button Content="{Binding ContactBookDashboard.EditModeButtonText, FallbackValue=Edit}"
+                        <Button Classes="btn-primary" Content="{Binding ContactBookDashboard.EditModeButtonText, FallbackValue=Edit}"
                                 Command="{Binding ContactBookDashboard.ToggleEditModeCommand}"
                                 Padding="14,6" FontWeight="Bold"
                                 Background="#0078D4" Foreground="White"
@@ -87,17 +194,17 @@
                         <Border Width="1" Background="#E0E0E0" Margin="4,2"/>
 
                         <!-- CRUD buttons (visible only in Edit Mode) -->
-                        <Button Content="+ Add" Command="{Binding AddContactCommand}"
+                        <Button Classes="btn-blue" Content="+ Add" Command="{Binding AddContactCommand}"
                                 IsVisible="{Binding ContactBookDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#007AFF" Foreground="White"
                                 ToolTip.Tip="Add new contact"/>
-                        <Button Content="Edit Contact" Command="{Binding EditContactCommand}"
+                        <Button Classes="btn-info" Content="Edit Contact" Command="{Binding EditContactCommand}"
                                 IsVisible="{Binding ContactBookDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#106EBE" Foreground="White"
                                 ToolTip.Tip="Edit selected contact"/>
-                        <Button Content="Delete" Command="{Binding DeleteEntryCommand}"
+                        <Button Classes="btn-danger" Content="Delete" Command="{Binding DeleteEntryCommand}"
                                 IsVisible="{Binding ContactBookDashboard.IsEditMode, FallbackValue=False}"
                                 Padding="12,6"
                                 Background="#D13438" Foreground="White"
@@ -110,12 +217,12 @@
                     <!-- ===== Import / Export ===== -->
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 x:Name="ImportExportToolbar" IsVisible="False">
-                        <Button x:Name="ImportExcelBtn"
+                        <Button Classes="btn-warning" x:Name="ImportExcelBtn"
                                 Content="Import Excel" Command="{Binding ImportExcelCommand}"
                                 Padding="12,6"
                                 Background="#FF8C00" Foreground="White"
                                 ToolTip.Tip="Import from Excel file"/>
-                        <Button Content="Export Excel" Command="{Binding ExportExcelCommand}"
+                        <Button Classes="btn-green" Content="Export Excel" Command="{Binding ExportExcelCommand}"
                                 Padding="12,6"
                                 Background="#107C10" Foreground="White"
                                 ToolTip.Tip="Export to Excel file"/>
