@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NistAttendance.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NistAttendance.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="24" MaxWidth="640" Margin="0,8">
+
+            <!-- Page Title -->
+            <TextBlock Text="Settings" FontSize="26" FontWeight="Bold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+
+            <!-- ===== Appearance Card ===== -->
+            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+
+                    <!-- Theme Toggle -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Dark Theme" FontSize="14"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="Switch between light and dark appearance"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsDarkTheme}"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+
+                    <!-- Font Size -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Font Size" FontSize="14"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="Adjust the text size across the application"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding FontSizeOptions}"
+                                  SelectedIndex="{Binding FontSizeIndex}"
+                                  Width="140" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Keyboard Shortcuts Card ===== -->
+            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+
+                    <!-- Shortcuts Table -->
+                    <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+                        <!-- Header -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Shortcut" FontWeight="Bold"
+                                   FontSize="13" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Action" FontWeight="Bold"
+                                   FontSize="13" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <!-- Ctrl+1 -->
+                        <Border Grid.Row="1" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 1" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="Attendance Dashboard"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- Ctrl+2 -->
+                        <Border Grid.Row="2" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 2" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Contact Book"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- Ctrl+3 -->
+                        <Border Grid.Row="3" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 3" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="File Search"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- Ctrl+H -->
+                        <Border Grid.Row="4" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + H" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="Home"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- Ctrl+F -->
+                        <Border Grid.Row="5" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + F" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="Focus Search Bar"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- Ctrl+, -->
+                        <Border Grid.Row="6" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + ," FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="Settings"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+
+                        <!-- F1 -->
+                        <Border Grid.Row="7" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="F1" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="Keyboard Shortcuts Guide"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,2"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== About Card ===== -->
+            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="About" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="NIST Workspace v1.0" FontSize="14"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="Attendance, contacts, and file search — all in one place."
+                               FontSize="12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Status -->
+            <TextBlock Text="{Binding StatusMessage}" FontSize="12"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Margin="0,0,0,16"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

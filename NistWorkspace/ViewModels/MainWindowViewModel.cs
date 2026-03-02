@@ -34,10 +34,14 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
+    // Settings service
+    private readonly ISettingsService _settingsService;
+
     // Cached ViewModels
     private DashboardViewModel? _dashboardVm;
     private ContactBookDashboardViewModel? _contactBookVm;
     private FileSearchViewModel? _fileSearchVm;
+    private SettingsViewModel? _settingsVm;
 
     // Accessors for closing logic
     public DashboardViewModel? AttendanceDashboard => _dashboardVm;
@@ -60,6 +64,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _contactExcelImportService = new ContactExcelImportService();
         _contactExcelExportService = new ContactExcelExportService();
         _fileIndexService = new FileIndexService();
+        _settingsService = new SettingsService();
 
         _currentView = new HomeViewModel(NavigateTo);
     }
@@ -108,11 +113,22 @@ public partial class MainWindowViewModel : ViewModelBase
                 StatusMessage = _fileSearchVm.StatusMessage;
                 _ = _fileSearchVm.InitializeAsync();
                 break;
+
+            case "settings":
+                _settingsVm ??= new SettingsViewModel(_settingsService);
+                CurrentView = _settingsVm;
+                CurrentViewName = "settings";
+                StatusMessage = "Settings";
+                _ = _settingsVm.InitializeAsync();
+                break;
         }
     }
 
     [RelayCommand]
     private void GoHome() => NavigateTo("home");
+
+    [RelayCommand]
+    private void GoToSettings() => NavigateTo("settings");
 
     // --- Closing Logic ---
 

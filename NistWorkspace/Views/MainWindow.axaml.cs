@@ -1,11 +1,14 @@
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using NistAttendance.ViewModels;
 
 namespace NistAttendance.Views;
@@ -13,6 +16,7 @@ namespace NistAttendance.Views;
 public partial class MainWindow : Window
 {
     private bool _forceClose;
+    private DispatcherTimer? _clockTimer;
 
     public MainWindow()
     {
@@ -34,10 +38,196 @@ public partial class MainWindow : Window
                 await vm.InitializeAsync();
                 UpdateToolbarVisibility(vm.CurrentViewName);
             }
+
+            StartClock();
         };
 
         Closing += OnWindowClosing;
+        KeyDown += OnKeyDown;
     }
+
+    // --- Keyboard Shortcuts ---
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.D1:
+                    vm.NavigateTo("attendance");
+                    e.Handled = true;
+                    break;
+                case Key.D2:
+                    vm.NavigateTo("contacts");
+                    e.Handled = true;
+                    break;
+                case Key.D3:
+                    vm.NavigateTo("search");
+                    e.Handled = true;
+                    break;
+                case Key.H:
+                    vm.NavigateTo("home");
+                    e.Handled = true;
+                    break;
+                case Key.F:
+                    FocusSearchBar();
+                    e.Handled = true;
+                    break;
+                case Key.OemComma:
+                    vm.NavigateTo("settings");
+                    e.Handled = true;
+                    break;
+            }
+        }
+        else if (e.Key == Key.F1 && e.KeyModifiers == KeyModifiers.None)
+        {
+            ShowKeyboardShortcutsDialog();
+            e.Handled = true;
+        }
+    }
+
+    private void FocusSearchBar()
+    {
+        var contentArea = this.FindControl<ContentControl>("ContentArea");
+        if (contentArea?.Content is not Control currentView) return;
+
+        var textBox = FindSearchTextBox(currentView);
+        textBox?.Focus();
+    }
+
+    private static TextBox? FindSearchTextBox(Control root)
+    {
+        if (root is TextBox tb && !string.IsNullOrEmpty(tb.Watermark) &&
+            tb.Watermark.Contains("search", StringComparison.OrdinalIgnoreCase))
+            return tb;
+
+        if (root is Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                if (child is Control ctrl)
+                {
+                    var found = FindSearchTextBox(ctrl);
+                    if (found != null) return found;
+                }
+            }
+        }
+        else if (root is ContentControl cc && cc.Content is Control content)
+        {
+            return FindSearchTextBox(content);
+        }
+        else if (root is Decorator dec && dec.Child is Control decChild)
+        {
+            return FindSearchTextBox(decChild);
+        }
+
+        return null;
+    }
+
+    private async void ShowKeyboardShortcutsDialog()
+    {
+        var dialog = new Window
+        {
+            Title = "Keyboard Shortcuts",
+            Width = 400,
+            Height = 380,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            ShowInTaskbar = false
+        };
+
+        var rootPanel = new StackPanel { Margin = new Thickness(24), Spacing = 16 };
+
+        rootPanel.Children.Add(new TextBlock
+        {
+            Text = "Keyboard Shortcuts",
+            FontSize = 20,
+            FontWeight = FontWeight.Bold
+        });
+
+        var shortcuts = new[]
+        {
+            ("Ctrl + 1", "Attendance Dashboard"),
+            ("Ctrl + 2", "Contact Book"),
+            ("Ctrl + 3", "File Search"),
+            ("Ctrl + H", "Home"),
+            ("Ctrl + F", "Focus Search Bar"),
+            ("Ctrl + ,", "Settings"),
+            ("F1", "This Help Dialog"),
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = ColumnDefinitions.Parse("140,*"),
+            RowDefinitions = RowDefinitions.Parse(string.Join(",", Enumerable.Repeat("Auto", shortcuts.Length)))
+        };
+
+        for (int i = 0; i < shortcuts.Length; i++)
+        {
+            var keyText = new TextBlock
+            {
+                Text = shortcuts[i].Item1,
+                FontFamily = new FontFamily("Consolas,Monospace"),
+                FontSize = 13,
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 4)
+            };
+            Grid.SetRow(keyText, i);
+            Grid.SetColumn(keyText, 0);
+
+            var descText = new TextBlock
+            {
+                Text = shortcuts[i].Item2,
+                FontSize = 13,
+                Margin = new Thickness(0, 4)
+            };
+            Grid.SetRow(descText, i);
+            Grid.SetColumn(descText, 1);
+
+            grid.Children.Add(keyText);
+            grid.Children.Add(descText);
+        }
+
+        rootPanel.Children.Add(grid);
+
+        var closeBtn = new Button
+        {
+            Content = "Close",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Padding = new Thickness(24, 8),
+            Margin = new Thickness(0, 8, 0, 0),
+            Background = new SolidColorBrush(Color.Parse("#0078D4")),
+            Foreground = Brushes.White,
+            FontWeight = FontWeight.SemiBold
+        };
+        closeBtn.Click += (_, _) => dialog.Close();
+        rootPanel.Children.Add(closeBtn);
+
+        dialog.Content = rootPanel;
+        await dialog.ShowDialog(this);
+    }
+
+    // --- Live Clock ---
+
+    private void StartClock()
+    {
+        var clockText = this.FindControl<TextBlock>("ClockText");
+        if (clockText == null) return;
+
+        clockText.Text = DateTime.Now.ToString("HH:mm:ss");
+
+        _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _clockTimer.Tick += (_, _) =>
+        {
+            clockText.Text = DateTime.Now.ToString("HH:mm:ss");
+        };
+        _clockTimer.Start();
+    }
+
+    // --- Navigation / Toolbar ---
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -57,11 +247,14 @@ public partial class MainWindow : Window
         var importExcelBtn = this.FindControl<Button>("ImportExcelBtn");
         var toolbarBorder = this.FindControl<Border>("ToolbarBorder");
         var sectionTitle = this.FindControl<TextBlock>("SectionTitle");
+        var toolbarSettingsBtn = this.FindControl<Button>("ToolbarSettingsBtn");
+        var statusModuleName = this.FindControl<TextBlock>("StatusModuleName");
 
         bool isHome = viewName == "home";
         bool isAttendance = viewName == "attendance";
         bool isContacts = viewName == "contacts";
         bool isSearch = viewName == "search";
+        bool isSettings = viewName == "settings";
 
         if (toolbarBorder != null) toolbarBorder.IsVisible = !isHome;
         if (attendanceToolbar != null) attendanceToolbar.IsVisible = isAttendance;
@@ -69,6 +262,7 @@ public partial class MainWindow : Window
         if (fileSearchToolbar != null) fileSearchToolbar.IsVisible = isSearch;
         if (importExportToolbar != null) importExportToolbar.IsVisible = isAttendance || isContacts;
         if (importExcelBtn != null) importExcelBtn.IsVisible = isAttendance;
+        if (toolbarSettingsBtn != null) toolbarSettingsBtn.IsVisible = !isHome && !isSettings;
 
         if (sectionTitle != null)
         {
@@ -77,10 +271,26 @@ public partial class MainWindow : Window
                 "attendance" => "Attendance Management",
                 "contacts" => "Contact Book",
                 "search" => "File Search",
+                "settings" => "Settings",
+                _ => ""
+            };
+        }
+
+        if (statusModuleName != null)
+        {
+            statusModuleName.Text = viewName switch
+            {
+                "attendance" => "Attendance",
+                "contacts" => "Contacts",
+                "search" => "File Search",
+                "settings" => "Settings",
+                "home" => "Home",
                 _ => ""
             };
         }
     }
+
+    // --- Window Closing ---
 
     private async void OnWindowClosing(object? sender, CancelEventArgs e)
     {
@@ -127,9 +337,8 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Returns true=Save, false=Discard, null=Go Back (cancel close).
-    /// </summary>
+    // --- Dialogs ---
+
     private async Task<bool?> ShowUnsavedChangesDialogAsync()
     {
         var dialog = new Window

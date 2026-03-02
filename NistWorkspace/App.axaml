@@ -2,7 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="NistAttendance.App"
              xmlns:local="using:NistAttendance"
-             RequestedThemeVariant="Light">
+>
+
+    <Application.Resources>
+        <x:Double x:Key="DefaultFontSize">14</x:Double>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>

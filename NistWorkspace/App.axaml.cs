@@ -2,8 +2,11 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
+using Avalonia.Styling;
+using System;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using NistAttendance.Services;
 using NistAttendance.ViewModels;
 using NistAttendance.Views;
 
@@ -20,9 +23,31 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
+
+            // Load saved theme and font size before window creation
+            try
+            {
+                var settingsService = new SettingsService();
+                var settings = settingsService.LoadAsync().GetAwaiter().GetResult();
+
+                RequestedThemeVariant = settings.ThemeVariant == "Dark"
+                    ? ThemeVariant.Dark
+                    : ThemeVariant.Light;
+
+                double fontSize = settings.FontSizePreset switch
+                {
+                    "Small" => 12.0,
+                    "Large" => 16.0,
+                    _ => 14.0
+                };
+                Resources["DefaultFontSize"] = fontSize;
+            }
+            catch
+            {
+                RequestedThemeVariant = ThemeVariant.Light;
+            }
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new MainWindowViewModel(),

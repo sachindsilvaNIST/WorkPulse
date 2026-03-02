@@ -9,4 +9,8 @@ public class AppSettings
     public int OvertimeBreakDeductionMinutes { get; set; } = 20;
     public string DefaultTitle { get; set; } = "MSW SETTLEMENT";
     public string? LastOpenedMonth { get; set; }
+
+    // Theme and display settings
+    public string ThemeVariant { get; set; } = "Light";
+    public string FontSizePreset { get; set; } = "Medium";
 }

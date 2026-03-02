@@ -20,4 +20,7 @@ public partial class HomeViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoToFileSearch() => _navigate("search");
+
+    [RelayCommand]
+    private void GoToSettings() => _navigate("settings");
 }
