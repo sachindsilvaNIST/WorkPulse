@@ -7,6 +7,7 @@
              x:Class="NistAttendance.Views.ContactBookDashboardView"
              x:DataType="vm:ContactBookDashboardViewModel">
 
+    <Grid x:Name="RootGrid">
     <DockPanel>
         <!-- Search Bar + Summary -->
         <Border DockPanel.Dock="Top" Padding="0,0,0,12">
@@ -52,7 +53,8 @@
 
         <!-- DataGrid + Empty State -->
         <Grid>
-        <DataGrid ItemsSource="{Binding FilteredContacts}"
+        <DataGrid x:Name="ContactsGrid"
+                  ItemsSource="{Binding FilteredContacts}"
                   SelectedItem="{Binding SelectedContact}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
@@ -206,4 +208,5 @@
                    FontWeight="SemiBold"/>
         </Grid>
     </DockPanel>
+    </Grid>
 </UserControl>
