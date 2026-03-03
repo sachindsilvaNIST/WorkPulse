@@ -147,7 +147,7 @@
                                Foreground="{DynamicResource AppForeground}"/>
                     <TextBlock Text="{Binding VersionDisplay}" FontSize="14"
                                Foreground="{DynamicResource AppForeground}"/>
-                    <TextBlock Text="Attendance, contacts, and file search — all in one place."
+                    <TextBlock Text="Attendance, Contact Book, and File Search — all in one place."
                                FontSize="12"
                                Foreground="{DynamicResource AppForegroundSecondary}"/>
                 </StackPanel>
