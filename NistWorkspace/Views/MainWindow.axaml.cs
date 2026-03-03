@@ -388,8 +388,8 @@ public partial class MainWindow : Window
         {
             Content = "Go Back",
             Padding = new Thickness(14, 6),
-            Background = new SolidColorBrush(Color.Parse("#E5E5EA")),
-            Foreground = new SolidColorBrush(Color.Parse("#1A1A1A"))
+            Background = new SolidColorBrush(Color.Parse("#808080")),
+            Foreground = Brushes.White
         };
         backBtn.Click += (_, _) => { result = null; dialog.Close(); };
 
@@ -563,8 +563,8 @@ public partial class MainWindow : Window
         {
             Content = "Cancel",
             Padding = new Thickness(16, 6),
-            Background = new SolidColorBrush(Color.Parse("#E5E5EA")),
-            Foreground = new SolidColorBrush(Color.Parse("#1A1A1A"))
+            Background = new SolidColorBrush(Color.Parse("#808080")),
+            Foreground = Brushes.White
         };
         cancelBtn.Click += (_, _) => { result = false; dialog.Close(); };
 

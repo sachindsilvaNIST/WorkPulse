@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Styling;
@@ -22,6 +23,9 @@ public partial class SettingsViewModel : ViewModelBase
     private string _statusMessage = "";
 
     public string[] FontSizeOptions { get; } = { "Small", "Medium", "Large" };
+
+    public string VersionDisplay { get; } =
+        $"NIST Workspace v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"}";
 
     public SettingsViewModel(ISettingsService settingsService)
     {

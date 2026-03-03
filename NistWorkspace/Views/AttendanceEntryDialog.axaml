@@ -12,35 +12,35 @@
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
-        Background="#F3F3F3">
+        Background="{DynamicResource AppBackgroundAlt}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Border Padding="28">
             <StackPanel Spacing="18">
                 <!-- Date Picker -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Date" FontWeight="SemiBold" Foreground="#1A1A1A"/>
+                    <TextBlock Text="Date" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <DatePicker SelectedDate="{Binding SelectedDate}"
                                 HorizontalAlignment="Stretch"/>
                 </StackPanel>
 
                 <!-- Day Type -->
                 <StackPanel Spacing="6">
-                    <TextBlock Text="Type" FontWeight="SemiBold" Foreground="#1A1A1A"/>
+                    <TextBlock Text="Type" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <ComboBox x:Name="DayTypeCombo" SelectedIndex="0"
                               HorizontalAlignment="Stretch"/>
                 </StackPanel>
 
                 <!-- Holiday/Leave Name (visible for leave types that support a name) -->
                 <StackPanel Spacing="6" IsVisible="{Binding ShowHolidayName}">
-                    <TextBlock Text="Description (optional)" FontWeight="SemiBold" Foreground="#1A1A1A"/>
+                    <TextBlock Text="Description (optional)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <TextBox Text="{Binding HolidayName}" Watermark="e.g., NEW YEAR HOLIDAY"/>
                 </StackPanel>
 
                 <!-- Login Time (visible only for work days) -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsWorkDay}">
-                    <TextBlock Text="Login Time (default: 08:20)" FontWeight="SemiBold" Foreground="#1A1A1A"/>
-                    <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1"
+                    <TextBlock Text="Login Time (default: 08:20)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
+                    <Border Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppDivider}" BorderThickness="1"
                             CornerRadius="4" Padding="12,8">
                         <Grid ColumnDefinitions="*,Auto,*,Auto">
                             <NumericUpDown Grid.Column="0" Value="{Binding LoginHour}"
@@ -54,15 +54,15 @@
                                            HorizontalAlignment="Stretch"
                                            HorizontalContentAlignment="Center"/>
                             <TextBlock Grid.Column="3" Text="  (24h)" VerticalAlignment="Center"
-                                       Foreground="#666666" FontSize="12" Margin="8,0,0,0"/>
+                                       Foreground="{DynamicResource AppForegroundSecondary}" FontSize="12" Margin="8,0,0,0"/>
                         </Grid>
                     </Border>
                 </StackPanel>
 
                 <!-- Logout Time (visible only for work days) -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsWorkDay}">
-                    <TextBlock Text="Logout Time (default: 17:25)" FontWeight="SemiBold" Foreground="#1A1A1A"/>
-                    <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1"
+                    <TextBlock Text="Logout Time (default: 17:25)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
+                    <Border Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppDivider}" BorderThickness="1"
                             CornerRadius="4" Padding="12,8">
                         <Grid ColumnDefinitions="*,Auto,*,Auto">
                             <NumericUpDown Grid.Column="0" Value="{Binding LogoutHour}"
@@ -76,14 +76,14 @@
                                            HorizontalAlignment="Stretch"
                                            HorizontalContentAlignment="Center"/>
                             <TextBlock Grid.Column="3" Text="  (24h)" VerticalAlignment="Center"
-                                       Foreground="#666666" FontSize="12" Margin="8,0,0,0"/>
+                                       Foreground="{DynamicResource AppForegroundSecondary}" FontSize="12" Margin="8,0,0,0"/>
                         </Grid>
                     </Border>
                 </StackPanel>
 
                 <!-- Overtime Dropdown -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsWorkDay}">
-                    <TextBlock Text="Overtime?" FontWeight="SemiBold" Foreground="#1A1A1A"/>
+                    <TextBlock Text="Overtime?" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <ComboBox x:Name="OtCombo" HorizontalAlignment="Stretch" SelectedIndex="-1">
                         <ComboBoxItem Content="Yes"/>
                         <ComboBoxItem Content="No"/>
@@ -91,12 +91,12 @@
                 </StackPanel>
 
                 <!-- Overtime End Time Picker (visible only when Overtime = Yes) -->
-                <Border Background="#FFF3E0" Padding="16" CornerRadius="6"
+                <Border Background="{DynamicResource AppInfoPanel}" Padding="16" CornerRadius="6"
                         IsVisible="{Binding ShowOvertimeTimePicker}">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Overtime End Time (when you actually left)"
-                                   FontWeight="SemiBold" Foreground="#1A1A1A"/>
-                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
+                        <Border Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppDivider}" BorderThickness="1"
                                 CornerRadius="4" Padding="12,8">
                             <Grid ColumnDefinitions="*,Auto,*,Auto">
                                 <NumericUpDown Grid.Column="0" Value="{Binding OtEndHour}"
@@ -110,7 +110,7 @@
                                                HorizontalAlignment="Stretch"
                                                HorizontalContentAlignment="Center"/>
                                 <TextBlock Grid.Column="3" Text="  (24h)" VerticalAlignment="Center"
-                                           Foreground="#666666" FontSize="12" Margin="8,0,0,0"/>
+                                           Foreground="{DynamicResource AppForegroundSecondary}" FontSize="12" Margin="8,0,0,0"/>
                             </Grid>
                         </Border>
 
@@ -121,7 +121,7 @@
                         <!-- Confirm / Cancel Overtime buttons -->
                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
                             <Button Content="Cancel" Command="{Binding CancelOvertimeCommand}"
-                                    Padding="16,7" Background="#E5E5EA" Foreground="#1A1A1A"/>
+                                    Padding="16,7" Background="{DynamicResource AppButtonNeutral}" Foreground="{DynamicResource AppForeground}"/>
                             <Button Content="Confirm" Command="{Binding ConfirmOvertimeCommand}"
                                     Padding="16,7" FontWeight="Bold"
                                     Background="#107C10" Foreground="White"/>
@@ -130,14 +130,14 @@
                 </Border>
 
                 <!-- Overtime result display (No overtime / calculated Overtime) -->
-                <Border Background="#E8F5E9" Padding="12" CornerRadius="4"
+                <Border Background="{DynamicResource AppSuccessPanel}" Padding="12" CornerRadius="4"
                         IsVisible="{Binding IsOvertimeDecided}">
                     <TextBlock Text="{Binding OvertimeResultText}" FontWeight="SemiBold"
                                Foreground="#2E7D32"/>
                 </Border>
 
                 <!-- Validation Error -->
-                <Border Background="#FDECEA" Padding="12" CornerRadius="4"
+                <Border Background="{DynamicResource AppErrorPanel}" Padding="12" CornerRadius="4"
                         IsVisible="{Binding HasValidationError}">
                     <TextBlock Text="{Binding ValidationError}" FontWeight="SemiBold"
                                Foreground="#D13438"/>

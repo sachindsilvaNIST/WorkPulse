@@ -15,7 +15,7 @@
     <Border Padding="20">
         <StackPanel Spacing="14">
             <!-- Validation Error -->
-            <Border Background="#FDECEA" Padding="12" CornerRadius="4"
+            <Border Background="{DynamicResource AppErrorPanel}" Padding="12" CornerRadius="4"
                     IsVisible="{Binding HasValidationError}">
                 <TextBlock Text="{Binding ValidationError}" FontWeight="SemiBold"
                            Foreground="#D13438"/>
@@ -114,7 +114,7 @@
                         Spacing="8" Margin="0,8,0,0">
                 <Button Content="Cancel" Command="{Binding CancelCommand}"
                         Padding="16,6"
-                        Background="#E5E5EA" Foreground="#1A1A1A"/>
+                        Background="{DynamicResource AppButtonNeutral}" Foreground="{DynamicResource AppForeground}"/>
                 <Button Content="Save" Command="{Binding SaveCommand}"
                         Padding="16,6" FontWeight="Bold"
                         Background="#107C10" Foreground="White"/>

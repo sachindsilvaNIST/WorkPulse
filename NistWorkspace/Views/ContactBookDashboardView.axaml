@@ -19,7 +19,7 @@
                          FontSize="14"
                          Padding="12,8"
                          CornerRadius="6"
-                         BorderBrush="#D0D0D0"
+                         BorderBrush="{DynamicResource AppDivider}"
                          Margin="0,0,8,0"/>
 
                 <!-- Clear Search Button -->
@@ -33,7 +33,7 @@
                         ToolTip.Tip="Clear search">
                     <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
                               Width="16" Height="16"
-                              Foreground="#999999"/>
+                              Foreground="{DynamicResource AppForegroundSecondary}"/>
                 </Button>
 
                 <!-- Summary -->
@@ -206,7 +206,7 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    FontSize="18"
-                   Foreground="#999999"
+                   Foreground="{DynamicResource AppForegroundSecondary}"
                    FontWeight="SemiBold"/>
         </Grid>
     </DockPanel>

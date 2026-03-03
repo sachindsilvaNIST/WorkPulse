@@ -14,6 +14,11 @@
                     <SolidColorBrush x:Key="AppForegroundSecondary" Color="#666666"/>
                     <SolidColorBrush x:Key="AppDivider" Color="#E0E0E0"/>
                     <SolidColorBrush x:Key="AppControlHover" Color="White"/>
+                    <SolidColorBrush x:Key="AppInfoPanel" Color="#FFF3E0"/>
+                    <SolidColorBrush x:Key="AppSuccessPanel" Color="#E8F5E9"/>
+                    <SolidColorBrush x:Key="AppErrorPanel" Color="#FDECEA"/>
+                    <SolidColorBrush x:Key="AppButtonNeutral" Color="#E5E5EA"/>
+                    <SolidColorBrush x:Key="AppInputBackground" Color="White"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="AppBackground" Color="#1E1E1E"/>
@@ -22,6 +27,11 @@
                     <SolidColorBrush x:Key="AppForegroundSecondary" Color="#999999"/>
                     <SolidColorBrush x:Key="AppDivider" Color="#404040"/>
                     <SolidColorBrush x:Key="AppControlHover" Color="#3D3D3D"/>
+                    <SolidColorBrush x:Key="AppInfoPanel" Color="#3D2E00"/>
+                    <SolidColorBrush x:Key="AppSuccessPanel" Color="#1B3D1F"/>
+                    <SolidColorBrush x:Key="AppErrorPanel" Color="#3D1418"/>
+                    <SolidColorBrush x:Key="AppButtonNeutral" Color="#404040"/>
+                    <SolidColorBrush x:Key="AppInputBackground" Color="#2D2D2D"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <x:Double x:Key="DefaultFontSize">14</x:Double>

@@ -145,7 +145,7 @@
                 <StackPanel Spacing="8">
                     <TextBlock Text="About" FontSize="18" FontWeight="SemiBold"
                                Foreground="{DynamicResource AppForeground}"/>
-                    <TextBlock Text="NIST Workspace v1.0" FontSize="14"
+                    <TextBlock Text="{Binding VersionDisplay}" FontSize="14"
                                Foreground="{DynamicResource AppForeground}"/>
                     <TextBlock Text="Attendance, contacts, and file search — all in one place."
                                FontSize="12"
