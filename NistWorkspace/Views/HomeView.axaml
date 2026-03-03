@@ -19,6 +19,12 @@
                            FontSize="14"
                            HorizontalAlignment="Center"
                            Foreground="{DynamicResource AppForegroundSecondary}"/>
+                <TextBlock Text="{Binding VersionDisplay}"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppForegroundSecondary}"
+                           Opacity="0.6"
+                           Margin="0,4,0,0"/>
             </StackPanel>
 
             <!-- Navigation Buttons -->

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -24,6 +25,9 @@ public partial class MainWindow : Window
 
         Loaded += async (_, _) =>
         {
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            Title = $"NIST Workspace  v{version?.ToString(3) ?? "0.0.0"}";
+
             if (DataContext is MainWindowViewModel vm)
             {
                 vm.ShowOpenFileDialog = ShowOpenFileDialogAsync;

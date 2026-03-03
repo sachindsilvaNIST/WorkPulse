@@ -61,6 +61,7 @@ public partial class DashboardViewModel : ViewModelBase
     private bool _hasNoSearchResults;
 
     private MonthlyData? _currentMonthData;
+    private List<AttendanceRecord>? _allRecordsCache;
 
     public DashboardViewModel(IDataService dataService)
     {
@@ -127,6 +128,7 @@ public partial class DashboardViewModel : ViewModelBase
         await _dataService.SaveMonthAsync(_currentMonthData);
 
         HasUnsavedChanges = false;
+        InvalidateGlobalCache();
         RefreshSummary();
 
         // Exit edit mode after saving
@@ -220,6 +222,7 @@ public partial class DashboardViewModel : ViewModelBase
         await _dataService.SaveMonthAsync(data);
         MonthYearDisplay = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(SelectedMonth).ToUpper()} {SelectedYear}";
         HasUnsavedChanges = false;
+        InvalidateGlobalCache();
         RefreshDisplay();
     }
 
@@ -231,6 +234,7 @@ public partial class DashboardViewModel : ViewModelBase
             await _dataService.SaveMonthAsync(_currentMonthData);
         }
         HasUnsavedChanges = false;
+        InvalidateGlobalCache();
         RefreshDisplay();
     }
 
@@ -239,7 +243,7 @@ public partial class DashboardViewModel : ViewModelBase
         Records = new ObservableCollection<AttendanceRecord>(
             _currentMonthData?.Records.OrderBy(r => r.Date) ?? Enumerable.Empty<AttendanceRecord>());
         RefreshSummary();
-        ApplyFilter();
+        _ = ApplyFilterAsync();
     }
 
     private void RefreshSummary()
@@ -253,7 +257,7 @@ public partial class DashboardViewModel : ViewModelBase
 
     partial void OnSearchTextChanged(string value)
     {
-        ApplyFilter();
+        _ = ApplyFilterAsync();
     }
 
     [RelayCommand]
@@ -262,7 +266,7 @@ public partial class DashboardViewModel : ViewModelBase
         SearchText = "";
     }
 
-    private void ApplyFilter()
+    private async Task ApplyFilterAsync()
     {
         if (string.IsNullOrWhiteSpace(SearchText))
         {
@@ -272,13 +276,36 @@ public partial class DashboardViewModel : ViewModelBase
         }
         else
         {
+            if (_allRecordsCache == null)
+                await LoadAllRecordsAsync();
+
             var lower = SearchText.ToLowerInvariant();
-            var filtered = Records
+            var filtered = _allRecordsCache!
                 .Where(r => r.SearchText.Contains(lower))
                 .OrderBy(r => r.Date)
                 .ToList();
             FilteredRecords = new ObservableCollection<AttendanceRecord>(filtered);
             HasNoSearchResults = filtered.Count == 0;
         }
+    }
+
+    private async Task LoadAllRecordsAsync()
+    {
+        var months = await _dataService.GetAvailableMonthsAsync();
+        var all = new List<AttendanceRecord>();
+
+        foreach (var (year, month) in months)
+        {
+            var data = await _dataService.LoadMonthAsync(year, month);
+            if (data?.Records != null)
+                all.AddRange(data.Records);
+        }
+
+        _allRecordsCache = all.OrderBy(r => r.Date).ToList();
+    }
+
+    private void InvalidateGlobalCache()
+    {
+        _allRecordsCache = null;
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using CommunityToolkit.Mvvm.Input;
 
 namespace NistAttendance.ViewModels;
@@ -6,6 +7,9 @@ namespace NistAttendance.ViewModels;
 public partial class HomeViewModel : ViewModelBase
 {
     private readonly Action<string> _navigate;
+
+    public string VersionDisplay { get; } =
+        $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"}";
 
     public HomeViewModel(Action<string> navigate)
     {
