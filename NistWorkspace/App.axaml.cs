@@ -5,6 +5,7 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Styling;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using NistAttendance.Services;
 using NistAttendance.ViewModels;
@@ -26,10 +27,11 @@ public partial class App : Application
             DisableAvaloniaDataAnnotationValidation();
 
             // Load saved theme and font size before window creation
+            // Use Task.Run to avoid SynchronizationContext deadlock
             try
             {
                 var settingsService = new SettingsService();
-                var settings = settingsService.LoadAsync().GetAwaiter().GetResult();
+                var settings = Task.Run(() => settingsService.LoadAsync()).GetAwaiter().GetResult();
 
                 RequestedThemeVariant = settings.ThemeVariant == "Dark"
                     ? ThemeVariant.Dark

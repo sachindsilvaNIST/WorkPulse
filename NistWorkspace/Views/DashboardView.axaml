@@ -47,22 +47,22 @@
         </Grid>
 
         <!-- Summary Panel -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource LayerFillColorAltBrush}"
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource AppBackgroundAlt}"
                 Padding="16" CornerRadius="6" Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal" Spacing="48">
                 <StackPanel>
                     <TextBlock Text="Work Days" FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
                     <TextBlock Text="{Binding TotalWorkDays}" FontSize="24" FontWeight="Bold" Foreground="#0078D4"/>
                 </StackPanel>
                 <StackPanel>
                     <TextBlock Text="Overtime Count" FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
                     <TextBlock Text="{Binding OvertimeCount}" FontSize="24" FontWeight="Bold" Foreground="#FF8C00"/>
                 </StackPanel>
                 <StackPanel>
                     <TextBlock Text="Total Overtime" FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
                     <TextBlock Text="{Binding TotalOvertimeDuration}" FontSize="24" FontWeight="Bold" Foreground="#D13438"/>
                 </StackPanel>
             </StackPanel>
@@ -78,7 +78,7 @@
                   CanUserResizeColumns="False"
                   GridLinesVisibility="Horizontal"
                   BorderThickness="1"
-                  BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                  BorderBrush="{DynamicResource AppDivider}"
                   CornerRadius="6"
                   HeadersVisibility="Column"
                   SelectionMode="Single"
