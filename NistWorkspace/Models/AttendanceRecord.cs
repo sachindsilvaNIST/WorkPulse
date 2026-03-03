@@ -76,4 +76,9 @@ public class AttendanceRecord
     [JsonIgnore]
     public bool IsOvertimePending =>
         DayType == DayType.WorkDay && LoginTime.HasValue && LogoutTime.HasValue && !IsOvertimeDecided;
+
+    [JsonIgnore]
+    public string SearchText =>
+        $"{Date:yyyy-MM-dd} {DayAbbreviation} {DayOfWeek} {DayType} {HolidayName} {LoginDisplay} {LogoutDisplay} {OvertimeFlag}"
+            .ToLowerInvariant();
 }

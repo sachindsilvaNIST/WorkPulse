@@ -51,6 +51,15 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private bool _hasUnsavedChanges;
 
+    [ObservableProperty]
+    private string _searchText = "";
+
+    [ObservableProperty]
+    private ObservableCollection<AttendanceRecord> _filteredRecords = new();
+
+    [ObservableProperty]
+    private bool _hasNoSearchResults;
+
     private MonthlyData? _currentMonthData;
 
     public DashboardViewModel(IDataService dataService)
@@ -230,6 +239,7 @@ public partial class DashboardViewModel : ViewModelBase
         Records = new ObservableCollection<AttendanceRecord>(
             _currentMonthData?.Records.OrderBy(r => r.Date) ?? Enumerable.Empty<AttendanceRecord>());
         RefreshSummary();
+        ApplyFilter();
     }
 
     private void RefreshSummary()
@@ -240,4 +250,35 @@ public partial class DashboardViewModel : ViewModelBase
     }
 
     public MonthlyData? GetCurrentMonthData() => _currentMonthData;
+
+    partial void OnSearchTextChanged(string value)
+    {
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = "";
+    }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            FilteredRecords = new ObservableCollection<AttendanceRecord>(
+                Records.OrderBy(r => r.Date));
+            HasNoSearchResults = false;
+        }
+        else
+        {
+            var lower = SearchText.ToLowerInvariant();
+            var filtered = Records
+                .Where(r => r.SearchText.Contains(lower))
+                .OrderBy(r => r.Date)
+                .ToList();
+            FilteredRecords = new ObservableCollection<AttendanceRecord>(filtered);
+            HasNoSearchResults = filtered.Count == 0;
+        }
+    }
 }
