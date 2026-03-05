@@ -15,11 +15,16 @@
         Background="{DynamicResource AppBackgroundAlt}">
 
     <Window.Styles>
-        <Style Selector="DatePickerFlyoutPresenter">
+        <!-- Remove scale animation from DatePicker flyout button -->
+        <Style Selector="DatePicker /template/ Button">
+            <Setter Property="RenderTransform" Value="none"/>
             <Setter Property="Transitions" Value="{x:Null}"/>
         </Style>
-        <Style Selector="Popup">
-            <Setter Property="WindowManagerAddShadowHint" Value="False"/>
+        <Style Selector="DatePicker /template/ Button:pressed">
+            <Setter Property="RenderTransform" Value="none"/>
+        </Style>
+        <Style Selector="DatePicker /template/ Button:pointerover">
+            <Setter Property="RenderTransform" Value="none"/>
         </Style>
     </Window.Styles>
 
