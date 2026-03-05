@@ -117,6 +117,19 @@ public class ExcelExportService : IExcelExportService
             return;
         }
 
+        if (record.DayType == DayType.BusinessTrip)
+        {
+            var label = string.IsNullOrWhiteSpace(record.HolidayName) ? "出張" : $"{record.HolidayName} 出張";
+            ws.Cell(row, 3).Value = record.DayAbbreviation;
+            ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
+            ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
+            ws.Range(row, 5, row, 11).Merge().Value = label;
+            ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Range(row, 5, row, 11).Style.Font.Italic = true;
+            ws.Range(row, 5, row, 11).Style.Fill.BackgroundColor = XLColor.FromHtml("#DCEBFF");
+            return;
+        }
+
         if (record.DayType == DayType.Weekend)
         {
             ws.Cell(row, 3).Value = record.DayAbbreviation;

@@ -173,6 +173,22 @@ public class ExcelImportService : IExcelImportService
         var dayText = cellC.GetString().Trim().ToUpper();
         var loginText = cellE.GetString().Trim();
 
+        // Check for business trip (出張)
+        if (loginText.Contains("出張"))
+        {
+            if (cellD.DataType == XLDataType.DateTime)
+            {
+                var location = loginText.Replace("出張", "").Trim();
+                return new AttendanceRecord
+                {
+                    Date = DateOnly.FromDateTime(cellD.GetDateTime()),
+                    DayType = DayType.BusinessTrip,
+                    HolidayName = string.IsNullOrWhiteSpace(location) ? null : location
+                };
+            }
+            return null;
+        }
+
         // Check for weekend/rest day (Saturday/Sunday with 休 or 土・日曜日)
         if (loginText == "休" || loginText.Contains("休") || loginText.Contains("土・日曜日"))
         {

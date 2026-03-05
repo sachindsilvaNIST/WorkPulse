@@ -151,6 +151,44 @@ public partial class DashboardViewModel : ViewModelBase
         await SaveAndRefresh();
     }
 
+    public async Task SaveRecords(List<AttendanceRecord> records)
+    {
+        // Group records by (Year, Month) to handle cross-month business trips
+        var groups = records.GroupBy(r => (r.Date.Year, r.Date.Month));
+
+        foreach (var group in groups)
+        {
+            var (year, month) = group.Key;
+            var monthData = await _dataService.LoadMonthAsync(year, month)
+                ?? new MonthlyData
+                {
+                    Year = year,
+                    Month = month,
+                    MonthLabel = System.Globalization.CultureInfo.InvariantCulture
+                        .DateTimeFormat.GetAbbreviatedMonthName(month).ToUpper(),
+                    Title = $"{System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month).ToUpper()} - MSW SETTLEMENT"
+                };
+
+            foreach (var record in group)
+            {
+                var existing = monthData.Records.FirstOrDefault(r => r.Date == record.Date);
+                if (existing != null)
+                    monthData.Records.Remove(existing);
+                monthData.Records.Add(record);
+            }
+
+            monthData.Records = monthData.Records.OrderBy(r => r.Date).ToList();
+            await _dataService.SaveMonthAsync(monthData);
+
+            // Update in-memory state if this is the currently viewed month
+            if (year == SelectedYear && month == SelectedMonth)
+                _currentMonthData = monthData;
+        }
+
+        InvalidateGlobalCache();
+        RefreshDisplay();
+    }
+
     public async Task DeleteRecord(AttendanceRecord record)
     {
         if (_currentMonthData == null) return;

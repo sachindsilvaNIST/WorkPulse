@@ -17,6 +17,7 @@ public partial class AttendanceEntryDialog : Window
         DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Unpaid Leave: 休み" });
         DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Public Holiday: 休日" });
         DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Weekend: 土・日曜日" });
+        DayTypeCombo.Items.Add(new ComboBoxItem { Content = "Business Trip: 出張" });
     }
 
     public AttendanceEntryDialog(AttendanceEntryViewModel viewModel) : this()
@@ -32,6 +33,7 @@ public partial class AttendanceEntryDialog : Window
             DayType.UnpaidLeave => 2,
             DayType.PublicHoliday => 3,
             DayType.Weekend => 4,
+            DayType.BusinessTrip => 5,
             _ => 0
         };
 
@@ -45,6 +47,7 @@ public partial class AttendanceEntryDialog : Window
                 2 => DayType.UnpaidLeave,
                 3 => DayType.PublicHoliday,
                 4 => DayType.Weekend,
+                5 => DayType.BusinessTrip,
                 _ => DayType.WorkDay
             };
         };

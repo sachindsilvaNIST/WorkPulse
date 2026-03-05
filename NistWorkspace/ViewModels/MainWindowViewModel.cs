@@ -298,9 +298,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (ShowEditDialog != null && await ShowEditDialog(entryVm))
         {
-            var record = entryVm.ToRecord();
-            await _dashboardVm.SaveRecord(record);
-            StatusMessage = $"Added record for {record.Date}";
+            var records = entryVm.ToRecords();
+            if (records.Count == 1)
+            {
+                await _dashboardVm.SaveRecord(records[0]);
+                StatusMessage = $"Added record for {records[0].Date}";
+            }
+            else
+            {
+                await _dashboardVm.SaveRecords(records);
+                StatusMessage = $"Added {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
+            }
         }
     }
 
@@ -325,9 +333,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (ShowEditDialog != null && await ShowEditDialog(entryVm))
         {
-            var record = entryVm.ToRecord();
-            await _dashboardVm.SaveRecord(record);
-            StatusMessage = $"Updated record for {record.Date}";
+            var records = entryVm.ToRecords();
+            if (records.Count == 1)
+            {
+                await _dashboardVm.SaveRecord(records[0]);
+                StatusMessage = $"Updated record for {records[0].Date}";
+            }
+            else
+            {
+                await _dashboardVm.SaveRecords(records);
+                StatusMessage = $"Updated {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
+            }
         }
     }
 
@@ -407,9 +423,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (ShowEditDialog != null && await ShowEditDialog(entryVm))
         {
-            var record = entryVm.ToRecord();
-            await _dashboardVm.SaveRecord(record);
-            StatusMessage = $"Added {record.DayType}: {record.HolidayName ?? record.LoginDisplay} on {record.Date}";
+            var records = entryVm.ToRecords();
+            if (records.Count == 1)
+            {
+                await _dashboardVm.SaveRecord(records[0]);
+                StatusMessage = $"Added {records[0].DayType}: {records[0].HolidayName ?? records[0].LoginDisplay} on {records[0].Date}";
+            }
+            else
+            {
+                await _dashboardVm.SaveRecords(records);
+                StatusMessage = $"Added {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
+            }
         }
     }
 

@@ -14,14 +14,22 @@
         ShowInTaskbar="False"
         Background="{DynamicResource AppBackgroundAlt}">
 
+    <Window.Styles>
+        <Style Selector="DatePickerFlyoutPresenter">
+            <Setter Property="Transitions" Value="{x:Null}"/>
+        </Style>
+        <Style Selector="Popup">
+            <Setter Property="WindowManagerAddShadowHint" Value="False"/>
+        </Style>
+    </Window.Styles>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Border Padding="28">
             <StackPanel Spacing="18">
                 <!-- Date Picker -->
                 <StackPanel Spacing="6">
                     <TextBlock Text="Date" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
-                    <DatePicker SelectedDate="{Binding SelectedDate}"
-                                HorizontalAlignment="Stretch"/>
+                    <DatePicker SelectedDate="{Binding SelectedDate}"/>
                 </StackPanel>
 
                 <!-- Day Type -->
@@ -35,6 +43,55 @@
                 <StackPanel Spacing="6" IsVisible="{Binding ShowHolidayName}">
                     <TextBlock Text="Description (optional)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <TextBox Text="{Binding HolidayName}" Watermark="e.g., NEW YEAR HOLIDAY"/>
+                </StackPanel>
+
+                <!-- Business Trip Fields -->
+                <StackPanel Spacing="12" IsVisible="{Binding ShowBusinessTripFields}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Scheduled Departure Date" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <DatePicker SelectedDate="{Binding DepartureDate}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Scheduled Return Date" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <DatePicker SelectedDate="{Binding ReturnDate}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Business Trip Location(s)" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding NewLocationText}"
+                                     Watermark="e.g., Osaka" Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="+ Add"
+                                    Command="{Binding AddLocationCommand}"
+                                    Padding="14,7" FontWeight="SemiBold"
+                                    Background="#0078D4" Foreground="White"/>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding TripLocations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource AppBackgroundAlt}"
+                                            CornerRadius="4" Padding="10,6" Margin="0,2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding}"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource AppForeground}"/>
+                                            <Button Grid.Column="1" Content="X"
+                                                    Command="{Binding $parent[ItemsControl].((vm:AttendanceEntryViewModel)DataContext).RemoveLocationCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="8,2" FontSize="11"
+                                                    Background="#D13438" Foreground="White"
+                                                    CornerRadius="3"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Login Time (visible only for work days) -->

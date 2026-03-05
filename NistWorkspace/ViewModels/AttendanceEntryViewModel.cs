@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NistAttendance.Models;
@@ -63,6 +66,22 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showHolidayName;
 
+    // Business Trip fields
+    [ObservableProperty]
+    private bool _showBusinessTripFields;
+
+    [ObservableProperty]
+    private DateTimeOffset _departureDate = DateTimeOffset.Now;
+
+    [ObservableProperty]
+    private DateTimeOffset _returnDate = DateTimeOffset.Now;
+
+    [ObservableProperty]
+    private ObservableCollection<string> _tripLocations = new();
+
+    [ObservableProperty]
+    private string _newLocationText = "";
+
     [ObservableProperty]
     private string _windowTitle = "Add Attendance";
 
@@ -89,6 +108,18 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         HolidayName = record.HolidayName;
         IsWorkDay = record.DayType == DayType.WorkDay;
         ShowHolidayName = record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday;
+        ShowBusinessTripFields = record.DayType == DayType.BusinessTrip;
+
+        if (record.DayType == DayType.BusinessTrip)
+        {
+            DepartureDate = new DateTimeOffset(record.Date.ToDateTime(TimeOnly.MinValue));
+            ReturnDate = DepartureDate;
+            if (!string.IsNullOrWhiteSpace(record.HolidayName))
+            {
+                TripLocations = new ObservableCollection<string>(
+                    record.HolidayName.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+            }
+        }
 
         if (record.LoginTime.HasValue)
         {
@@ -133,7 +164,10 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             Date = date,
             DayType = DayType,
             HolidayName = DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday
-                ? HolidayName : null
+                ? HolidayName
+                : DayType == DayType.BusinessTrip && TripLocations.Count > 0
+                    ? string.Join(", ", TripLocations)
+                    : null
         };
 
         if (DayType == DayType.WorkDay)
@@ -150,10 +184,40 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         return record;
     }
 
+    public List<AttendanceRecord> ToRecords()
+    {
+        if (DayType != DayType.BusinessTrip)
+            return new List<AttendanceRecord> { ToRecord() };
+
+        var locationString = TripLocations.Count > 0
+            ? string.Join(", ", TripLocations)
+            : null;
+
+        var departure = DateOnly.FromDateTime(DepartureDate.DateTime);
+        var returnDate = DateOnly.FromDateTime(ReturnDate.DateTime);
+
+        if (returnDate < departure)
+            returnDate = departure;
+
+        var records = new List<AttendanceRecord>();
+        for (var d = departure; d <= returnDate; d = d.AddDays(1))
+        {
+            records.Add(new AttendanceRecord
+            {
+                Date = d,
+                DayType = DayType.BusinessTrip,
+                HolidayName = locationString
+            });
+        }
+
+        return records;
+    }
+
     partial void OnDayTypeChanged(DayType value)
     {
         IsWorkDay = value == DayType.WorkDay;
         ShowHolidayName = value is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday;
+        ShowBusinessTripFields = value == DayType.BusinessTrip;
     }
 
     partial void OnOvertimeSelectionChanged(int value)
@@ -212,6 +276,23 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void AddLocation()
+    {
+        var trimmed = NewLocationText?.Trim();
+        if (!string.IsNullOrEmpty(trimmed) && !TripLocations.Contains(trimmed))
+        {
+            TripLocations.Add(trimmed);
+            NewLocationText = "";
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveLocation(string location)
+    {
+        TripLocations.Remove(location);
+    }
+
+    [RelayCommand]
     private void Save()
     {
         // Validate: Work day must have Overtime selected
@@ -220,6 +301,26 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             HasValidationError = true;
             ValidationError = "Please select Yes or No for Overtime before saving.";
             return;
+        }
+
+        // Validate: Business trip fields
+        if (DayType == DayType.BusinessTrip)
+        {
+            if (TripLocations.Count == 0)
+            {
+                HasValidationError = true;
+                ValidationError = "Please add at least one business trip location.";
+                return;
+            }
+
+            var dep = DateOnly.FromDateTime(DepartureDate.DateTime);
+            var ret = DateOnly.FromDateTime(ReturnDate.DateTime);
+            if (ret < dep)
+            {
+                HasValidationError = true;
+                ValidationError = "Return date must be on or after the departure date.";
+                return;
+            }
         }
 
         DialogResult = true;

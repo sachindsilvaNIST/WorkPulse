@@ -47,6 +47,7 @@ public class AttendanceRecord
         DayType.UnpaidLeave => HolidayName ?? "休み",
         DayType.PublicHoliday => HolidayName ?? "休日",
         DayType.Weekend => HolidayName ?? "---",
+        DayType.BusinessTrip => string.IsNullOrWhiteSpace(HolidayName) ? "出張" : $"{HolidayName} 出張",
         _ => ""
     };
 

@@ -18,6 +18,7 @@ public class DayTypeToColorConverter : IValueConverter
                 DayType.UnpaidLeave => new SolidColorBrush(Color.FromRgb(255, 240, 230)),
                 DayType.PublicHoliday => new SolidColorBrush(Color.FromRgb(255, 248, 220)),
                 DayType.Weekend => new SolidColorBrush(Color.FromRgb(230, 230, 230)),
+                DayType.BusinessTrip => new SolidColorBrush(Color.FromRgb(220, 235, 255)),
                 _ => Brushes.Transparent
             };
         }
