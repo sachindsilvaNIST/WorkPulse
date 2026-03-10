@@ -70,6 +70,25 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showBusinessTripFields;
 
+    // Trip type: -1 = not selected, 0 = Domestic, 1 = Overseas
+    [ObservableProperty]
+    private int _tripCategoryIndex = -1;
+
+    [ObservableProperty]
+    private bool _showPrefectureDropdown;
+
+    [ObservableProperty]
+    private bool _showCountryDropdown;
+
+    [ObservableProperty]
+    private string? _selectedPrefecture;
+
+    [ObservableProperty]
+    private string? _selectedCountry;
+
+    public List<string> Prefectures { get; } = TripData.Prefectures;
+    public List<string> Countries { get; } = TripData.Countries;
+
     [ObservableProperty]
     private DateTimeOffset _departureDate = DateTimeOffset.Now;
 
@@ -118,6 +137,16 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             {
                 TripLocations = new ObservableCollection<string>(
                     record.HolidayName.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+            }
+
+            // Restore trip category
+            if (record.TripCategory.HasValue)
+            {
+                TripCategoryIndex = record.TripCategory.Value == TripCategory.Domestic ? 0 : 1;
+                if (record.TripCategory.Value == TripCategory.Domestic)
+                    SelectedPrefecture = record.TripRegion;
+                else
+                    SelectedCountry = record.TripRegion;
             }
         }
 
@@ -170,6 +199,17 @@ public partial class AttendanceEntryViewModel : ViewModelBase
                     : null
         };
 
+        if (DayType == DayType.BusinessTrip)
+        {
+            record.TripCategory = TripCategoryIndex switch
+            {
+                0 => TripCategory.Domestic,
+                1 => TripCategory.Overseas,
+                _ => null
+            };
+            record.TripRegion = TripCategoryIndex == 0 ? SelectedPrefecture : SelectedCountry;
+        }
+
         if (DayType == DayType.WorkDay)
         {
             record.LoginTime = new TimeOnly(LoginHour, LoginMinute);
@@ -199,6 +239,14 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         if (returnDate < departure)
             returnDate = departure;
 
+        var tripCategory = TripCategoryIndex switch
+        {
+            0 => (TripCategory?)TripCategory.Domestic,
+            1 => (TripCategory?)TripCategory.Overseas,
+            _ => null
+        };
+        var tripRegion = TripCategoryIndex == 0 ? SelectedPrefecture : SelectedCountry;
+
         var records = new List<AttendanceRecord>();
         for (var d = departure; d <= returnDate; d = d.AddDays(1))
         {
@@ -206,7 +254,9 @@ public partial class AttendanceEntryViewModel : ViewModelBase
             {
                 Date = d,
                 DayType = DayType.BusinessTrip,
-                HolidayName = locationString
+                HolidayName = locationString,
+                TripCategory = tripCategory,
+                TripRegion = tripRegion
             });
         }
 
@@ -218,6 +268,24 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         IsWorkDay = value == DayType.WorkDay;
         ShowHolidayName = value is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday;
         ShowBusinessTripFields = value == DayType.BusinessTrip;
+
+        if (value != DayType.BusinessTrip)
+        {
+            TripCategoryIndex = -1;
+            ShowPrefectureDropdown = false;
+            ShowCountryDropdown = false;
+        }
+    }
+
+    partial void OnTripCategoryIndexChanged(int value)
+    {
+        ShowPrefectureDropdown = value == 0; // Domestic
+        ShowCountryDropdown = value == 1;    // Overseas
+
+        if (value == 0)
+            SelectedCountry = null;
+        else if (value == 1)
+            SelectedPrefecture = null;
     }
 
     partial void OnOvertimeSelectionChanged(int value)
@@ -306,6 +374,27 @@ public partial class AttendanceEntryViewModel : ViewModelBase
         // Validate: Business trip fields
         if (DayType == DayType.BusinessTrip)
         {
+            if (TripCategoryIndex == -1)
+            {
+                HasValidationError = true;
+                ValidationError = "Please select a trip type (Domestic or Overseas).";
+                return;
+            }
+
+            if (TripCategoryIndex == 0 && string.IsNullOrWhiteSpace(SelectedPrefecture))
+            {
+                HasValidationError = true;
+                ValidationError = "Please select a prefecture for the domestic trip.";
+                return;
+            }
+
+            if (TripCategoryIndex == 1 && string.IsNullOrWhiteSpace(SelectedCountry))
+            {
+                HasValidationError = true;
+                ValidationError = "Please select a country for the overseas trip.";
+                return;
+            }
+
             if (TripLocations.Count == 0)
             {
                 HasValidationError = true;

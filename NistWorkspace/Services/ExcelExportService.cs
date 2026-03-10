@@ -119,7 +119,7 @@ public class ExcelExportService : IExcelExportService
 
         if (record.DayType == DayType.BusinessTrip)
         {
-            var label = string.IsNullOrWhiteSpace(record.HolidayName) ? "出張" : $"{record.HolidayName} 出張";
+            var label = record.LoginDisplay;
             ws.Cell(row, 3).Value = record.DayAbbreviation;
             ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
             ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";

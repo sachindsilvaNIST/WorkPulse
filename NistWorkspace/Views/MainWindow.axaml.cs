@@ -84,6 +84,10 @@ public partial class MainWindow : Window
                     vm.NavigateTo("settings");
                     e.Handled = true;
                     break;
+                case Key.Q:
+                    Close();
+                    e.Handled = true;
+                    break;
             }
         }
         else if (e.Key == Key.F1 && e.KeyModifiers == KeyModifiers.None)
@@ -160,6 +164,7 @@ public partial class MainWindow : Window
             ("Ctrl + H", "Home"),
             ("Ctrl + F", "Focus Search Bar"),
             ("Ctrl + ,", "Settings"),
+            ("Ctrl + Q", "Quit Application"),
             ("F1", "This Help Dialog"),
         };
 

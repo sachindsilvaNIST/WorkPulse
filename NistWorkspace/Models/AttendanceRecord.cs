@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace NistAttendance.Models;
@@ -12,6 +13,8 @@ public class AttendanceRecord
 
     public DayType DayType { get; set; } = DayType.WorkDay;
     public string? HolidayName { get; set; }
+    public TripCategory? TripCategory { get; set; }
+    public string? TripRegion { get; set; }
 
     public TimeOnly? LoginTime { get; set; }
     public TimeOnly? LogoutTime { get; set; }
@@ -47,7 +50,7 @@ public class AttendanceRecord
         DayType.UnpaidLeave => HolidayName ?? "休み",
         DayType.PublicHoliday => HolidayName ?? "休日",
         DayType.Weekend => HolidayName ?? "---",
-        DayType.BusinessTrip => string.IsNullOrWhiteSpace(HolidayName) ? "出張" : $"{HolidayName} 出張",
+        DayType.BusinessTrip => FormatBusinessTripDisplay(),
         _ => ""
     };
 
@@ -80,6 +83,25 @@ public class AttendanceRecord
 
     [JsonIgnore]
     public string SearchText =>
-        $"{Date:yyyy-MM-dd} {DayAbbreviation} {DayOfWeek} {DayType} {HolidayName} {LoginDisplay} {LogoutDisplay} {OvertimeFlag}"
+        $"{Date:yyyy-MM-dd} {DayAbbreviation} {DayOfWeek} {DayType} {HolidayName} {TripRegion} {LoginDisplay} {LogoutDisplay} {OvertimeFlag}"
             .ToLowerInvariant();
+
+    private string FormatBusinessTripDisplay()
+    {
+        var tripLabel = TripCategory switch
+        {
+            Models.TripCategory.Domestic => "国内出張",
+            Models.TripCategory.Overseas => "海外出張",
+            _ => "出張"
+        };
+
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(TripRegion))
+            parts.Add(TripRegion);
+        if (!string.IsNullOrWhiteSpace(HolidayName))
+            parts.Add(HolidayName);
+        parts.Add(tripLabel);
+
+        return string.Join(" ", parts);
+    }
 }

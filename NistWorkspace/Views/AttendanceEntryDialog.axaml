@@ -52,6 +52,35 @@
 
                 <!-- Business Trip Fields -->
                 <StackPanel Spacing="12" IsVisible="{Binding ShowBusinessTripFields}">
+                    <!-- Trip Type -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Trip Type *" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <ComboBox x:Name="TripCategoryCombo" HorizontalAlignment="Stretch"
+                                  SelectedIndex="{Binding TripCategoryIndex}">
+                            <ComboBoxItem Content="&#x56FD;&#x5185;&#x51FA;&#x5F35;: Domestic Business Trip"/>
+                            <ComboBoxItem Content="&#x6D77;&#x5916;&#x51FA;&#x5F35;: Overseas Business Trip"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Prefecture (Domestic) -->
+                    <StackPanel Spacing="6" IsVisible="{Binding ShowPrefectureDropdown}">
+                        <TextBlock Text="Prefecture *" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Prefectures}"
+                                  SelectedItem="{Binding SelectedPrefecture}"/>
+                    </StackPanel>
+
+                    <!-- Country (Overseas) -->
+                    <StackPanel Spacing="6" IsVisible="{Binding ShowCountryDropdown}">
+                        <TextBlock Text="Country *" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Countries}"
+                                  SelectedItem="{Binding SelectedCountry}"/>
+                    </StackPanel>
+
                     <StackPanel Spacing="6">
                         <TextBlock Text="Scheduled Departure Date" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppForeground}"/>

@@ -173,17 +173,55 @@ public class ExcelImportService : IExcelImportService
         var dayText = cellC.GetString().Trim().ToUpper();
         var loginText = cellE.GetString().Trim();
 
-        // Check for business trip (出張)
+        // Check for business trip (出張 / 国内出張 / 海外出張)
         if (loginText.Contains("出張"))
         {
             if (cellD.DataType == XLDataType.DateTime)
             {
-                var location = loginText.Replace("出張", "").Trim();
+                TripCategory? tripCategory = null;
+                string remaining = loginText;
+
+                if (remaining.Contains("国内出張"))
+                {
+                    tripCategory = TripCategory.Domestic;
+                    remaining = remaining.Replace("国内出張", "").Trim();
+                }
+                else if (remaining.Contains("海外出張"))
+                {
+                    tripCategory = TripCategory.Overseas;
+                    remaining = remaining.Replace("海外出張", "").Trim();
+                }
+                else
+                {
+                    remaining = remaining.Replace("出張", "").Trim();
+                }
+
+                // Parse "Region Location1, Location2" pattern
+                string? tripRegion = null;
+                string? locations = null;
+
+                if (!string.IsNullOrWhiteSpace(remaining))
+                {
+                    // Try to match region (prefecture or country) as first token
+                    var parts = remaining.Split(' ', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        tripRegion = parts[0];
+                        locations = parts[1];
+                    }
+                    else
+                    {
+                        locations = remaining;
+                    }
+                }
+
                 return new AttendanceRecord
                 {
                     Date = DateOnly.FromDateTime(cellD.GetDateTime()),
                     DayType = DayType.BusinessTrip,
-                    HolidayName = string.IsNullOrWhiteSpace(location) ? null : location
+                    TripCategory = tripCategory,
+                    TripRegion = tripRegion,
+                    HolidayName = string.IsNullOrWhiteSpace(locations) ? null : locations
                 };
             }
             return null;
