@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using NistAttendance.Converters;
 using NistAttendance.Models;
 
 namespace NistAttendance.Services;
@@ -75,22 +76,4 @@ public class JsonDataService : IDataService
         return Task.FromResult(result.OrderByDescending(x => x.Year)
             .ThenByDescending(x => x.Month).ToList());
     }
-}
-
-public class DateOnlyJsonConverter : JsonConverter<DateOnly>
-{
-    public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => DateOnly.ParseExact(reader.GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-    public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.ToString("yyyy-MM-dd"));
-}
-
-public class TimeOnlyJsonConverter : JsonConverter<TimeOnly>
-{
-    public override TimeOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => TimeOnly.ParseExact(reader.GetString()!, "HH:mm", CultureInfo.InvariantCulture);
-
-    public override void Write(Utf8JsonWriter writer, TimeOnly value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.ToString("HH:mm"));
 }

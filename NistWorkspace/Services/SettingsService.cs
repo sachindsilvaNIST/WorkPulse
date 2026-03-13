@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using NistAttendance.Converters;
 using NistAttendance.Models;
 
 namespace NistAttendance.Services;

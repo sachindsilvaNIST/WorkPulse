@@ -28,4 +28,8 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NistAttendance.Shared\NistAttendance.Shared.csproj" />
+  </ItemGroup>
 </Project>
