@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -11,6 +12,9 @@ public class MonthlyData
     public string MonthLabel { get; set; } = "";
     public string Title { get; set; } = "";
     public List<AttendanceRecord> Records { get; set; } = new();
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public DateTime LastModifiedUtc { get; set; }
 
     [JsonIgnore]
     public int TotalWorkDays => Records.Count(r => r.DayType == DayType.WorkDay && r.LoginTime.HasValue);

@@ -101,7 +101,7 @@ public class HttpApiClient : IDisposable
     public async Task<SyncResponse?> PullAsync(DateTime since)
     {
         var response = await SendWithRetry(() =>
-            _http.GetAsync($"api/sync/pull?since={since:O}"));
+            _http.PostAsJsonAsync("api/sync/pull", new { LastSyncedAt = since }, _jsonOptions));
 
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SyncResponse>(_jsonOptions);

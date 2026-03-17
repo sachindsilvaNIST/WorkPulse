@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NistAttendance.Api.Data;
 using NistAttendance.Api.Mapping;
 using NistAttendance.DTOs;
+using NistAttendance.Models;
 
 namespace NistAttendance.Api.Controllers;
 
@@ -13,10 +14,13 @@ public class SyncController : ApiControllerBase
 
     public SyncController(AppDbContext db) => _db = db;
 
+    /// <summary>
+    /// Push client data to server. Only upserts items where client timestamp is newer.
+    /// </summary>
     [HttpPost("push")]
     public async Task<ActionResult<SyncResponse>> Push([FromBody] SyncRequest request)
     {
-        // Upsert attendance months
+        // Upsert attendance months — only if client is newer
         foreach (var monthData in request.Months)
         {
             var existing = await _db.AttendanceMonths
@@ -25,46 +29,58 @@ public class SyncController : ApiControllerBase
 
             if (existing != null)
             {
-                // Last-write-wins: client is pushing, so client data wins
-                existing.MonthLabel = monthData.MonthLabel;
-                existing.Title = monthData.Title;
-                existing.LastModifiedUtc = DateTime.UtcNow;
-                _db.AttendanceRecords.RemoveRange(existing.Records);
-                existing.Records = monthData.Records.Select(r => r.ToEntity()).ToList();
+                // Only overwrite if client data is newer
+                if (monthData.LastModifiedUtc > existing.LastModifiedUtc)
+                {
+                    existing.MonthLabel = monthData.MonthLabel;
+                    existing.Title = monthData.Title;
+                    existing.LastModifiedUtc = monthData.LastModifiedUtc;
+                    _db.AttendanceRecords.RemoveRange(existing.Records);
+                    existing.Records = monthData.Records.Select(r => r.ToEntity()).ToList();
+                }
             }
             else
             {
-                _db.AttendanceMonths.Add(monthData.ToEntity(UserId));
+                var entity = monthData.ToEntity(UserId);
+                if (monthData.LastModifiedUtc != default)
+                    entity.LastModifiedUtc = monthData.LastModifiedUtc;
+                _db.AttendanceMonths.Add(entity);
             }
         }
 
-        // Upsert contacts
+        // Upsert contacts — per-contact timestamp comparison
         if (request.Contacts != null)
         {
-            var existingContacts = await _db.Contacts.Where(c => c.UserId == UserId).ToListAsync();
-            _db.Contacts.RemoveRange(existingContacts);
+            var existingContacts = await _db.Contacts
+                .Where(c => c.UserId == UserId)
+                .ToDictionaryAsync(c => c.Id);
+
             foreach (var contact in request.Contacts.Contacts)
             {
-                _db.Contacts.Add(contact.ToEntity(UserId));
-            }
-        }
-
-        // Upsert settings
-        if (request.Settings != null)
-        {
-            var existingSettings = await _db.UserSettings.FirstOrDefaultAsync(s => s.UserId == UserId);
-            if (existingSettings != null)
-            {
-                existingSettings.StandardLoginTime = request.Settings.StandardLoginTime;
-                existingSettings.StandardLogoutTime = request.Settings.StandardLogoutTime;
-                existingSettings.OvertimeBreakDeductionMinutes = request.Settings.OvertimeBreakDeductionMinutes;
-                existingSettings.DefaultTitle = request.Settings.DefaultTitle;
-                existingSettings.ThemeVariant = request.Settings.ThemeVariant;
-                existingSettings.FontSizePreset = request.Settings.FontSizePreset;
-            }
-            else
-            {
-                _db.UserSettings.Add(request.Settings.ToEntity(UserId));
+                if (existingContacts.TryGetValue(contact.Id, out var existing))
+                {
+                    // Only overwrite if client is newer
+                    if (contact.LastModifiedUtc > existing.LastModifiedUtc)
+                    {
+                        existing.Affiliation = contact.Affiliation;
+                        existing.FamilyName = contact.FamilyName;
+                        existing.GivenName = contact.GivenName;
+                        existing.Department = contact.Department;
+                        existing.Email = contact.Email;
+                        existing.Intercom = contact.Intercom;
+                        existing.ContactNumber = contact.ContactNumber;
+                        existing.Notes = contact.Notes;
+                        existing.LastModifiedUtc = contact.LastModifiedUtc;
+                    }
+                }
+                else
+                {
+                    // New contact from client
+                    var entity = contact.ToEntity(UserId);
+                    if (contact.LastModifiedUtc != default)
+                        entity.LastModifiedUtc = contact.LastModifiedUtc;
+                    _db.Contacts.Add(entity);
+                }
             }
         }
 
@@ -73,6 +89,9 @@ public class SyncController : ApiControllerBase
         return Ok(new SyncResponse { ServerTimestamp = DateTime.UtcNow });
     }
 
+    /// <summary>
+    /// Pull all server data modified since the given timestamp.
+    /// </summary>
     [HttpPost("pull")]
     public async Task<ActionResult<SyncResponse>> Pull([FromBody] SyncPullRequest request)
     {
@@ -85,15 +104,12 @@ public class SyncController : ApiControllerBase
             .Where(c => c.UserId == UserId && c.LastModifiedUtc > request.LastSyncedAt)
             .ToListAsync();
 
-        var settings = await _db.UserSettings.FirstOrDefaultAsync(s => s.UserId == UserId);
-
         return Ok(new SyncResponse
         {
             Months = months.Select(m => m.ToMonthlyData()).ToList(),
             Contacts = contacts.Count > 0
-                ? new Models.ContactBookData { Contacts = contacts.Select(c => c.ToContactRecord()).ToList() }
+                ? new ContactBookData { Contacts = contacts.Select(c => c.ToContactRecord()).ToList() }
                 : null,
-            Settings = settings?.ToAppSettings(),
             ServerTimestamp = DateTime.UtcNow
         });
     }

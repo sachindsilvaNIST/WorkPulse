@@ -50,6 +50,7 @@ public class JsonDataService : IDataService
 
     public async Task SaveMonthAsync(MonthlyData data)
     {
+        data.LastModifiedUtc = DateTime.UtcNow;
         var path = GetFilePath(data.Year, data.Month);
         var json = JsonSerializer.Serialize(data, _jsonOptions);
         await File.WriteAllTextAsync(path, json);

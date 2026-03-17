@@ -15,6 +15,7 @@ public static class EntityMapper
             Month = entity.Month,
             MonthLabel = entity.MonthLabel,
             Title = entity.Title,
+            LastModifiedUtc = entity.LastModifiedUtc,
             Records = entity.Records.Select(r => r.ToAttendanceRecord()).OrderBy(r => r.Date).ToList()
         };
     }
@@ -86,7 +87,8 @@ public static class EntityMapper
             Email = entity.Email,
             Intercom = entity.Intercom,
             ContactNumber = entity.ContactNumber,
-            Notes = entity.Notes
+            Notes = entity.Notes,
+            LastModifiedUtc = entity.LastModifiedUtc
         };
     }
 

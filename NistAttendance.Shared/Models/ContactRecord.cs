@@ -15,6 +15,9 @@ public class ContactRecord
     public string ContactNumber { get; set; } = "";
     public string Notes { get; set; } = "";
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public DateTime LastModifiedUtc { get; set; }
+
     [JsonIgnore]
     public string FullName => $"{FamilyName} {GivenName}".Trim();
 

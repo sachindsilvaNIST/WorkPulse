@@ -39,6 +39,12 @@ public class JsonContactDataService : IContactDataService
 
     public async Task SaveContactsAsync(ContactBookData data)
     {
+        var now = DateTime.UtcNow;
+        foreach (var c in data.Contacts)
+        {
+            if (c.LastModifiedUtc == default)
+                c.LastModifiedUtc = now;
+        }
         var json = JsonSerializer.Serialize(data, _jsonOptions);
         await File.WriteAllTextAsync(_filePath, json);
     }

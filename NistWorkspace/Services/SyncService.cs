@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NistAttendance.DTOs;
 using NistAttendance.Models;
@@ -79,9 +81,55 @@ public class SyncService : ISyncService
             var settings = await _settingsService.LoadAsync();
             var lastSync = settings.LastSyncedAtUtc;
 
-            // --- Push local data to server ---
+            // --- Step 1: Pull server changes since last sync ---
+            var pullResponse = await _apiClient.PullAsync(lastSync);
+
+            if (pullResponse != null)
+            {
+                // Merge server months into local (server wins if newer)
+                foreach (var serverMonth in pullResponse.Months)
+                {
+                    var localMonth = await _dataService.LoadMonthAsync(serverMonth.Year, serverMonth.Month);
+
+                    if (localMonth == null || serverMonth.LastModifiedUtc > localMonth.LastModifiedUtc)
+                    {
+                        // Server is newer or local doesn't exist — save server version
+                        await _dataService.SaveMonthAsync(serverMonth);
+                    }
+                }
+
+                // Merge contacts (per-contact comparison by Id)
+                if (pullResponse.Contacts != null && pullResponse.Contacts.Contacts.Count > 0)
+                {
+                    var localContacts = await _contactDataService.LoadContactsAsync();
+                    var localMap = localContacts.Contacts.ToDictionary(c => c.Id);
+
+                    foreach (var serverContact in pullResponse.Contacts.Contacts)
+                    {
+                        if (localMap.TryGetValue(serverContact.Id, out var local))
+                        {
+                            if (serverContact.LastModifiedUtc > local.LastModifiedUtc)
+                            {
+                                // Server is newer — replace local
+                                localMap[serverContact.Id] = serverContact;
+                            }
+                        }
+                        else
+                        {
+                            // New contact from server
+                            localMap[serverContact.Id] = serverContact;
+                        }
+                    }
+
+                    localContacts.Contacts = localMap.Values.ToList();
+                    await _contactDataService.SaveContactsAsync(localContacts);
+                }
+            }
+
+            // --- Step 2: Push local data to server ---
+            // Server will only accept items where client timestamp is newer
             var availableMonths = await _dataService.GetAvailableMonthsAsync();
-            var localMonths = new System.Collections.Generic.List<MonthlyData>();
+            var localMonths = new List<MonthlyData>();
             foreach (var (year, month) in availableMonths)
             {
                 var data = await _dataService.LoadMonthAsync(year, month);
@@ -95,32 +143,15 @@ public class SyncService : ISyncService
             {
                 Months = localMonths,
                 Contacts = contacts,
-                Settings = null, // Don't push desktop-only settings to server
+                Settings = null,
                 LastSyncedAt = lastSync
             };
 
             var pushResponse = await _apiClient.PushAsync(pushRequest);
 
-            // --- Pull server data (anything newer than our last sync) ---
-            var pullResponse = await _apiClient.PullAsync(lastSync);
-
-            if (pullResponse != null)
-            {
-                // Merge server months into local (server wins for newer data)
-                foreach (var serverMonth in pullResponse.Months)
-                {
-                    await _dataService.SaveMonthAsync(serverMonth);
-                }
-
-                // Merge contacts (replace with server version)
-                if (pullResponse.Contacts != null && pullResponse.Contacts.Contacts.Count > 0)
-                {
-                    await _contactDataService.SaveContactsAsync(pullResponse.Contacts);
-                }
-            }
-
             // Update last sync timestamp
             var serverTime = pushResponse?.ServerTimestamp ?? DateTime.UtcNow;
+            settings = await _settingsService.LoadAsync();
             settings.LastSyncedAtUtc = serverTime;
             await _settingsService.SaveAsync(settings);
 
