@@ -2,6 +2,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using NistAttendance.Services;
 using NistAttendance.Web;
 using NistAttendance.Web.Auth;
 using NistAttendance.Web.Services;
@@ -36,6 +37,7 @@ builder.Services.AddScoped(sp =>
 // Application services
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ApiDataService>();
+builder.Services.AddScoped<IDataService>(sp => sp.GetRequiredService<ApiDataService>());
 builder.Services.AddScoped<ApiContactDataService>();
 builder.Services.AddScoped<ApiSettingsService>();
 

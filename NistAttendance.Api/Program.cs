@@ -12,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 var connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
            ?? builder.Configuration.GetConnectionString("DefaultConnection")
            ?? "";
+var usePostgres = false;
+
 if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
 {
     var uri = new Uri(connStr);
@@ -20,10 +22,28 @@ if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
     connStr = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')}"
             + $";Username={userInfo[0]};Password={userInfo[1]}"
             + ";SSL Mode=Require;Trust Server Certificate=true";
+    usePostgres = true;
+}
+else if (!string.IsNullOrEmpty(connStr) && connStr.Contains("Host="))
+{
+    usePostgres = true;
 }
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connStr));
+if (usePostgres)
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connStr));
+}
+else
+{
+    // Local dev: use SQLite (no PostgreSQL needed)
+    var sqlitePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "NistAttendance", "nist_attendance.db");
+    Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite($"Data Source={sqlitePath}"));
+}
 
 // Identity
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -83,7 +103,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        db.Database.EnsureCreated();
+    else
+        db.Database.Migrate();
 }
 
 if (app.Environment.IsDevelopment())
