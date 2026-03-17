@@ -1,50 +1,50 @@
-2026-03-17T02:40:15.087414238Z #23 exporting layers 1.3s done
-2026-03-17T02:40:15.255257416Z #23 exporting manifest sha256:5ecc716e20ffb6d4f3f5170548aea302fa377991272a26ed62ca33cc67f83df6 0.0s done
-2026-03-17T02:40:15.255280446Z #23 exporting config sha256:d3a252497dbe218703e30043ae44de4d0c94eedcd04dc8c45ca439c6bff93c81 done
-2026-03-17T02:40:15.831422215Z #23 DONE 2.0s
-2026-03-17T02:40:15.831444056Z 
-2026-03-17T02:40:15.831449306Z #24 exporting cache to client directory
-2026-03-17T02:40:15.831453776Z #24 preparing build cache for export
-2026-03-17T02:40:34.444326663Z #24 writing cache image manifest sha256:eec8faca866a9ad4e91cfb36686cbb8a3dfc0d703e69c2f716a18abfe5896801
-2026-03-17T02:40:34.687338801Z #24 writing cache image manifest sha256:eec8faca866a9ad4e91cfb36686cbb8a3dfc0d703e69c2f716a18abfe5896801 0.2s done
-2026-03-17T02:40:34.687359872Z #24 DONE 18.9s
-2026-03-17T02:41:12.520692676Z Pushing image to registry...
-2026-03-17T02:41:14.156436743Z Upload succeeded
-2026-03-17T02:41:23.54460433Z ==> Deploying...
-2026-03-17T02:41:23.611665249Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
-2026-03-17T02:41:34.076790228Z Unhandled exception. System.ArgumentException: Couldn't set port (Parameter 'port')
-2026-03-17T02:41:34.076826739Z  ---> System.ArgumentOutOfRangeException: Invalid port: -1 (Parameter 'value')
-2026-03-17T02:41:34.076831699Z Actual value was -1.
-2026-03-17T02:41:34.076835599Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Port(Int32 value)
-2026-03-17T02:41:34.076838939Z    at Npgsql.NpgsqlConnectionStringBuilder.GeneratedActions(GeneratedAction action, String keyword, Object& value)
-2026-03-17T02:41:34.076845579Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Item(String keyword, Object value)
-2026-03-17T02:41:34.07684938Z    --- End of inner exception stack trace ---
-2026-03-17T02:41:34.07685252Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Item(String keyword, Object value)
-2026-03-17T02:41:34.076854509Z    at System.Data.Common.DbConnectionStringBuilder.set_ConnectionString(String value)
-2026-03-17T02:41:34.07685652Z    at Npgsql.NpgsqlConnectionStringBuilder..ctor(String connectionString)
-2026-03-17T02:41:34.07685911Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists(Boolean async, CancellationToken cancellationToken)
-2026-03-17T02:41:34.07686104Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists()
-2026-03-17T02:41:34.07686315Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.Exists()
-2026-03-17T02:41:34.07686508Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.GetAppliedMigrations()
-2026-03-17T02:41:34.07686871Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.Migrate(String targetMigration)
-2026-03-17T02:41:34.07687196Z    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
-2026-03-17T02:41:34.07687475Z    at Program.<Main>$(String[] args) in /src/NistAttendance.Api/Program.cs:line 85
-2026-03-17T02:41:36.181233307Z ==> Exited with status 139
-2026-03-17T02:41:36.188463758Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
-2026-03-17T02:41:42.248229523Z Unhandled exception. System.ArgumentException: Couldn't set port (Parameter 'port')
-2026-03-17T02:41:42.248266294Z  ---> System.ArgumentOutOfRangeException: Invalid port: -1 (Parameter 'value')
-2026-03-17T02:41:42.248270884Z Actual value was -1.
-2026-03-17T02:41:42.248274514Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Port(Int32 value)
-2026-03-17T02:41:42.248277664Z    at Npgsql.NpgsqlConnectionStringBuilder.GeneratedActions(GeneratedAction action, String keyword, Object& value)
-2026-03-17T02:41:42.248282104Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Item(String keyword, Object value)
-2026-03-17T02:41:42.248285714Z    --- End of inner exception stack trace ---
-2026-03-17T02:41:42.248289124Z    at Npgsql.NpgsqlConnectionStringBuilder.set_Item(String keyword, Object value)
-2026-03-17T02:41:42.248291134Z    at System.Data.Common.DbConnectionStringBuilder.set_ConnectionString(String value)
-2026-03-17T02:41:42.248293064Z    at Npgsql.NpgsqlConnectionStringBuilder..ctor(String connectionString)
-2026-03-17T02:41:42.248295474Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists(Boolean async, CancellationToken cancellationToken)
-2026-03-17T02:41:42.248298305Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists()
-2026-03-17T02:41:42.248301745Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.Exists()
-2026-03-17T02:41:42.248305095Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.GetAppliedMigrations()
-2026-03-17T02:41:42.248308415Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.Migrate(String targetMigration)
-2026-03-17T02:41:42.248311445Z    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
-2026-03-17T02:41:42.248314885Z    at Program.<Main>$(String[] args) in /src/NistAttendance.Api/Program.cs:line 85
+2026-03-17T02:49:29.320589618Z       No XML encryptor configured. Key {9af16d1d-86f2-4024-a2bf-7286e3991d9a} may be persisted to storage in unencrypted form.
+2026-03-17T02:49:29.420851722Z warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+2026-03-17T02:49:29.420875893Z       Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:10000'.
+2026-03-17T02:49:29.511544665Z warn: Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware[16]
+2026-03-17T02:49:29.511616657Z       The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+2026-03-17T02:49:29.617610318Z info: Microsoft.Hosting.Lifetime[14]
+2026-03-17T02:49:29.617641468Z       Now listening on: http://[::]:10000
+2026-03-17T02:49:29.617656419Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:49:29.617660379Z       Application started. Press Ctrl+C to shut down.
+2026-03-17T02:49:29.61769992Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:49:29.617703649Z       Hosting environment: Production
+2026-03-17T02:49:29.61770628Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:49:29.61770951Z       Content root path: /app
+2026-03-17T02:49:30.511229982Z fail: Microsoft.AspNetCore.Server.Kestrel[13]
+2026-03-17T02:49:30.511257963Z       Connection id "0HNK3PV7REMKI", Request id "0HNK3PV7REMKI:00000001": An unhandled exception was thrown by the application.
+2026-03-17T02:49:30.511261913Z       System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+2026-03-17T02:49:30.511265183Z          at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
+2026-03-17T02:49:30.511267933Z          at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in /src/NistAttendance.Api/Program.cs:line 51
+2026-03-17T02:49:30.511271443Z          at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+2026-03-17T02:49:30.511275693Z          at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+2026-03-17T02:49:30.511278493Z          at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+2026-03-17T02:49:30.511281093Z          at System.Lazy`1.CreateValue()
+2026-03-17T02:49:30.511284714Z          at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+2026-03-17T02:49:30.511305764Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+2026-03-17T02:49:30.511310404Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+2026-03-17T02:49:30.511318274Z          at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+2026-03-17T02:49:30.511323884Z          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+2026-03-17T02:49:30.511327415Z          at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+2026-03-17T02:49:31.162261533Z ==> Your service is live 🎉
+2026-03-17T02:49:31.246550981Z fail: Microsoft.AspNetCore.Server.Kestrel[13]
+2026-03-17T02:49:31.246580252Z       Connection id "0HNK3PV7REMKJ", Request id "0HNK3PV7REMKJ:00000001": An unhandled exception was thrown by the application.
+2026-03-17T02:49:31.246585492Z       System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+2026-03-17T02:49:31.246589792Z          at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
+2026-03-17T02:49:31.246593102Z          at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in /src/NistAttendance.Api/Program.cs:line 51
+2026-03-17T02:49:31.246597202Z          at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+2026-03-17T02:49:31.246601262Z          at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+2026-03-17T02:49:31.246604472Z       --- End of stack trace from previous location ---
+2026-03-17T02:49:31.246607853Z          at System.Lazy`1.CreateValue()
+2026-03-17T02:49:31.246611293Z          at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+2026-03-17T02:49:31.246614462Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+2026-03-17T02:49:31.246617763Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+2026-03-17T02:49:31.246620923Z          at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+2026-03-17T02:49:31.246624603Z          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+2026-03-17T02:49:31.246627953Z          at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+2026-03-17T02:49:31.250842397Z ==> 
+2026-03-17T02:49:31.257310344Z ==> ///////////////////////////////////////////////////////////
+2026-03-17T02:49:31.26505786Z ==> 
+2026-03-17T02:49:31.269141508Z ==> Available at your primary URL https://nistattendancemanagementsystem.onrender.com
+2026-03-17T02:49:31.276465304Z ==> 
+2026-03-17T02:49:31.280471579Z ==> ///////////////////////////////////////////////////////////
