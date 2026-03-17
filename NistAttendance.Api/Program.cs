@@ -8,9 +8,19 @@ using NistAttendance.Api.Data.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database
+// Database — handle Render's postgresql:// URI format
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
+if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
+{
+    var uri = new Uri(connStr);
+    var userInfo = uri.UserInfo.Split(':');
+    connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')}"
+            + $";Username={userInfo[0]};Password={userInfo[1]}"
+            + ";SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connStr));
 
 // Identity
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
