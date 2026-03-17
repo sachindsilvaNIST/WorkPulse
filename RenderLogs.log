@@ -1,0 +1,50 @@
+2026-03-17T02:29:58.180882488Z #19 1.216   Determining projects to restore...
+2026-03-17T02:29:58.600115558Z #19 1.636   All projects are up-to-date for restore.
+2026-03-17T02:29:58.963854445Z #19 1.999   NistAttendance.Shared -> /src/NistAttendance.Shared/bin/Release/net8.0/NistAttendance.Shared.dll
+2026-03-17T02:30:03.454691626Z #19 6.490   NistAttendance.Api -> /src/NistAttendance.Api/bin/Release/net8.0/NistAttendance.Api.dll
+2026-03-17T02:30:03.667369195Z #19 6.702   NistAttendance.Api -> /app/api/
+2026-03-17T02:30:03.88066064Z #19 DONE 6.8s
+2026-03-17T02:30:03.881873259Z 
+2026-03-17T02:30:03.88188345Z #20 [build 13/13] RUN cp -r /app/web/wwwroot/* /app/api/wwwroot/ 2>/dev/null || true
+2026-03-17T02:30:13.617974437Z #20 DONE 9.9s
+2026-03-17T02:30:13.836528456Z 
+2026-03-17T02:30:13.864307778Z #21 [runtime 2/3] WORKDIR /app
+2026-03-17T02:30:13.864318369Z #21 sha256:702ef3ec04b1085e305f914849ce7d2924b72555ee3395b74e9cb93bd1f56f5a 92B / 92B done
+2026-03-17T02:30:13.864323589Z #21 extracting sha256:702ef3ec04b1085e305f914849ce7d2924b72555ee3395b74e9cb93bd1f56f5a
+2026-03-17T02:30:16.682806226Z #21 extracting sha256:702ef3ec04b1085e305f914849ce7d2924b72555ee3395b74e9cb93bd1f56f5a 3.0s done
+2026-03-17T02:30:16.842736205Z #21 CACHED
+2026-03-17T02:30:16.842760986Z 
+2026-03-17T02:30:16.842769936Z #22 [runtime 3/3] COPY --from=build /app/api .
+2026-03-17T02:30:16.981023842Z #22 DONE 0.3s
+2026-03-17T02:30:17.137273601Z 
+2026-03-17T02:30:17.137290361Z #23 exporting to docker image format
+2026-03-17T02:30:17.137296342Z #23 exporting layers
+2026-03-17T02:30:18.207494535Z #23 exporting layers 1.2s done
+2026-03-17T02:30:18.375472792Z #23 exporting manifest sha256:43814c252a7dcd675b08dc8a8c5b7f6f1a0c0db7be4f23be4b6fd1bac38239e7 done
+2026-03-17T02:30:18.375493843Z #23 exporting config sha256:4773f1b1d56359dae833574122ee3938b76e0be8c64e7693a0614fac7f352831 done
+2026-03-17T02:30:18.854892134Z #23 DONE 1.9s
+2026-03-17T02:30:18.854910284Z 
+2026-03-17T02:30:18.854914554Z #24 exporting cache to client directory
+2026-03-17T02:30:18.854917935Z #24 preparing build cache for export
+2026-03-17T02:30:25.372238299Z #24 writing cache image manifest sha256:40234d709a83bc86d42f04b73011e777a8f2e40cd950c4616889400b4f27e102 done
+2026-03-17T02:30:25.37300847Z #24 DONE 6.5s
+2026-03-17T02:30:28.167979266Z Pushing image to registry...
+2026-03-17T02:30:29.87806554Z Upload succeeded
+2026-03-17T02:30:34.412974272Z ==> Deploying...
+2026-03-17T02:30:34.493497567Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-03-17T02:30:44.99151267Z Unhandled exception. System.ArgumentException: Host can't be null
+2026-03-17T02:30:44.991555514Z    at Npgsql.NpgsqlConnectionStringBuilder.PostProcessAndValidate()
+2026-03-17T02:30:44.991559154Z    at Npgsql.NpgsqlConnection.SetupDataSource()
+2026-03-17T02:30:44.991561614Z    at Npgsql.NpgsqlConnection.set_ConnectionString(String value)
+2026-03-17T02:30:44.991563764Z    at Npgsql.NpgsqlConnection..ctor(String connectionString)
+2026-03-17T02:30:44.991565494Z    at Npgsql.NpgsqlConnection.CloneWith(String connectionString)
+2026-03-17T02:30:44.991567295Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlRelationalConnection.CloneWith(String connectionString)
+2026-03-17T02:30:44.991572875Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists(Boolean async, CancellationToken cancellationToken)
+2026-03-17T02:30:44.991576045Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlDatabaseCreator.Exists()
+2026-03-17T02:30:44.991578965Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.Exists()
+2026-03-17T02:30:44.991581916Z    at Microsoft.EntityFrameworkCore.Migrations.HistoryRepository.GetAppliedMigrations()
+2026-03-17T02:30:44.991585376Z    at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.Migrate(String targetMigration)
+2026-03-17T02:30:44.991588446Z    at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
+2026-03-17T02:30:44.991591197Z    at Program.<Main>$(String[] args) in /src/NistAttendance.Api/Program.cs:line 83
+2026-03-17T02:30:47.309411843Z ==> Exited with status 139
+2026-03-17T02:30:47.312694191Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys

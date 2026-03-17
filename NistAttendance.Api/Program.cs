@@ -8,8 +8,10 @@ using NistAttendance.Api.Data.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database — handle Render's postgresql:// URI format
-var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
+// Database — check DATABASE_URL (Render), then fall back to ConnectionStrings:DefaultConnection
+var connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
+           ?? builder.Configuration.GetConnectionString("DefaultConnection")
+           ?? "";
 if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
 {
     var uri = new Uri(connStr);
