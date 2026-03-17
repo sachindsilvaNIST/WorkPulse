@@ -1,50 +1,50 @@
-2026-03-17T02:49:29.320589618Z       No XML encryptor configured. Key {9af16d1d-86f2-4024-a2bf-7286e3991d9a} may be persisted to storage in unencrypted form.
-2026-03-17T02:49:29.420851722Z warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
-2026-03-17T02:49:29.420875893Z       Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:10000'.
-2026-03-17T02:49:29.511544665Z warn: Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware[16]
-2026-03-17T02:49:29.511616657Z       The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
-2026-03-17T02:49:29.617610318Z info: Microsoft.Hosting.Lifetime[14]
-2026-03-17T02:49:29.617641468Z       Now listening on: http://[::]:10000
-2026-03-17T02:49:29.617656419Z info: Microsoft.Hosting.Lifetime[0]
-2026-03-17T02:49:29.617660379Z       Application started. Press Ctrl+C to shut down.
-2026-03-17T02:49:29.61769992Z info: Microsoft.Hosting.Lifetime[0]
-2026-03-17T02:49:29.617703649Z       Hosting environment: Production
-2026-03-17T02:49:29.61770628Z info: Microsoft.Hosting.Lifetime[0]
-2026-03-17T02:49:29.61770951Z       Content root path: /app
-2026-03-17T02:49:30.511229982Z fail: Microsoft.AspNetCore.Server.Kestrel[13]
-2026-03-17T02:49:30.511257963Z       Connection id "0HNK3PV7REMKI", Request id "0HNK3PV7REMKI:00000001": An unhandled exception was thrown by the application.
-2026-03-17T02:49:30.511261913Z       System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
-2026-03-17T02:49:30.511265183Z          at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
-2026-03-17T02:49:30.511267933Z          at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in /src/NistAttendance.Api/Program.cs:line 51
-2026-03-17T02:49:30.511271443Z          at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
-2026-03-17T02:49:30.511275693Z          at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
-2026-03-17T02:49:30.511278493Z          at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
-2026-03-17T02:49:30.511281093Z          at System.Lazy`1.CreateValue()
-2026-03-17T02:49:30.511284714Z          at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
-2026-03-17T02:49:30.511305764Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
-2026-03-17T02:49:30.511310404Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
-2026-03-17T02:49:30.511318274Z          at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
-2026-03-17T02:49:30.511323884Z          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
-2026-03-17T02:49:30.511327415Z          at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
-2026-03-17T02:49:31.162261533Z ==> Your service is live 🎉
-2026-03-17T02:49:31.246550981Z fail: Microsoft.AspNetCore.Server.Kestrel[13]
-2026-03-17T02:49:31.246580252Z       Connection id "0HNK3PV7REMKJ", Request id "0HNK3PV7REMKJ:00000001": An unhandled exception was thrown by the application.
-2026-03-17T02:49:31.246585492Z       System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
-2026-03-17T02:49:31.246589792Z          at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
-2026-03-17T02:49:31.246593102Z          at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in /src/NistAttendance.Api/Program.cs:line 51
-2026-03-17T02:49:31.246597202Z          at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
-2026-03-17T02:49:31.246601262Z          at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
-2026-03-17T02:49:31.246604472Z       --- End of stack trace from previous location ---
-2026-03-17T02:49:31.246607853Z          at System.Lazy`1.CreateValue()
-2026-03-17T02:49:31.246611293Z          at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
-2026-03-17T02:49:31.246614462Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
-2026-03-17T02:49:31.246617763Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
-2026-03-17T02:49:31.246620923Z          at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
-2026-03-17T02:49:31.246624603Z          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
-2026-03-17T02:49:31.246627953Z          at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
-2026-03-17T02:49:31.250842397Z ==> 
-2026-03-17T02:49:31.257310344Z ==> ///////////////////////////////////////////////////////////
-2026-03-17T02:49:31.26505786Z ==> 
-2026-03-17T02:49:31.269141508Z ==> Available at your primary URL https://nistattendancemanagementsystem.onrender.com
-2026-03-17T02:49:31.276465304Z ==> 
-2026-03-17T02:49:31.280471579Z ==> ///////////////////////////////////////////////////////////
+2026-03-17T02:57:05.94625743Z       Executed DbCommand (164ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+2026-03-17T02:57:05.946261141Z       SELECT EXISTS (
+2026-03-17T02:57:05.946264091Z           SELECT 1 FROM pg_catalog.pg_class c
+2026-03-17T02:57:05.946266221Z           JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+2026-03-17T02:57:05.946268491Z           WHERE n.nspname='public' AND
+2026-03-17T02:57:05.946270991Z                 c.relname='__EFMigrationsHistory'
+2026-03-17T02:57:05.946273381Z       )
+2026-03-17T02:57:06.107494326Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-03-17T02:57:06.107512417Z       Executed DbCommand (161ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+2026-03-17T02:57:06.107515607Z       SELECT "MigrationId", "ProductVersion"
+2026-03-17T02:57:06.107517717Z       FROM "__EFMigrationsHistory"
+2026-03-17T02:57:06.107520427Z       ORDER BY "MigrationId";
+2026-03-17T02:57:06.119875442Z info: Microsoft.EntityFrameworkCore.Migrations[20405]
+2026-03-17T02:57:06.119891082Z       No migrations were applied. The database is already up to date.
+2026-03-17T02:57:06.65775953Z warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+2026-03-17T02:57:06.65778668Z       Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+2026-03-17T02:57:06.672347652Z warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+2026-03-17T02:57:06.672360332Z       No XML encryptor configured. Key {122715ba-8f50-4d59-afc4-5349061e9f0c} may be persisted to storage in unencrypted form.
+2026-03-17T02:57:06.771566378Z warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+2026-03-17T02:57:06.771583319Z       Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:10000'.
+2026-03-17T02:57:07.058412049Z info: Microsoft.Hosting.Lifetime[14]
+2026-03-17T02:57:07.0584304Z       Now listening on: http://[::]:10000
+2026-03-17T02:57:07.058543451Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:57:07.058551382Z       Application started. Press Ctrl+C to shut down.
+2026-03-17T02:57:07.058554142Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:57:07.058556411Z       Hosting environment: Production
+2026-03-17T02:57:07.058558522Z info: Microsoft.Hosting.Lifetime[0]
+2026-03-17T02:57:07.058561412Z       Content root path: /app
+2026-03-17T02:57:08.360337977Z fail: Microsoft.AspNetCore.Server.Kestrel[13]
+2026-03-17T02:57:08.360363058Z       Connection id "0HNK3Q3GAKLKT", Request id "0HNK3Q3GAKLKT:00000001": An unhandled exception was thrown by the application.
+2026-03-17T02:57:08.360366658Z       System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+2026-03-17T02:57:08.360369848Z          at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
+2026-03-17T02:57:08.360372208Z          at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in /src/NistAttendance.Api/Program.cs:line 51
+2026-03-17T02:57:08.360374958Z          at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+2026-03-17T02:57:08.360377688Z          at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+2026-03-17T02:57:08.360379968Z          at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+2026-03-17T02:57:08.360382658Z          at System.Lazy`1.CreateValue()
+2026-03-17T02:57:08.360384758Z          at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+2026-03-17T02:57:08.360386868Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+2026-03-17T02:57:08.360389038Z          at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+2026-03-17T02:57:08.360391358Z          at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+2026-03-17T02:57:08.360393928Z          at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+2026-03-17T02:57:08.360396049Z          at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+2026-03-17T02:57:18.538050926Z ==> Your service is live 🎉
+2026-03-17T02:57:18.737719527Z ==> 
+2026-03-17T02:57:18.740277565Z ==> ///////////////////////////////////////////////////////////
+2026-03-17T02:57:18.742473847Z ==> 
+2026-03-17T02:57:18.744904124Z ==> Available at your primary URL https://nistattendancemanagementsystem.onrender.com
+2026-03-17T02:57:18.746765399Z ==> 
+2026-03-17T02:57:18.748977302Z ==> ///////////////////////////////////////////////////////////
