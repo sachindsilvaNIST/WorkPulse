@@ -1,0 +1,215 @@
+@using NistAttendance.Models
+
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(IsEdit ? "Edit Entry" : "Add Entry")</h5>
+                <button type="button" class="btn-close" @onclick="OnCancel"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" @bind="_date" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" @bind="_dayType">
+                            <option value="WorkDay">Work Day</option>
+                            <option value="AnnualPaidLeave">Annual Paid Leave</option>
+                            <option value="UnpaidLeave">Unpaid Leave</option>
+                            <option value="PublicHoliday">Public Holiday</option>
+                            <option value="Weekend">Weekend</option>
+                            <option value="BusinessTrip">Business Trip</option>
+                        </select>
+                    </div>
+
+                    @if (_dayType is "AnnualPaidLeave" or "UnpaidLeave" or "PublicHoliday")
+                    {
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" @bind="_holidayName" placeholder="e.g., NEW YEAR HOLIDAY" />
+                        </div>
+                    }
+
+                    @if (_dayType == "BusinessTrip")
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label">Trip Type *</label>
+                            <select class="form-select" @bind="_tripCategory">
+                                <option value="">-- Select --</option>
+                                <option value="Domestic">Domestic Business Trip</option>
+                                <option value="Overseas">Overseas Business Trip</option>
+                            </select>
+                        </div>
+                        @if (_tripCategory == "Domestic")
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">Prefecture *</label>
+                                <select class="form-select" @bind="_tripRegion">
+                                    <option value="">-- Select --</option>
+                                    @foreach (var p in TripData.Prefectures)
+                                    {
+                                        <option value="@p">@p</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        @if (_tripCategory == "Overseas")
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">Country *</label>
+                                <select class="form-select" @bind="_tripRegion">
+                                    <option value="">-- Select --</option>
+                                    @foreach (var c in TripData.Countries)
+                                    {
+                                        <option value="@c">@c</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="col-12">
+                            <label class="form-label">Destination(s)</label>
+                            <input type="text" class="form-control" @bind="_holidayName" placeholder="e.g., Osaka Office, Tokyo HQ" />
+                        </div>
+                    }
+
+                    @if (_dayType == "WorkDay")
+                    {
+                        <div class="col-md-3">
+                            <label class="form-label">Login Hour</label>
+                            <input type="number" class="form-control" min="0" max="23" @bind="_loginHour" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Login Min</label>
+                            <input type="number" class="form-control" min="0" max="59" @bind="_loginMin" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Logout Hour</label>
+                            <input type="number" class="form-control" min="0" max="23" @bind="_logoutHour" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Logout Min</label>
+                            <input type="number" class="form-control" min="0" max="59" @bind="_logoutMin" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Overtime?</label>
+                            <select class="form-select" @bind="_overtimeSelection">
+                                <option value="-1">-- Select --</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        @if (_overtimeSelection == 1)
+                        {
+                            <div class="col-md-3">
+                                <label class="form-label">OT End Hr</label>
+                                <input type="number" class="form-control" min="0" max="23" @bind="_otEndHour" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">OT End Min</label>
+                                <input type="number" class="form-control" min="0" max="59" @bind="_otEndMin" />
+                            </div>
+                        }
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="alert alert-danger mt-3">@_error</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+                <button class="btn btn-primary" @onclick="Save">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public AttendanceRecord? Record { get; set; }
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public EventCallback<AttendanceRecord> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private DateTime _date = DateTime.Today;
+    private string _dayType = "WorkDay";
+    private string? _holidayName;
+    private string _tripCategory = "";
+    private string _tripRegion = "";
+    private int _loginHour = 8, _loginMin = 20;
+    private int _logoutHour = 17, _logoutMin = 25;
+    private int _overtimeSelection = -1;
+    private int _otEndHour = 21, _otEndMin = 0;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        if (Record != null)
+        {
+            _date = Record.Date.ToDateTime(TimeOnly.MinValue);
+            _dayType = Record.DayType.ToString();
+            _holidayName = Record.HolidayName;
+            _tripCategory = Record.TripCategory?.ToString() ?? "";
+            _tripRegion = Record.TripRegion ?? "";
+            if (Record.LoginTime.HasValue) { _loginHour = Record.LoginTime.Value.Hour; _loginMin = Record.LoginTime.Value.Minute; }
+            if (Record.LogoutTime.HasValue) { _logoutHour = Record.LogoutTime.Value.Hour; _logoutMin = Record.LogoutTime.Value.Minute; }
+            if (Record.IsOvertimeDecided) _overtimeSelection = Record.IsOvertime ? 1 : 0;
+        }
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+        if (!Enum.TryParse<DayType>(_dayType, out var dayType))
+        {
+            _error = "Invalid day type.";
+            return;
+        }
+
+        if (dayType == DayType.WorkDay && _overtimeSelection == -1)
+        {
+            _error = "Please select Yes or No for Overtime.";
+            return;
+        }
+
+        var record = new AttendanceRecord
+        {
+            Date = DateOnly.FromDateTime(_date),
+            DayType = dayType,
+            HolidayName = _holidayName
+        };
+
+        if (dayType == DayType.BusinessTrip)
+        {
+            record.TripCategory = _tripCategory switch
+            {
+                "Domestic" => TripCategory.Domestic,
+                "Overseas" => TripCategory.Overseas,
+                _ => null
+            };
+            record.TripRegion = string.IsNullOrWhiteSpace(_tripRegion) ? null : _tripRegion;
+        }
+
+        if (dayType == DayType.WorkDay)
+        {
+            record.LoginTime = new TimeOnly(_loginHour, _loginMin);
+            record.LogoutTime = new TimeOnly(_logoutHour, _logoutMin);
+            record.IsOvertimeDecided = true;
+
+            if (_overtimeSelection == 1)
+            {
+                var otEnd = new TimeOnly(_otEndHour, _otEndMin);
+                var (isOt, hrs, mins) = NistAttendance.Services.OvertimeCalculator.Calculate(record.LoginTime, otEnd);
+                record.IsOvertime = isOt;
+                record.OvertimeHours = hrs;
+                record.OvertimeMinutes = mins;
+                record.LogoutTime = otEnd;
+            }
+        }
+
+        await OnSave.InvokeAsync(record);
+    }
+}

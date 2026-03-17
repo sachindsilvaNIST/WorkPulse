@@ -24,6 +24,10 @@ public partial class MainWindowViewModel : ViewModelBase
     // File search service
     private readonly IFileIndexService _fileIndexService;
 
+    // Sync
+    private readonly HttpApiClient _apiClient;
+    private readonly ISyncService _syncService;
+
     // Navigation
     [ObservableProperty]
     private ViewModelBase _currentView;
@@ -65,6 +69,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _contactExcelExportService = new ContactExcelExportService();
         _fileIndexService = new FileIndexService();
         _settingsService = new SettingsService();
+        _apiClient = new HttpApiClient();
+        _syncService = new SyncService(_dataService, _contactDataService, _settingsService, _apiClient);
 
         _currentView = new HomeViewModel(NavigateTo);
     }
@@ -115,7 +121,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 break;
 
             case "settings":
-                _settingsVm ??= new SettingsViewModel(_settingsService);
+                _settingsVm ??= new SettingsViewModel(_settingsService, _syncService);
                 CurrentView = _settingsVm;
                 CurrentViewName = "settings";
                 StatusMessage = "Settings";

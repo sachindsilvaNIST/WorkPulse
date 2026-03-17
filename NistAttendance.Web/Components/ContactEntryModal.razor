@@ -1,0 +1,114 @@
+@using NistAttendance.Models
+
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(IsEdit ? "Edit Contact" : "Add Contact")</h5>
+                <button type="button" class="btn-close" @onclick="OnCancel"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Affiliation</label>
+                        <input type="text" class="form-control" @bind="_affiliation" placeholder="e.g., NIST" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" @bind="_department" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Family Name *</label>
+                        <input type="text" class="form-control" @bind="_familyName" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Given Name</label>
+                        <input type="text" class="form-control" @bind="_givenName" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="_email" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Intercom</label>
+                        <input type="text" class="form-control" @bind="_intercom" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" class="form-control" @bind="_contactNumber" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" rows="2" @bind="_notes"></textarea>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="alert alert-danger mt-3">@_error</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+                <button class="btn btn-primary" @onclick="Save">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ContactRecord? Contact { get; set; }
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public EventCallback<ContactRecord> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string _affiliation = "";
+    private string _familyName = "";
+    private string _givenName = "";
+    private string _department = "";
+    private string _email = "";
+    private string _intercom = "";
+    private string _contactNumber = "";
+    private string _notes = "";
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        if (Contact != null)
+        {
+            _affiliation = Contact.Affiliation;
+            _familyName = Contact.FamilyName;
+            _givenName = Contact.GivenName;
+            _department = Contact.Department;
+            _email = Contact.Email;
+            _intercom = Contact.Intercom;
+            _contactNumber = Contact.ContactNumber;
+            _notes = Contact.Notes;
+        }
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_familyName))
+        {
+            _error = "Family Name is required.";
+            return;
+        }
+
+        var record = new ContactRecord
+        {
+            Affiliation = _affiliation.Trim(),
+            FamilyName = _familyName.Trim(),
+            GivenName = _givenName.Trim(),
+            Department = _department.Trim(),
+            Email = _email.Trim(),
+            Intercom = _intercom.Trim(),
+            ContactNumber = _contactNumber.Trim(),
+            Notes = _notes.Trim()
+        };
+
+        await OnSave.InvokeAsync(record);
+    }
+}

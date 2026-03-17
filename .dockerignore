@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/publish/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/node_modules/
+NistWorkspace/
+*.user
+*.suo
+.git
+.gitignore
+*.md
+docker-compose*.yml

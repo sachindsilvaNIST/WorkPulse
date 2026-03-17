@@ -1,0 +1,138 @@
+@page "/settings"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using NistAttendance.Models
+@inject NistAttendance.Web.Services.ApiSettingsService SettingsService
+
+<h4 class="mb-4">Settings</h4>
+
+@if (_loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>Work Schedule</strong></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Standard Login</label>
+                            <input type="time" class="form-control" @bind="_loginTime" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Standard Logout</label>
+                            <input type="time" class="form-control" @bind="_logoutTime" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">OT Break Deduction (minutes)</label>
+                            <input type="number" class="form-control" min="0" max="120" @bind="_breakMinutes" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>Display</strong></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Default Title</label>
+                            <input type="text" class="form-control" @bind="_defaultTitle" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Theme</label>
+                            <select class="form-select" @bind="_theme">
+                                <option value="Light">Light</option>
+                                <option value="Dark">Dark</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Font Size</label>
+                            <select class="form-select" @bind="_fontSize">
+                                <option value="Small">Small</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Large">Large</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <button class="btn btn-primary" @onclick="SaveSettings" disabled="@_saving">
+                @if (_saving) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Save Settings
+            </button>
+
+            @if (_saved)
+            {
+                <span class="text-success ms-3">Settings saved.</span>
+            }
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <span class="text-danger ms-3">@_error</span>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _saving;
+    private bool _saved;
+    private string? _error;
+
+    private TimeOnly _loginTime = new(8, 20);
+    private TimeOnly _logoutTime = new(17, 25);
+    private int _breakMinutes = 20;
+    private string _defaultTitle = "MSW SETTLEMENT";
+    private string _theme = "Light";
+    private string _fontSize = "Medium";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var s = await SettingsService.LoadAsync();
+        _loginTime = s.StandardLoginTime;
+        _logoutTime = s.StandardLogoutTime;
+        _breakMinutes = s.OvertimeBreakDeductionMinutes;
+        _defaultTitle = s.DefaultTitle;
+        _theme = s.ThemeVariant;
+        _fontSize = s.FontSizePreset;
+        _loading = false;
+    }
+
+    private async Task SaveSettings()
+    {
+        _saving = true;
+        _saved = false;
+        _error = null;
+
+        try
+        {
+            var settings = new AppSettings
+            {
+                StandardLoginTime = _loginTime,
+                StandardLogoutTime = _logoutTime,
+                OvertimeBreakDeductionMinutes = _breakMinutes,
+                DefaultTitle = _defaultTitle,
+                ThemeVariant = _theme,
+                FontSizePreset = _fontSize
+            };
+            await SettingsService.SaveAsync(settings);
+            _saved = true;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to save: {ex.Message}";
+        }
+
+        _saving = false;
+    }
+}

@@ -1,0 +1,64 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthState
+@inject NistAttendance.Web.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<nav class="d-flex flex-column bg-dark text-white p-3" style="width: 220px; min-height: 100vh;">
+    <h5 class="mb-4 text-center">
+        <span class="text-primary">NIST</span> Workspace
+    </h5>
+
+    <AuthorizeView>
+        <Authorized>
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="" Match="NavLinkMatch.All">
+                        <i class="bi bi-house-door me-2"></i>Home
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="dashboard">
+                        <i class="bi bi-calendar-check me-2"></i>Attendance
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="contacts">
+                        <i class="bi bi-person-lines-fill me-2"></i>Contacts
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="settings">
+                        <i class="bi bi-gear me-2"></i>Settings
+                    </NavLink>
+                </li>
+            </ul>
+
+            <div class="mt-auto pt-3 border-top border-secondary">
+                <small class="text-secondary d-block mb-2">@context.User.Identity?.Name</small>
+                <button class="btn btn-outline-secondary btn-sm w-100" @onclick="Logout">Logout</button>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="register">
+                        <i class="bi bi-person-plus me-2"></i>Register
+                    </NavLink>
+                </li>
+            </ul>
+        </NotAuthorized>
+    </AuthorizeView>
+</nav>
+
+@code {
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("login");
+    }
+}

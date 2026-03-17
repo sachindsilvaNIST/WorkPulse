@@ -138,6 +138,78 @@
                 </StackPanel>
             </Border>
 
+            <!-- ===== Cloud Sync Card ===== -->
+            <Border Background="{DynamicResource AppBackground}"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppForeground}"/>
+                    <TextBlock Text="Sync your data with the NIST Workspace web app."
+                               FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+
+                    <!-- Login Form (shown when not connected) -->
+                    <StackPanel Spacing="12" IsVisible="{Binding !IsSyncLoggedIn}">
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Server URL"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="0" Grid.Column="1"
+                                     Text="{Binding SyncServerUrl}"
+                                     Watermark="https://your-server.onrender.com"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1"
+                                     Text="{Binding SyncEmail}"
+                                     Watermark="your@email.com"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Password"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="2" Grid.Column="1"
+                                     Text="{Binding SyncPassword}"
+                                     PasswordChar="*"
+                                     Watermark="Password"/>
+                        </Grid>
+
+                        <Button Content="Connect" Command="{Binding SyncLoginCommand}"
+                                HorizontalAlignment="Left" Classes="accent"/>
+                    </StackPanel>
+
+                    <!-- Connected state -->
+                    <StackPanel Spacing="12" IsVisible="{Binding IsSyncLoggedIn}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock FontSize="13"
+                                           Foreground="{DynamicResource AppForeground}">
+                                    <Run Text="Connected as "/>
+                                    <Run Text="{Binding SyncEmail}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock FontSize="12"
+                                           Foreground="{DynamicResource AppForegroundSecondary}">
+                                    <Run Text="Last synced: "/>
+                                    <Run Text="{Binding LastSyncDisplay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Sync Now" Command="{Binding SyncNowCommand}"
+                                    IsEnabled="{Binding !IsSyncing}" Classes="accent"/>
+                            <Button Content="Disconnect" Command="{Binding SyncLogoutCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Sync status message -->
+                    <TextBlock Text="{Binding SyncStatusMessage}" FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"
+                               IsVisible="{Binding SyncStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+            </Border>
+
             <!-- ===== About Card ===== -->
             <Border Background="{DynamicResource AppBackground}"
                     BorderBrush="{DynamicResource AppDivider}"

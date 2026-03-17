@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: nist-attendance
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: nist-attendance-db
+          property: connectionString
+      - key: Jwt__Secret
+        generateValue: true
+      - key: Jwt__Issuer
+        value: NistAttendanceApi
+      - key: Jwt__Audience
+        value: NistAttendanceApp
+      - key: AllowedOrigins__0
+        value: https://nist-attendance.onrender.com
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+databases:
+  - name: nist-attendance-db
+    plan: free
+    databaseName: nist_attendance
+    user: nist_user

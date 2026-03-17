@@ -1,0 +1,31 @@
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<div class="text-center mt-5">
+    <h1 class="display-4 fw-bold">NIST Workspace</h1>
+    <p class="lead text-secondary">Attendance Management System</p>
+
+    <div class="row justify-content-center mt-5 g-4">
+        <div class="col-md-4">
+            <div class="card border-primary h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check display-4 text-primary"></i>
+                    <h5 class="card-title mt-3">Attendance</h5>
+                    <p class="card-text text-secondary">Track daily attendance, overtime, and business trips</p>
+                    <a href="dashboard" class="btn btn-primary">Open Dashboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-lines-fill display-4 text-success"></i>
+                    <h5 class="card-title mt-3">Contacts</h5>
+                    <p class="card-text text-secondary">Manage your professional contact book</p>
+                    <a href="contacts" class="btn btn-success">Open Contacts</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

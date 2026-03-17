@@ -13,4 +13,10 @@ public class AppSettings
     // Theme and display settings
     public string ThemeVariant { get; set; } = "Light";
     public string FontSizePreset { get; set; } = "Medium";
+
+    // Sync settings (desktop only, not synced to server)
+    public bool SyncEnabled { get; set; }
+    public string SyncServerUrl { get; set; } = "";
+    public string SyncEmail { get; set; } = "";
+    public DateTime LastSyncedAtUtc { get; set; } = DateTime.MinValue;
 }

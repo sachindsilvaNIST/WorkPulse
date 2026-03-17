@@ -1,0 +1,61 @@
+@page "/login"
+@inject NistAttendance.Web.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">Login</h3>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="alert alert-danger">@_error</div>
+                }
+
+                <EditForm Model="_model" OnValidSubmit="HandleLogin">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <InputText class="form-control" @bind-Value="_model.Email" placeholder="you@example.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <InputText class="form-control" type="password" @bind-Value="_model.Password" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" disabled="@_loading">
+                        @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                        Login
+                    </button>
+                </EditForm>
+
+                <p class="text-center mt-3 text-secondary">
+                    Don't have an account? <a href="register">Register</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel _model = new();
+    private string? _error;
+    private bool _loading;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+        var (success, error) = await Auth.LoginAsync(_model.Email, _model.Password);
+        if (success)
+            Nav.NavigateTo("/");
+        else
+            _error = "Invalid email or password.";
+        _loading = false;
+    }
+
+    private class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

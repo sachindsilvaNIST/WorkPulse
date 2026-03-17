@@ -82,6 +82,14 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve Blazor WASM static files (production: embedded in wwwroot)
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
 app.MapControllers();
+
+// Fallback to Blazor index.html for client-side routing
+app.MapFallbackToFile("index.html");
 
 app.Run();
