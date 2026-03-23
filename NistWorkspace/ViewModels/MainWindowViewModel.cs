@@ -77,8 +77,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public async Task InitializeAsync()
     {
-        // Nothing to init on home screen
-        await Task.CompletedTask;
+        // Try auto-connect if sync was previously configured
+        await _syncService.TryAutoConnectAsync();
     }
 
     // --- Navigation ---
@@ -203,6 +203,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var lastMonth = monthsData[^1];
             await _dashboardVm.ImportMonthData(lastMonth);
+            _syncService.NotifyDataChanged();
 
             StatusMessage = $"Imported {monthsData.Count} month(s) successfully.";
         }
@@ -256,6 +257,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             await _contactBookVm.ImportContacts(contacts);
+            _syncService.NotifyDataChanged();
             StatusMessage = $"Imported {contacts.Count} contacts successfully.";
         }
         catch (Exception ex)
@@ -315,6 +317,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 await _dashboardVm.SaveRecords(records);
                 StatusMessage = $"Added {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
             }
+            _syncService.NotifyDataChanged();
         }
     }
 
@@ -350,6 +353,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 await _dashboardVm.SaveRecords(records);
                 StatusMessage = $"Updated {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
             }
+            _syncService.NotifyDataChanged();
         }
     }
 
@@ -385,6 +389,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         await _dashboardVm.DeleteRecord(selected);
+        _syncService.NotifyDataChanged();
     }
 
     private async Task DeleteContactEntry()
@@ -410,6 +415,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         await _contactBookVm.DeleteContact(selected);
+        _syncService.NotifyDataChanged();
     }
 
     [RelayCommand]
@@ -440,6 +446,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 await _dashboardVm.SaveRecords(records);
                 StatusMessage = $"Added {records.Count} business trip records ({records[0].Date} to {records[^1].Date})";
             }
+            _syncService.NotifyDataChanged();
         }
     }
 
@@ -461,6 +468,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             var record = entryVm.ToRecord();
             await _contactBookVm.AddContact(record);
+            _syncService.NotifyDataChanged();
         }
     }
 
@@ -488,6 +496,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             var record = entryVm.ToRecord();
             await _contactBookVm.UpdateContact(record);
+            _syncService.NotifyDataChanged();
         }
     }
 

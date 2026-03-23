@@ -56,6 +56,17 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settingsService = settingsService;
         _syncService = syncService;
+
+        // Listen for background sync completions
+        _syncService.SyncCompleted += OnSyncCompleted;
+    }
+
+    private async void OnSyncCompleted(bool success)
+    {
+        _settings = await _settingsService.LoadAsync();
+        UpdateLastSyncDisplay();
+        if (success)
+            SyncStatusMessage = "Auto-synced.";
     }
 
     public async Task InitializeAsync()
@@ -114,7 +125,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             IsSyncLoggedIn = true;
             SyncPassword = "";
-            SyncStatusMessage = "Connected! You can now sync.";
+            SyncStatusMessage = "Connected! Auto-sync is active.";
         }
         else
         {

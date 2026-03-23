@@ -98,6 +98,8 @@ else
     </div>
 }
 
+@implements IDisposable
+
 @code {
     private List<ContactRecord> _contacts = new();
     private List<ContactRecord> _filtered = new();
@@ -111,10 +113,28 @@ else
 
     private bool _showDeleteConfirm;
     private ContactRecord? _deletingContact;
+    private System.Threading.Timer? _refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadContacts();
+
+        // Auto-refresh every 30 seconds to pick up desktop-synced changes
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                var data = await ContactService.LoadContactsAsync();
+                _contacts = data.Contacts;
+                ApplyFilter();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
     }
 
     private async Task LoadContacts()

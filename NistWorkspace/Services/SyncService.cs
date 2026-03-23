@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NistAttendance.DTOs;
 using NistAttendance.Models;
 
 namespace NistAttendance.Services;
 
-public class SyncService : ISyncService
+public class SyncService : ISyncService, IDisposable
 {
     private readonly IDataService _dataService;
     private readonly IContactDataService _contactDataService;
@@ -15,10 +16,14 @@ public class SyncService : ISyncService
     private readonly HttpApiClient _apiClient;
 
     private bool _isSyncing;
+    private Timer? _autoSyncTimer;
+    private Timer? _debounceTimer;
 
     public bool IsLoggedIn => _apiClient.IsAuthenticated;
     public bool IsSyncing => _isSyncing;
     public string? LastError { get; private set; }
+
+    public event Action<bool>? SyncCompleted;
 
     public SyncService(
         IDataService dataService,
@@ -49,6 +54,9 @@ public class SyncService : ISyncService
             settings.SyncEmail = email;
             await _settingsService.SaveAsync(settings);
 
+            // Start auto-sync after successful login
+            StartAutoSync();
+
             return (true, null);
         }
         catch (Exception ex)
@@ -59,10 +67,70 @@ public class SyncService : ISyncService
 
     public async Task LogoutAsync()
     {
+        StopAutoSync();
         _apiClient.ClearTokens();
         var settings = await _settingsService.LoadAsync();
         settings.SyncEnabled = false;
         await _settingsService.SaveAsync(settings);
+    }
+
+    public async Task<bool> TryAutoConnectAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            if (!settings.SyncEnabled || string.IsNullOrEmpty(settings.SyncServerUrl) || string.IsNullOrEmpty(settings.SyncEmail))
+                return false;
+
+            _apiClient.SetBaseUrl(settings.SyncServerUrl);
+
+            // We don't store passwords, so we can't auto-login with credentials.
+            // Instead, try to do a pull to check if our saved token still works.
+            // If not, the user will need to re-login from Settings.
+            // For now, just mark as "configured but not authenticated".
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public void StartAutoSync(int intervalSeconds = 30)
+    {
+        StopAutoSync();
+        _autoSyncTimer = new Timer(
+            _ => _ = SyncInBackground(),
+            null,
+            TimeSpan.FromSeconds(5), // Initial delay: sync soon after login
+            TimeSpan.FromSeconds(intervalSeconds));
+    }
+
+    public void StopAutoSync()
+    {
+        _autoSyncTimer?.Dispose();
+        _autoSyncTimer = null;
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+    }
+
+    public void NotifyDataChanged()
+    {
+        if (!IsLoggedIn) return;
+
+        // Debounce: wait 2 seconds after last change before syncing
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(
+            _ => _ = SyncInBackground(),
+            null,
+            TimeSpan.FromSeconds(2),
+            Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task SyncInBackground()
+    {
+        var (success, _) = await SyncAsync();
+        SyncCompleted?.Invoke(success);
     }
 
     public async Task<(bool Success, string? Error)> SyncAsync()
@@ -93,7 +161,6 @@ public class SyncService : ISyncService
 
                     if (localMonth == null || serverMonth.LastModifiedUtc > localMonth.LastModifiedUtc)
                     {
-                        // Server is newer or local doesn't exist — save server version
                         await _dataService.SaveMonthAsync(serverMonth);
                     }
                 }
@@ -109,14 +176,10 @@ public class SyncService : ISyncService
                         if (localMap.TryGetValue(serverContact.Id, out var local))
                         {
                             if (serverContact.LastModifiedUtc > local.LastModifiedUtc)
-                            {
-                                // Server is newer — replace local
                                 localMap[serverContact.Id] = serverContact;
-                            }
                         }
                         else
                         {
-                            // New contact from server
                             localMap[serverContact.Id] = serverContact;
                         }
                     }
@@ -127,7 +190,6 @@ public class SyncService : ISyncService
             }
 
             // --- Step 2: Push local data to server ---
-            // Server will only accept items where client timestamp is newer
             var availableMonths = await _dataService.GetAvailableMonthsAsync();
             var localMonths = new List<MonthlyData>();
             foreach (var (year, month) in availableMonths)
@@ -166,5 +228,11 @@ public class SyncService : ISyncService
         {
             _isSyncing = false;
         }
+    }
+
+    public void Dispose()
+    {
+        StopAutoSync();
+        _apiClient.Dispose();
     }
 }
