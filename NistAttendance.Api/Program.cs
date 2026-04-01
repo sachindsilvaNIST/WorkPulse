@@ -16,7 +16,9 @@ var usePostgres = false;
 
 if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
 {
-    var uri = new Uri(connStr);
+    // Strip query params not supported by Npgsql (e.g., channel_binding, sslmode)
+    var cleanUrl = connStr.Split('?')[0];
+    var uri = new Uri(cleanUrl);
     var userInfo = uri.UserInfo.Split(':');
     var port = uri.Port > 0 ? uri.Port : 5432;
     connStr = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')}"

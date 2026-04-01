@@ -17,7 +17,7 @@ public interface ISyncService
     Task<(bool Success, string? Error)> SyncAsync();
 
     /// <summary>Start periodic background sync (every intervalSeconds).</summary>
-    void StartAutoSync(int intervalSeconds = 30);
+    void StartAutoSync(int intervalSeconds = 5);
 
     /// <summary>Stop periodic background sync.</summary>
     void StopAutoSync();

@@ -2,29 +2,29 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 
-<div class="text-center mt-5">
-    <h1 class="display-4 fw-bold">NIST Workspace</h1>
-    <p class="lead text-secondary">Attendance Management System</p>
+<div class="text-center mt-16">
+    <h1 class="text-4xl font-bold text-gray-900">NIST Workspace</h1>
+    <p class="text-lg text-gray-500 mt-2">Attendance Management System</p>
 
-    <div class="row justify-content-center mt-5 g-4">
-        <div class="col-md-4">
-            <div class="card border-primary h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-calendar-check display-4 text-primary"></i>
-                    <h5 class="card-title mt-3">Attendance</h5>
-                    <p class="card-text text-secondary">Track daily attendance, overtime, and business trips</p>
-                    <a href="dashboard" class="btn btn-primary">Open Dashboard</a>
-                </div>
+    <div class="flex justify-center gap-6 mt-12">
+        <div class="w-72">
+            <div class="bg-white rounded-lg border-2 border-nist-primary shadow-sm hover:shadow-md transition-shadow h-full p-6 text-center">
+                <svg class="w-12 h-12 mx-auto text-nist-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <h5 class="text-lg font-semibold mt-4">Attendance</h5>
+                <p class="text-sm text-gray-500 mt-2">Track daily attendance, overtime, and business trips</p>
+                <a href="dashboard" class="inline-block mt-4 bg-nist-primary hover:bg-nist-primary-dark text-white font-medium py-2 px-6 rounded-md transition-colors">
+                    Open Dashboard
+                </a>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-success h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-lines-fill display-4 text-success"></i>
-                    <h5 class="card-title mt-3">Contacts</h5>
-                    <p class="card-text text-secondary">Manage your professional contact book</p>
-                    <a href="contacts" class="btn btn-success">Open Contacts</a>
-                </div>
+        <div class="w-72">
+            <div class="bg-white rounded-lg border-2 border-nist-success shadow-sm hover:shadow-md transition-shadow h-full p-6 text-center">
+                <svg class="w-12 h-12 mx-auto text-nist-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <h5 class="text-lg font-semibold mt-4">Contacts</h5>
+                <p class="text-sm text-gray-500 mt-2">Manage your professional contact book</p>
+                <a href="contacts" class="inline-block mt-4 bg-nist-success hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
+                    Open Contacts
+                </a>
             </div>
         </div>
     </div>

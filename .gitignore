@@ -62,3 +62,6 @@ mono_crash.*
 
 # Avalonia designer
 *.axaml.g.cs
+
+# Node
+node_modules/

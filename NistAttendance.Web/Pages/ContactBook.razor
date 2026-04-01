@@ -3,65 +3,65 @@
 @using NistAttendance.Models
 @inject NistAttendance.Web.Services.ApiContactDataService ContactService
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Contact Book</h4>
-    <div class="d-flex gap-2">
-        <input type="text" class="form-control" style="width: 250px;" placeholder="Search contacts..."
+<div class="flex justify-between items-center mb-4">
+    <h4 class="text-xl font-semibold">Contact Book</h4>
+    <div class="flex gap-2">
+        <input type="text" class="w-64 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" placeholder="Search contacts..."
                @bind="_searchText" @bind:event="oninput" @bind:after="ApplyFilter" />
-        <button class="btn btn-primary" @onclick="AddContact">
-            <i class="bi bi-plus-lg me-1"></i>Add
+        <button class="bg-nist-primary hover:bg-nist-primary-dark text-white font-medium py-2 px-4 rounded-md text-sm transition-colors" @onclick="AddContact">
+            + Add
         </button>
-        <button class="btn btn-outline-secondary" @onclick="ExportContacts" disabled="@_exporting">
-            <i class="bi bi-download me-1"></i>Export
+        <button class="border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium py-2 px-4 rounded-md text-sm transition-colors disabled:opacity-50" @onclick="ExportContacts" disabled="@_exporting">
+            Export
         </button>
     </div>
 </div>
 
 @if (_loading)
 {
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary"></div>
+    <div class="text-center py-12">
+        <div class="inline-block w-8 h-8 border-4 border-nist-primary/30 border-t-nist-primary rounded-full animate-spin"></div>
     </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-hover table-bordered align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Affiliation</th>
-                    <th>Family Name</th>
-                    <th>Given Name</th>
-                    <th>Department</th>
-                    <th>Email</th>
-                    <th>Intercom</th>
-                    <th>Contact Number</th>
-                    <th>Notes</th>
-                    <th style="width: 100px;">Actions</th>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+            <thead>
+                <tr class="bg-gray-900 text-white">
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Affiliation</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Family Name</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Given Name</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Department</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Email</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Intercom</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Contact Number</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Notes</th>
+                    <th class="px-3 py-2 text-left text-xs uppercase tracking-wide w-24">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @if (!_filtered.Any())
                 {
-                    <tr><td colspan="9" class="text-center text-secondary py-4">No contacts found.</td></tr>
+                    <tr><td colspan="9" class="text-center text-gray-400 py-8">No contacts found.</td></tr>
                 }
                 @foreach (var c in _filtered)
                 {
-                    <tr>
-                        <td>@c.Affiliation</td>
-                        <td>@c.FamilyName</td>
-                        <td>@c.GivenName</td>
-                        <td>@c.Department</td>
-                        <td>@c.Email</td>
-                        <td>@c.Intercom</td>
-                        <td>@c.ContactNumber</td>
-                        <td>@c.Notes</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditContact(c)">
-                                <i class="bi bi-pencil"></i>
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="px-3 py-2">@c.Affiliation</td>
+                        <td class="px-3 py-2">@c.FamilyName</td>
+                        <td class="px-3 py-2">@c.GivenName</td>
+                        <td class="px-3 py-2">@c.Department</td>
+                        <td class="px-3 py-2">@c.Email</td>
+                        <td class="px-3 py-2">@c.Intercom</td>
+                        <td class="px-3 py-2">@c.ContactNumber</td>
+                        <td class="px-3 py-2">@c.Notes</td>
+                        <td class="px-3 py-2 flex gap-1">
+                            <button class="px-2 py-1 text-xs border border-nist-primary text-nist-primary rounded hover:bg-nist-primary hover:text-white transition-colors" @onclick="() => EditContact(c)">
+                                Edit
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteContact(c)">
-                                <i class="bi bi-trash"></i>
+                            <button class="px-2 py-1 text-xs border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" @onclick="() => DeleteContact(c)">
+                                Del
                             </button>
                         </td>
                     </tr>
@@ -69,7 +69,7 @@ else
             </tbody>
         </table>
     </div>
-    <small class="text-secondary">@_filtered.Count of @_contacts.Count contacts</small>
+    <small class="text-gray-400 mt-2 block">@_filtered.Count of @_contacts.Count contacts</small>
 }
 
 @if (_showModal)
@@ -80,19 +80,17 @@ else
 
 @if (_showDeleteConfirm)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete Contact</h5>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to delete <strong>@_deletingContact?.FullName</strong>?
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => _showDeleteConfirm = false">Cancel</button>
-                    <button class="btn btn-danger" @onclick="ConfirmDelete">Delete</button>
-                </div>
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h5 class="text-lg font-semibold">Delete Contact</h5>
+            </div>
+            <div class="px-6 py-4">
+                Are you sure you want to delete <strong>@_deletingContact?.FullName</strong>?
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+                <button class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors" @onclick="() => _showDeleteConfirm = false">Cancel</button>
+                <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm transition-colors" @onclick="ConfirmDelete">Delete</button>
             </div>
         </div>
     </div>
@@ -119,7 +117,6 @@ else
     {
         await LoadContacts();
 
-        // Auto-refresh every 30 seconds to pick up desktop-synced changes
         _refreshTimer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(async () =>
@@ -129,7 +126,7 @@ else
                 ApplyFilter();
                 StateHasChanged();
             });
-        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
     public void Dispose()

@@ -19,4 +19,10 @@
     <ProjectReference Include="..\NistAttendance.Shared\NistAttendance.Shared.csproj" />
   </ItemGroup>
 
+  <!-- Tailwind CSS build -->
+  <Target Name="BuildTailwind" BeforeTargets="Build">
+    <Exec Command="npm install" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="npm run css:build" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
 </Project>

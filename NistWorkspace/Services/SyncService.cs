@@ -96,7 +96,7 @@ public class SyncService : ISyncService, IDisposable
         }
     }
 
-    public void StartAutoSync(int intervalSeconds = 30)
+    public void StartAutoSync(int intervalSeconds = 5)
     {
         StopAutoSync();
         _autoSyncTimer = new Timer(

@@ -1,129 +1,127 @@
 @using NistAttendance.Models
 
-<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@(IsEdit ? "Edit Entry" : "Add Entry")</h5>
-                <button type="button" class="btn-close" @onclick="OnCancel"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Date</label>
-                        <input type="date" class="form-control" @bind="_date" />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Type</label>
-                        <select class="form-select" @bind="_dayType">
-                            <option value="WorkDay">Work Day</option>
-                            <option value="AnnualPaidLeave">Annual Paid Leave</option>
-                            <option value="UnpaidLeave">Unpaid Leave</option>
-                            <option value="PublicHoliday">Public Holiday</option>
-                            <option value="Weekend">Weekend</option>
-                            <option value="BusinessTrip">Business Trip</option>
-                        </select>
-                    </div>
-
-                    @if (_dayType is "AnnualPaidLeave" or "UnpaidLeave" or "PublicHoliday")
-                    {
-                        <div class="col-12">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control" @bind="_holidayName" placeholder="e.g., NEW YEAR HOLIDAY" />
-                        </div>
-                    }
-
-                    @if (_dayType == "BusinessTrip")
-                    {
-                        <div class="col-md-6">
-                            <label class="form-label">Trip Type *</label>
-                            <select class="form-select" @bind="_tripCategory">
-                                <option value="">-- Select --</option>
-                                <option value="Domestic">Domestic Business Trip</option>
-                                <option value="Overseas">Overseas Business Trip</option>
-                            </select>
-                        </div>
-                        @if (_tripCategory == "Domestic")
-                        {
-                            <div class="col-md-6">
-                                <label class="form-label">Prefecture *</label>
-                                <select class="form-select" @bind="_tripRegion">
-                                    <option value="">-- Select --</option>
-                                    @foreach (var p in TripData.Prefectures)
-                                    {
-                                        <option value="@p">@p</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-                        @if (_tripCategory == "Overseas")
-                        {
-                            <div class="col-md-6">
-                                <label class="form-label">Country *</label>
-                                <select class="form-select" @bind="_tripRegion">
-                                    <option value="">-- Select --</option>
-                                    @foreach (var c in TripData.Countries)
-                                    {
-                                        <option value="@c">@c</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-                        <div class="col-12">
-                            <label class="form-label">Destination(s)</label>
-                            <input type="text" class="form-control" @bind="_holidayName" placeholder="e.g., Osaka Office, Tokyo HQ" />
-                        </div>
-                    }
-
-                    @if (_dayType == "WorkDay")
-                    {
-                        <div class="col-md-3">
-                            <label class="form-label">Login Hour</label>
-                            <input type="number" class="form-control" min="0" max="23" @bind="_loginHour" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Login Min</label>
-                            <input type="number" class="form-control" min="0" max="59" @bind="_loginMin" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Logout Hour</label>
-                            <input type="number" class="form-control" min="0" max="23" @bind="_logoutHour" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Logout Min</label>
-                            <input type="number" class="form-control" min="0" max="59" @bind="_logoutMin" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Overtime?</label>
-                            <select class="form-select" @bind="_overtimeSelection">
-                                <option value="-1">-- Select --</option>
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
-                            </select>
-                        </div>
-                        @if (_overtimeSelection == 1)
-                        {
-                            <div class="col-md-3">
-                                <label class="form-label">OT End Hr</label>
-                                <input type="number" class="form-control" min="0" max="23" @bind="_otEndHour" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">OT End Min</label>
-                                <input type="number" class="form-control" min="0" max="59" @bind="_otEndMin" />
-                            </div>
-                        }
-                    }
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h5 class="text-lg font-semibold">@(IsEdit ? "Edit Entry" : "Add Entry")</h5>
+            <button class="text-gray-400 hover:text-gray-600 text-xl" @onclick="OnCancel">&times;</button>
+        </div>
+        <div class="px-6 py-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_date" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_dayType">
+                        <option value="WorkDay">Work Day</option>
+                        <option value="AnnualPaidLeave">Annual Paid Leave</option>
+                        <option value="UnpaidLeave">Unpaid Leave</option>
+                        <option value="PublicHoliday">Public Holiday</option>
+                        <option value="Weekend">Weekend</option>
+                        <option value="BusinessTrip">Business Trip</option>
+                    </select>
                 </div>
 
-                @if (!string.IsNullOrEmpty(_error))
+                @if (_dayType is "AnnualPaidLeave" or "UnpaidLeave" or "PublicHoliday")
                 {
-                    <div class="alert alert-danger mt-3">@_error</div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_holidayName" placeholder="e.g., NEW YEAR HOLIDAY" />
+                    </div>
+                }
+
+                @if (_dayType == "BusinessTrip")
+                {
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Trip Type *</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_tripCategory">
+                            <option value="">-- Select --</option>
+                            <option value="Domestic">Domestic Business Trip</option>
+                            <option value="Overseas">Overseas Business Trip</option>
+                        </select>
+                    </div>
+                    @if (_tripCategory == "Domestic")
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prefecture *</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_tripRegion">
+                                <option value="">-- Select --</option>
+                                @foreach (var p in TripData.Prefectures)
+                                {
+                                    <option value="@p">@p</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    @if (_tripCategory == "Overseas")
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_tripRegion">
+                                <option value="">-- Select --</option>
+                                @foreach (var c in TripData.Countries)
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Destination(s)</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_holidayName" placeholder="e.g., Osaka Office, Tokyo HQ" />
+                    </div>
+                }
+
+                @if (_dayType == "WorkDay")
+                {
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Login Hour</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="23" @bind="_loginHour" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Login Min</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="59" @bind="_loginMin" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Logout Hour</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="23" @bind="_logoutHour" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Logout Min</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="59" @bind="_logoutMin" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime?</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_overtimeSelection">
+                            <option value="-1">-- Select --</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                    @if (_overtimeSelection == 1)
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">OT End Hr</label>
+                            <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="23" @bind="_otEndHour" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">OT End Min</label>
+                            <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" min="0" max="59" @bind="_otEndMin" />
+                        </div>
+                    }
                 }
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
-                <button class="btn btn-primary" @onclick="Save">Save</button>
-            </div>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mt-4">@_error</div>
+            }
+        </div>
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+            <button class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors" @onclick="OnCancel">Cancel</button>
+            <button class="px-4 py-2 bg-nist-primary hover:bg-nist-primary-dark text-white rounded-md text-sm transition-colors" @onclick="Save">Save</button>
         </div>
     </div>
 </div>
