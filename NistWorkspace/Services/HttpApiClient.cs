@@ -11,7 +11,7 @@ namespace NistAttendance.Services;
 
 public class HttpApiClient : IDisposable
 {
-    private readonly HttpClient _http;
+    private HttpClient _http;
     private readonly JsonSerializerOptions _jsonOptions;
     private string? _token;
     private string? _refreshToken;
@@ -31,7 +31,12 @@ public class HttpApiClient : IDisposable
 
     public void SetBaseUrl(string url)
     {
-        _http.BaseAddress = new Uri(url.TrimEnd('/') + "/");
+        // Recreate HttpClient to avoid InvalidOperationException
+        // when BaseAddress is changed after a request
+        var newBase = new Uri(url.TrimEnd('/') + "/");
+        _http = new HttpClient { BaseAddress = newBase };
+        if (!string.IsNullOrEmpty(_token))
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
     }
 
     public void SetTokens(string token, string refreshToken)
