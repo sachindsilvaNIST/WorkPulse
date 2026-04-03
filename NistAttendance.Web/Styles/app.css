@@ -33,7 +33,14 @@
   }
 
   input, select, textarea {
-    font-size: 14px;
+    font-size: 16px; /* prevent iOS zoom on focus */
+  }
+
+  /* Safe area for iPhone notch/dynamic island/bottom bar */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }
 
