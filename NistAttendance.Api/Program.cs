@@ -56,6 +56,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
 })
+.AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
@@ -95,13 +96,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto-migrate on startup
+// Auto-migrate on startup and seed roles
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -109,6 +114,21 @@ using (var scope = app.Services.CreateScope())
         db.Database.EnsureCreated();
     else
         db.Database.Migrate();
+
+    // Seed Admin role
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    if (!await roleManager.RoleExistsAsync("Admin"))
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+    // Make the first user an admin if no admins exist
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+    var admins = await userManager.GetUsersInRoleAsync("Admin");
+    if (admins.Count == 0)
+    {
+        var firstUser = db.Users.OrderBy(u => u.Id).FirstOrDefault();
+        if (firstUser != null)
+            await userManager.AddToRoleAsync(firstUser, "Admin");
+    }
 }
 
 if (app.Environment.IsDevelopment())

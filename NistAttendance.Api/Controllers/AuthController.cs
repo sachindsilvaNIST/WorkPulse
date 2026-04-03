@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
 
-        return Ok(GenerateAuthResponse(user));
+        return Ok(await GenerateAuthResponse(user));
     }
 
     [HttpPost("login")]
@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized(new { error = "Invalid email or password" });
 
-        var response = GenerateAuthResponse(user);
+        var response = await GenerateAuthResponse(user);
 
         user.RefreshToken = response.RefreshToken;
         user.RefreshTokenExpiryUtc = DateTime.UtcNow.AddDays(30);
@@ -72,7 +72,7 @@ public class AuthController : ControllerBase
             || user.RefreshTokenExpiryUtc <= DateTime.UtcNow)
             return Unauthorized(new { error = "Invalid or expired refresh token" });
 
-        var response = GenerateAuthResponse(user);
+        var response = await GenerateAuthResponse(user);
 
         user.RefreshToken = response.RefreshToken;
         user.RefreshTokenExpiryUtc = DateTime.UtcNow.AddDays(30);
@@ -81,19 +81,22 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    private AuthResponse GenerateAuthResponse(AppUser user)
+    private async Task<AuthResponse> GenerateAuthResponse(AppUser user)
     {
         var secret = _config["Jwt:Secret"]!;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var expires = DateTime.UtcNow.AddDays(7);
-        var claims = new[]
+        var roles = await _userManager.GetRolesAsync(user);
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Name, user.DisplayName)
         };
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
 
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"] ?? "NistAttendanceApi",

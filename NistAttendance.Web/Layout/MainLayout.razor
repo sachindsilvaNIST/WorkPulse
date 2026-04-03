@@ -2,9 +2,12 @@
 
 <div class="flex h-screen">
     <NavMenu />
-    <div class="flex-1 overflow-auto">
-        <main class="p-6">
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <main class="flex-1 overflow-auto p-6 bg-app-bg-alt">
             @Body
         </main>
+        <div class="px-4 py-2 bg-app-bg-alt border-t border-app-divider text-xs text-app-fg-secondary">
+            NIST Workspace
+        </div>
     </div>
 </div>

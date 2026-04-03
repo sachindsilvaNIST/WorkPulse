@@ -3,58 +3,54 @@
 @using NistAttendance.Models
 @inject NistAttendance.Web.Services.ApiSettingsService SettingsService
 
-<h4 class="text-xl font-semibold mb-6">Settings</h4>
+<h4 class="text-xl font-semibold text-app-fg mb-6">Settings</h4>
 
 @if (_loading)
 {
     <div class="text-center py-12">
-        <div class="inline-block w-8 h-8 border-4 border-nist-primary/30 border-t-nist-primary rounded-full animate-spin"></div>
+        <div class="spinner-primary"></div>
     </div>
 }
 else
 {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Work Schedule -->
-        <div class="bg-white rounded-lg border border-gray-200">
-            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <strong>Work Schedule</strong>
-            </div>
-            <div class="p-4 grid grid-cols-2 gap-4">
+        <div class="nist-card">
+            <div class="nist-card-header">Work Schedule</div>
+            <div class="nist-card-body grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Standard Login</label>
-                    <input type="time" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" @bind="_loginTime" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Standard Login</label>
+                    <input type="time" class="nist-input" @bind="_loginTime" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Standard Logout</label>
-                    <input type="time" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" @bind="_logoutTime" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Standard Logout</label>
+                    <input type="time" class="nist-input" @bind="_logoutTime" />
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">OT Break Deduction (minutes)</label>
-                    <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" min="0" max="120" @bind="_breakMinutes" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">OT Break Deduction (minutes)</label>
+                    <input type="number" class="nist-input" min="0" max="120" @bind="_breakMinutes" />
                 </div>
             </div>
         </div>
 
         <!-- Display -->
-        <div class="bg-white rounded-lg border border-gray-200">
-            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                <strong>Display</strong>
-            </div>
-            <div class="p-4 grid grid-cols-2 gap-4">
+        <div class="nist-card">
+            <div class="nist-card-header">Display</div>
+            <div class="nist-card-body grid grid-cols-2 gap-4">
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Title</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" @bind="_defaultTitle" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Default Title</label>
+                    <input type="text" class="nist-input" @bind="_defaultTitle" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" @bind="_theme">
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Theme</label>
+                    <select class="nist-input" @bind="_theme">
                         <option value="Light">Light</option>
                         <option value="Dark">Dark</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
-                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" @bind="_fontSize">
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Font Size</label>
+                    <select class="nist-input" @bind="_fontSize">
                         <option value="Small">Small</option>
                         <option value="Medium">Medium</option>
                         <option value="Large">Large</option>
@@ -65,18 +61,18 @@ else
 
         <!-- Save -->
         <div class="col-span-1 md:col-span-2">
-            <button class="bg-nist-primary hover:bg-nist-primary-dark text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50" @onclick="SaveSettings" disabled="@_saving">
-                @if (_saving) { <span class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 align-middle"></span> }
+            <button class="btn-primary" @onclick="SaveSettings" disabled="@_saving">
+                @if (_saving) { <span class="spinner"></span> }
                 Save Settings
             </button>
 
             @if (_saved)
             {
-                <span class="text-green-600 ml-3">Settings saved.</span>
+                <span class="text-nist-success ml-3">Settings saved.</span>
             }
             @if (!string.IsNullOrEmpty(_error))
             {
-                <span class="text-red-600 ml-3">@_error</span>
+                <span class="text-nist-danger ml-3">@_error</span>
             }
         </div>
     </div>

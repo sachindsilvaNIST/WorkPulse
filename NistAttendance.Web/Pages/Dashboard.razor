@@ -6,29 +6,29 @@
 @inject IDataService DataService
 
 <div class="flex justify-between items-center mb-4">
-    <h3 class="text-xl font-semibold">Attendance Dashboard</h3>
-    <button class="bg-nist-primary hover:bg-nist-primary-dark text-white font-medium py-2 px-4 rounded-md transition-colors" @onclick="ShowAddEntry">+ Add Entry</button>
+    <h3 class="text-xl font-semibold text-app-fg">Attendance Dashboard</h3>
+    <button class="btn-primary" @onclick="ShowAddEntry">+ Add Entry</button>
 </div>
 
 <!-- Month Navigator -->
 <div class="flex items-center gap-3 mb-6">
-    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors" @onclick="PrevMonth">&lt;</button>
-    <h5 class="text-lg font-medium">@_monthLabel @_year</h5>
-    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors" @onclick="NextMonth">&gt;</button>
+    <button class="btn-outline" @onclick="PrevMonth">&lt;</button>
+    <h5 class="text-lg font-medium text-app-fg">@_monthLabel @_year</h5>
+    <button class="btn-outline" @onclick="NextMonth">&gt;</button>
 </div>
 
 <!-- Summary Cards -->
 <div class="flex gap-4 mb-6">
-    <div class="bg-white border-2 border-nist-primary rounded-lg px-4 py-2">
-        <small class="text-xs text-gray-500 uppercase">Work Days</small>
+    <div class="nist-card border-2 border-nist-primary px-4 py-2">
+        <small class="text-xs text-app-fg-secondary uppercase">Work Days</small>
         <h5 class="text-lg font-bold text-nist-primary">@(_monthData?.TotalWorkDays ?? 0)</h5>
     </div>
-    <div class="bg-white border-2 border-amber-400 rounded-lg px-4 py-2">
-        <small class="text-xs text-gray-500 uppercase">Overtime</small>
+    <div class="nist-card border-2 border-amber-400 px-4 py-2">
+        <small class="text-xs text-app-fg-secondary uppercase">Overtime</small>
         <h5 class="text-lg font-bold text-amber-500">@(_monthData?.OvertimeCount ?? 0)</h5>
     </div>
-    <div class="bg-white border-2 border-cyan-400 rounded-lg px-4 py-2">
-        <small class="text-xs text-gray-500 uppercase">Total OT</small>
+    <div class="nist-card border-2 border-cyan-400 px-4 py-2">
+        <small class="text-xs text-app-fg-secondary uppercase">Total OT</small>
         @{ var (h, m) = _monthData?.TotalOvertimeDuration ?? (0, 0); }
         <h5 class="text-lg font-bold text-cyan-500">@h Hr @m Min</h5>
     </div>
@@ -36,48 +36,48 @@
 
 <!-- Search -->
 <div class="mb-4">
-    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary" placeholder="Search records..." @bind="_searchText" @bind:event="oninput" />
+    <input type="text" class="nist-input" placeholder="Search records..." @bind="_searchText" @bind:event="oninput" />
 </div>
 
 <!-- Attendance Table -->
 <div class="overflow-x-auto">
-    <table class="w-full text-sm border-collapse">
+    <table class="nist-table">
         <thead>
-            <tr class="bg-gray-900 text-white">
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Day</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Date</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Login</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Logout</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Overtime</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">OT Flag</th>
-                <th class="px-3 py-2 text-left text-xs uppercase tracking-wide">Actions</th>
+            <tr>
+                <th>Day</th>
+                <th>Date</th>
+                <th>Login</th>
+                <th>Logout</th>
+                <th>Overtime</th>
+                <th>OT Flag</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var record in FilteredRecords)
             {
-                <tr class="border-b border-gray-200 hover:bg-gray-50 @GetRowClass(record)">
-                    <td class="px-3 py-2">@record.DayAbbreviation</td>
-                    <td class="px-3 py-2">@record.Date.ToString("yyyy-MM-dd")</td>
-                    <td class="px-3 py-2">@record.LoginDisplay</td>
-                    <td class="px-3 py-2">@record.LogoutDisplay</td>
-                    <td class="px-3 py-2">
+                <tr class="@GetRowClass(record)">
+                    <td>@record.DayAbbreviation</td>
+                    <td>@record.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@record.LoginDisplay</td>
+                    <td>@record.LogoutDisplay</td>
+                    <td>
                         @if (record.IsOvertime)
                         {
                             <span>@record.OvertimeHours Hr @record.OvertimeMinutes Min</span>
                         }
                     </td>
-                    <td class="px-3 py-2">
+                    <td>
                         @if (record.IsOvertimeDecided)
                         {
-                            <span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full @(record.IsOvertime ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")">
+                            <span class="@(record.IsOvertime ? "badge-success" : "badge-danger")">
                                 @(record.IsOvertime ? "YES" : "NO")
                             </span>
                         }
                     </td>
-                    <td class="px-3 py-2 flex gap-1">
-                        <button class="px-2 py-1 text-xs border border-nist-primary text-nist-primary rounded hover:bg-nist-primary hover:text-white transition-colors" @onclick="() => ShowEditEntry(record)">Edit</button>
-                        <button class="px-2 py-1 text-xs border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors" @onclick="() => DeleteRecord(record)">Del</button>
+                    <td class="flex gap-1">
+                        <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => ShowEditEntry(record)">Edit</button>
+                        <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => DeleteRecord(record)">Del</button>
                     </td>
                 </tr>
             }

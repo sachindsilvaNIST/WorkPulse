@@ -1,55 +1,55 @@
 @using NistAttendance.Models
 
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h5 class="text-lg font-semibold">@(IsEdit ? "Edit Contact" : "Add Contact")</h5>
-            <button class="text-gray-400 hover:text-gray-600 text-xl" @onclick="OnCancel">&times;</button>
+<div class="modal-overlay">
+    <div class="modal-panel max-w-2xl">
+        <div class="modal-header">
+            <h5 class="text-lg font-semibold text-app-fg">@(IsEdit ? "Edit Contact" : "Add Contact")</h5>
+            <button class="text-app-fg-secondary hover:text-app-fg text-xl" @onclick="OnCancel">&times;</button>
         </div>
-        <div class="px-6 py-4">
+        <div class="modal-body">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Affiliation</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_affiliation" placeholder="e.g., NIST" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Affiliation</label>
+                    <input type="text" class="nist-input" @bind="_affiliation" placeholder="e.g., NIST" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_department" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Department</label>
+                    <input type="text" class="nist-input" @bind="_department" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Family Name *</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_familyName" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Family Name *</label>
+                    <input type="text" class="nist-input" @bind="_familyName" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Given Name</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_givenName" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Given Name</label>
+                    <input type="text" class="nist-input" @bind="_givenName" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_email" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Email</label>
+                    <input type="email" class="nist-input" @bind="_email" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Intercom</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_intercom" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Intercom</label>
+                    <input type="text" class="nist-input" @bind="_intercom" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" @bind="_contactNumber" />
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Contact Number</label>
+                    <input type="text" class="nist-input" @bind="_contactNumber" />
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-nist-primary/40" rows="2" @bind="_notes"></textarea>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Notes</label>
+                    <textarea class="nist-input" rows="2" @bind="_notes"></textarea>
                 </div>
             </div>
 
             @if (!string.IsNullOrEmpty(_error))
             {
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mt-4">@_error</div>
+                <div class="bg-red-50 border border-red-200 text-nist-danger px-4 py-3 rounded-md mt-4">@_error</div>
             }
         </div>
-        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
-            <button class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors" @onclick="OnCancel">Cancel</button>
-            <button class="px-4 py-2 bg-nist-primary hover:bg-nist-primary-dark text-white rounded-md text-sm transition-colors" @onclick="Save">Save</button>
+        <div class="modal-footer">
+            <button class="btn-outline" @onclick="OnCancel">Cancel</button>
+            <button class="btn-primary" @onclick="Save">Save</button>
         </div>
     </div>
 </div>

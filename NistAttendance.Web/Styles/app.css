@@ -4,40 +4,162 @@
 @source "../Layout/**/*.razor";
 @source "../Components/**/*.razor";
 
-/* NIST theme */
+/* NIST Desktop-matching theme */
 @theme {
   --color-nist-primary: #0078D4;
   --color-nist-primary-dark: #005A9E;
+  --color-nist-blue: #007AFF;
   --color-nist-success: #107C10;
   --color-nist-danger: #D13438;
-  --color-nist-warning: #FFB900;
-  --color-nist-info: #0EA5E9;
+  --color-nist-warning: #FF8C00;
+  --color-nist-info: #106EBE;
+  --color-nist-purple: #8B5CF6;
+
+  /* Desktop Light theme colors */
+  --color-app-bg: #FFFFFF;
+  --color-app-bg-alt: #F5F5F5;
+  --color-app-fg: #333333;
+  --color-app-fg-secondary: #666666;
+  --color-app-divider: #E0E0E0;
+  --color-app-sidebar: #1E1E1E;
 }
 
-/* Base styles */
+/* Base styles — match desktop Segoe UI / Fluent */
 @layer base {
   html, body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    @apply h-full bg-gray-50 text-gray-900;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    @apply h-full bg-app-bg-alt text-app-fg;
+    font-size: 14px;
+  }
+
+  input, select, textarea {
+    font-size: 14px;
   }
 }
 
-/* Attendance row colors */
+/* Attendance row colors matching desktop */
 @layer components {
   .row-weekend {
     @apply bg-gray-100;
   }
-
   .row-leave {
-    @apply bg-amber-50;
+    background-color: #FFF3E0 !important;
   }
-
   .row-holiday {
-    @apply bg-cyan-50;
+    background-color: #E8F5E9 !important;
+  }
+  .row-trip {
+    background-color: #E3F2FD !important;
   }
 
-  .row-trip {
-    @apply bg-blue-50;
+  /* Desktop-style card */
+  .nist-card {
+    @apply bg-app-bg rounded-lg border border-app-divider;
+  }
+  .nist-card-header {
+    @apply px-5 py-3 border-b border-app-divider font-semibold text-app-fg;
+  }
+  .nist-card-body {
+    @apply p-5;
+  }
+
+  /* Desktop-style buttons */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-primary text-white;
+  }
+  .btn-blue {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-blue text-white;
+  }
+  .btn-green {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-success text-white;
+  }
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-danger text-white;
+  }
+  .btn-warning {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-warning text-white;
+  }
+  .btn-info {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-info text-white;
+  }
+  .btn-purple {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-purple text-white;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-transparent border border-app-divider text-app-fg;
+  }
+  .btn-outline:hover {
+    @apply bg-gray-100;
+  }
+  .btn-primary:hover, .btn-blue:hover, .btn-green:hover, .btn-danger:hover,
+  .btn-warning:hover, .btn-info:hover, .btn-purple:hover {
+    @apply opacity-80;
+  }
+  .btn-primary:active, .btn-blue:active, .btn-green:active, .btn-danger:active,
+  .btn-warning:active, .btn-info:active, .btn-purple:active, .btn-outline:active {
+    @apply opacity-60;
+  }
+
+  /* Desktop-style input */
+  .nist-input {
+    @apply w-full px-3 py-1.5 border border-app-divider rounded bg-app-bg text-app-fg text-sm
+           focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary;
+  }
+
+  /* Desktop-style table */
+  .nist-table {
+    @apply w-full text-sm border-collapse;
+  }
+  .nist-table thead tr {
+    @apply bg-app-bg-alt border-b-2 border-app-divider;
+  }
+  .nist-table th {
+    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-app-fg-secondary;
+  }
+  .nist-table td {
+    @apply px-3 py-2 border-b border-app-divider;
+  }
+  .nist-table tbody tr:hover {
+    @apply bg-gray-50;
+  }
+
+  /* Status badge */
+  .badge-success {
+    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700;
+  }
+  .badge-danger {
+    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-700;
+  }
+  .badge-info {
+    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700;
+  }
+  .badge-warning {
+    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50;
+  }
+  .modal-panel {
+    @apply bg-app-bg rounded-lg shadow-xl w-full mx-4;
+  }
+  .modal-header {
+    @apply px-6 py-4 border-b border-app-divider flex justify-between items-center;
+  }
+  .modal-body {
+    @apply px-6 py-4;
+  }
+  .modal-footer {
+    @apply px-6 py-4 border-t border-app-divider flex justify-end gap-2;
+  }
+
+  /* Spinner */
+  .spinner {
+    @apply inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 align-middle;
+  }
+  .spinner-primary {
+    @apply inline-block w-8 h-8 border-4 border-nist-primary/30 border-t-nist-primary rounded-full animate-spin;
   }
 }
 
