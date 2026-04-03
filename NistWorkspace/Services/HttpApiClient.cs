@@ -27,6 +27,7 @@ public class HttpApiClient : IDisposable
         {
             PropertyNameCaseInsensitive = true
         };
+        _jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         _jsonOptions.Converters.Add(new DateOnlyJsonConverter());
         _jsonOptions.Converters.Add(new TimeOnlyJsonConverter());
     }
