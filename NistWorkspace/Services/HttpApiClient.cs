@@ -99,7 +99,11 @@ public class HttpApiClient : IDisposable
         var response = await SendWithRetry(() =>
             _http.PostAsJsonAsync("api/sync/push", request, _jsonOptions));
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Push failed ({response.StatusCode}): {body}");
+        }
         return await response.Content.ReadFromJsonAsync<SyncResponse>(_jsonOptions);
     }
 
