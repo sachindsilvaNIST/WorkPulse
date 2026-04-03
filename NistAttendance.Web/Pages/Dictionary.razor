@@ -173,7 +173,7 @@ else
                 {
                     <div>
                         <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-1">Notes</div>
-                        <div class="text-app-fg text-sm whitespace-pre-wrap">@_detailEntry.Notes</div>
+                        <div class="text-app-fg text-sm whitespace-pre-wrap dict-notes-render">@((MarkupString)SanitizeHtml(_detailEntry.Notes))</div>
                     </div>
                 }
 
@@ -337,5 +337,15 @@ else
         _showLabelManager = false;
         await LoadLabels();
         await LoadEntries();
+    }
+
+    private static string SanitizeHtml(string html)
+    {
+        return html
+            .Replace("<script", "&lt;script")
+            .Replace("</script", "&lt;/script")
+            .Replace("onerror", "")
+            .Replace("onclick", "")
+            .Replace("onload", "");
     }
 }

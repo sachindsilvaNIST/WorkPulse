@@ -1,4 +1,5 @@
 @using NistAttendance.Web.Services
+@inject IJSRuntime JS
 
 <div class="modal-overlay">
     <div class="modal-panel max-w-2xl">
@@ -30,7 +31,27 @@
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Notes</label>
-                    <textarea class="nist-input" rows="2" @bind="_notes" placeholder="Grammar notes, usage hints, etc."></textarea>
+                    <div class="flex gap-1 mb-1">
+                        <button type="button" class="md-tool-btn" title="Bold" @onclick='() => WrapSelection("b")'>
+                            <strong>B</strong>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Italic" @onclick='() => WrapSelection("i")'>
+                            <em>I</em>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Underline" @onclick='() => WrapSelection("u")'>
+                            <span style="text-decoration:underline">U</span>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Highlight" @onclick='() => WrapSelection("mark")'>
+                            <span style="background:#FFE082;padding:0 3px;border-radius:2px">H</span>
+                        </button>
+                    </div>
+                    <textarea id="dict-notes" class="nist-input font-mono text-sm" rows="3" @bind="_notes" placeholder="Grammar notes, usage hints, etc."></textarea>
+                    @if (!string.IsNullOrWhiteSpace(_notes) && (_notes.Contains("<b>") || _notes.Contains("<i>") || _notes.Contains("<u>") || _notes.Contains("<mark>")))
+                    {
+                        <div class="mt-1 px-3 py-2 border border-app-divider rounded bg-app-bg-alt text-sm">
+                            @((MarkupString)SanitizeHtml(_notes))
+                        </div>
+                    }
                 </div>
 
                 <!-- Labels -->
@@ -111,6 +132,35 @@
     {
         if (!_selectedLabelIds.Remove(labelId))
             _selectedLabelIds.Add(labelId);
+    }
+
+    private async Task WrapSelection(string tag)
+    {
+        // Get selection from textarea via JS, wrap with tag, update _notes
+        var result = await JS.InvokeAsync<int[]>("dictNotesGetSelection", "dict-notes");
+        if (result is { Length: 2 })
+        {
+            var start = result[0];
+            var end = result[1];
+            if (start >= 0 && end >= start && end <= _notes.Length)
+            {
+                var selected = _notes.Substring(start, end - start);
+                if (string.IsNullOrEmpty(selected)) selected = "text";
+                _notes = _notes[..start] + $"<{tag}>{selected}</{tag}>" + _notes[end..];
+            }
+        }
+    }
+
+    private static string SanitizeHtml(string html)
+    {
+        // Only allow b, i, u, mark tags
+        var sanitized = html
+            .Replace("<script", "&lt;script")
+            .Replace("</script", "&lt;/script")
+            .Replace("onerror", "")
+            .Replace("onclick", "")
+            .Replace("onload", "");
+        return sanitized;
     }
 
     private async Task Save()

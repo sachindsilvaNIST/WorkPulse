@@ -52,6 +52,13 @@
     background-color: #E3F2FD !important;
   }
 
+  /* Dictionary notes rich text */
+  .dict-notes-render mark {
+    background-color: #FFE082;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
   /* Desktop-style card */
   .nist-card {
     @apply bg-app-bg rounded-lg border border-app-divider;

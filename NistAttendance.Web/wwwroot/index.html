@@ -51,6 +51,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
     <script src="js/markdown-editor.js"></script>
 
+    <!-- Dictionary Notes helper -->
+    <script>
+        function dictNotesGetSelection(id) {
+            var el = document.getElementById(id);
+            if (!el) return [0, 0];
+            return [el.selectionStart, el.selectionEnd];
+        }
+    </script>
+
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 
