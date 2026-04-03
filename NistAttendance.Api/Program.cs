@@ -100,6 +100,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new NistAttendance.Converters.DateOnlyJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NistAttendance.Converters.TimeOnlyJsonConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
