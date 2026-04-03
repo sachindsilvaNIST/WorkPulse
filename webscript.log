@@ -1,32 +1,32 @@
 Failed to load resource: the server responded with a status of 404 ()Understand this error
+2dotnet.runtime.8.0.25.yggygbt05a.js:3 info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
 dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.LogicalHandler[100]
-      Start processing HTTP request GET https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/attendance/2026/4
+      Start processing HTTP request POST https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/auth/login
 dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.ClientHandler[100]
-      Sending HTTP request GET https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/attendance/2026/4
+      Sending HTTP request POST https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/auth/login
 dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.ClientHandler[101]
-      Received HTTP response headers after 127.8999ms - 200
+      Received HTTP response headers after 506.9ms - 200
 dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.LogicalHandler[101]
-      End processing HTTP request after 155.6ms - 200
+      End processing HTTP request after 526.1ms - 200
+dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.LogicalHandler[100]
+      Start processing HTTP request GET https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/dictionary/labels
+dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.ClientHandler[100]
+      Sending HTTP request GET https://nistattendancemanagementsystem-715719063036.asia-northeast1.run.app/api/dictionary/labels
+api/dictionary/labels:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.ClientHandler[101]
+      Received HTTP response headers after 121.7ms - 500
+dotnet.runtime.8.0.25.yggygbt05a.js:3 info: System.Net.Http.HttpClient.NistApi.LogicalHandler[101]
+      End processing HTTP request after 138.3ms - 500
 blazor.webassembly.js:1 crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
-      Unhandled exception rendering component: DeserializeUnableToConvertValue, NistAttendance.Models.DayType Path: $.records[0].dayType | LineNumber: 0 | BytePositionInLine: 126.
-System.Text.Json.JsonException: DeserializeUnableToConvertValue, NistAttendance.Models.DayType Path: $.records[0].dayType | LineNumber: 0 | BytePositionInLine: 126.
-   at System.Text.Json.ThrowHelper.ThrowJsonException(String )
-   at System.Text.Json.Serialization.Converters.EnumConverter`1[[NistAttendance.Models.DayType, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].Read(Utf8JsonReader& , Type , JsonSerializerOptions )
-   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1[[NistAttendance.Models.DayType, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].ReadJsonAndSetMember(Object , ReadStack& , Utf8JsonReader& )
-   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].OnTryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , AttendanceRecord& )
-   at System.Text.Json.Serialization.JsonConverter`1[[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].TryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , AttendanceRecord& , Boolean& )
-   at System.Text.Json.Serialization.JsonCollectionConverter`2[[System.Collections.Generic.List`1[[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].OnTryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , List`1& )
-   at System.Text.Json.Serialization.JsonConverter`1[[System.Collections.Generic.List`1[[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].TryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , List`1& , Boolean& )
-   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1[[System.Collections.Generic.List`1[[NistAttendance.Models.AttendanceRecord, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].ReadJsonAndSetMember(Object , ReadStack& , Utf8JsonReader& )
-   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].OnTryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , MonthlyData& )
-   at System.Text.Json.Serialization.JsonConverter`1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].TryRead(Utf8JsonReader& , Type , JsonSerializerOptions , ReadStack& , MonthlyData& , Boolean& )
-   at System.Text.Json.Serialization.JsonConverter`1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].ReadCore(Utf8JsonReader& , JsonSerializerOptions , ReadStack& )
-   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].ContinueDeserialize(ReadBufferState& , JsonReaderState& , ReadStack& )
-   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.<DeserializeAsync>d__1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
-   at System.Net.Http.Json.HttpContentJsonExtensions.<ReadFromJsonAsyncCore>d__12`1[[NistAttendance.Models.MonthlyData, NistAttendance.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
-   at NistAttendance.Web.Services.ApiDataService.LoadMonthAsync(Int32 year, Int32 month)
-   at NistAttendance.Web.Pages.Dashboard.LoadMonth()
-   at NistAttendance.Web.Pages.Dashboard.OnInitializedAsync()
+      Unhandled exception rendering component: net_http_message_not_success_statuscode_reason, 500, Internal Server Error
+System.Net.Http.HttpRequestException: net_http_message_not_success_statuscode_reason, 500, Internal Server Error
+   at System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode()
+   at System.Net.Http.Json.HttpClientJsonExtensions.<<FromJsonAsyncCore>g__Core|12_0>d`2[[System.Collections.Generic.List`1[[NistAttendance.Web.Services.DictLabelDto, NistAttendance.Web, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Text.Json.JsonSerializerOptions, System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51]].MoveNext()
+   at NistAttendance.Web.Services.ApiDictionaryService.GetLabelsAsync()
+   at NistAttendance.Web.Pages.Dictionary.LoadLabels()
+   at NistAttendance.Web.Pages.Dictionary.OnInitializedAsync()
    at Microsoft.AspNetCore.Components.ComponentBase.RunInitAndSetParametersAsync()
    at Microsoft.AspNetCore.Components.RenderTree.Renderer.GetErrorHandledTask(Task , ComponentState )
 Dt @ blazor.webassembly.js:1Understand this error
