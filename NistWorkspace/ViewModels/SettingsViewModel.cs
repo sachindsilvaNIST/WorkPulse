@@ -1,5 +1,7 @@
 using System;
+using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Styling;
@@ -47,6 +49,23 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string _lastSyncDisplay = "Never";
 
+    private bool _isNetworkConnected;
+    public bool IsNetworkConnected
+    {
+        get => _isNetworkConnected;
+        set => SetProperty(ref _isNetworkConnected, value);
+    }
+
+    private string _networkStatusText = "Checking network...";
+    public string NetworkStatusText
+    {
+        get => _networkStatusText;
+        set => SetProperty(ref _networkStatusText, value);
+    }
+
+    private Timer? _networkCheckTimer;
+    private readonly HttpClient _networkCheckClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+
     public string[] FontSizeOptions { get; } = { "Small", "Medium", "Large" };
 
     public string VersionDisplay { get; } =
@@ -57,7 +76,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService = settingsService;
         _syncService = syncService;
 
-        // Listen for background sync completions
+        // Listen for background sync events
+        _syncService.SyncStarted += () => SyncStatusMessage = "Syncing...";
         _syncService.SyncCompleted += OnSyncCompleted;
     }
 
@@ -65,8 +85,9 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settings = await _settingsService.LoadAsync();
         UpdateLastSyncDisplay();
-        if (success)
-            SyncStatusMessage = "Auto-synced.";
+        SyncStatusMessage = success
+            ? $"Sync up-to-date ({DateTime.Now:HH:mm:ss})"
+            : "Sync failed — retrying...";
     }
 
     public async Task InitializeAsync()
@@ -85,6 +106,29 @@ public partial class SettingsViewModel : ViewModelBase
         SyncEmail = _settings.SyncEmail;
         IsSyncLoggedIn = _syncService.IsLoggedIn;
         UpdateLastSyncDisplay();
+
+        // Start network monitoring
+        await CheckNetworkAsync();
+        _networkCheckTimer = new Timer(
+            _ => _ = CheckNetworkAsync(),
+            null,
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromSeconds(10));
+    }
+
+    private async Task CheckNetworkAsync()
+    {
+        try
+        {
+            using var response = await _networkCheckClient.GetAsync("https://clients3.google.com/generate_204");
+            IsNetworkConnected = response.IsSuccessStatusCode;
+            NetworkStatusText = "Connected to network";
+        }
+        catch
+        {
+            IsNetworkConnected = false;
+            NetworkStatusText = "Not connected to network";
+        }
     }
 
     partial void OnIsDarkThemeChanged(bool value)

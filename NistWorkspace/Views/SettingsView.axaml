@@ -143,8 +143,18 @@
                     BorderBrush="{DynamicResource AppDivider}"
                     BorderThickness="1" CornerRadius="8" Padding="24,20">
                 <StackPanel Spacing="16">
-                    <TextBlock Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppForeground}"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="#22C55E"
+                                     IsVisible="{Binding IsNetworkConnected}"/>
+                            <Ellipse Width="8" Height="8" Fill="#EF4444"
+                                     IsVisible="{Binding !IsNetworkConnected}"/>
+                            <TextBlock Text="{Binding NetworkStatusText}" FontSize="12"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"/>
+                        </StackPanel>
+                    </Grid>
                     <TextBlock Text="Sync your data with the NIST Workspace web app."
                                FontSize="12"
                                Foreground="{DynamicResource AppForegroundSecondary}"/>

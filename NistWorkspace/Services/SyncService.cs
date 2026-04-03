@@ -24,6 +24,7 @@ public class SyncService : ISyncService, IDisposable
     public string? LastError { get; private set; }
 
     public event Action<bool>? SyncCompleted;
+    public event Action? SyncStarted;
 
     public SyncService(
         IDataService dataService,
@@ -129,6 +130,7 @@ public class SyncService : ISyncService, IDisposable
 
     private async Task SyncInBackground()
     {
+        SyncStarted?.Invoke();
         var (success, _) = await SyncAsync();
         SyncCompleted?.Invoke(success);
     }

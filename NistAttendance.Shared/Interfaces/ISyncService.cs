@@ -9,6 +9,9 @@ public interface ISyncService
     bool IsSyncing { get; }
     string? LastError { get; }
 
+    /// <summary>Raised when a background sync starts.</summary>
+    event Action? SyncStarted;
+
     /// <summary>Raised after a sync completes (success or failure).</summary>
     event Action<bool>? SyncCompleted;
 
