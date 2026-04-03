@@ -56,5 +56,6 @@ builder.Services.AddScoped<ApiDataService>();
 builder.Services.AddScoped<IDataService>(sp => sp.GetRequiredService<ApiDataService>());
 builder.Services.AddScoped<ApiContactDataService>();
 builder.Services.AddScoped<ApiSettingsService>();
+builder.Services.AddScoped<ApiDictionaryService>();
 
 await builder.Build().RunAsync();
