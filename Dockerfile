@@ -32,8 +32,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/api .
 
-ENV ASPNETCORE_URLS=http://+:${PORT:-10000}
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-EXPOSE 10000
-ENTRYPOINT ["dotnet", "NistAttendance.Api.dll"]
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "dotnet NistAttendance.Api.dll --urls http://+:${PORT:-8080}"]

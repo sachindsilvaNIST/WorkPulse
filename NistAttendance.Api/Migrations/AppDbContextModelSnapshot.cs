@@ -485,6 +485,134 @@ namespace NistAttendance.Api.Migrations
                     b.ToTable("UserSettings");
                 });
 
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryEntryEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Japanese")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reading")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Meaning")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExampleJp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExampleEn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DictionaryEntries");
+                });
+
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryLabelEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("DictionaryLabels");
+                });
+
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryEntryLabelEntity", b =>
+                {
+                    b.Property<int>("EntryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LabelId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EntryId", "LabelId");
+
+                    b.HasIndex("LabelId");
+
+                    b.ToTable("DictionaryEntryLabels");
+                });
+
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryEntryEntity", b =>
+                {
+                    b.HasOne("NistAttendance.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryLabelEntity", b =>
+                {
+                    b.HasOne("NistAttendance.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("NistAttendance.Api.Data.Entities.DictionaryEntryLabelEntity", b =>
+                {
+                    b.HasOne("NistAttendance.Api.Data.Entities.DictionaryEntryEntity", "Entry")
+                        .WithMany("EntryLabels")
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NistAttendance.Api.Data.Entities.DictionaryLabelEntity", "Label")
+                        .WithMany("EntryLabels")
+                        .HasForeignKey("LabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entry");
+
+                    b.Navigation("Label");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
