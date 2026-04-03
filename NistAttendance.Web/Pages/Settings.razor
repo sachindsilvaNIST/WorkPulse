@@ -2,6 +2,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using NistAttendance.Models
 @inject NistAttendance.Web.Services.ApiSettingsService SettingsService
+@inject IJSRuntime JS
 
 <h4 class="text-xl font-semibold text-app-fg mb-6">Settings</h4>
 
@@ -14,6 +15,37 @@
 else
 {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Appearance -->
+        <div class="nist-card">
+            <div class="nist-card-header">Appearance</div>
+            <div class="nist-card-body space-y-4">
+                <!-- Theme Toggle -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-app-fg">Dark Mode</div>
+                        <div class="text-xs text-app-fg-secondary">Switch between light and dark appearance</div>
+                    </div>
+                    <button class="relative w-11 h-6 rounded-full transition-colors @(_theme == "Dark" ? "bg-nist-primary" : "bg-gray-300")"
+                            @onclick="ToggleTheme">
+                        <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform @(_theme == "Dark" ? "translate-x-5" : "")"></span>
+                    </button>
+                </div>
+
+                <!-- Font Size -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-medium text-app-fg">Font Size</div>
+                        <div class="text-xs text-app-fg-secondary">Adjust text size across the app</div>
+                    </div>
+                    <select class="nist-input w-32" @bind="_fontSize">
+                        <option value="Small">Small</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Large">Large</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- Work Schedule -->
         <div class="nist-card">
             <div class="nist-card-header">Work Schedule</div>
@@ -33,35 +65,9 @@ else
             </div>
         </div>
 
-        <!-- Display -->
-        <div class="nist-card">
-            <div class="nist-card-header">Display</div>
-            <div class="nist-card-body grid grid-cols-2 gap-4">
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Default Title</label>
-                    <input type="text" class="nist-input" @bind="_defaultTitle" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Theme</label>
-                    <select class="nist-input" @bind="_theme">
-                        <option value="Light">Light</option>
-                        <option value="Dark">Dark</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Font Size</label>
-                    <select class="nist-input" @bind="_fontSize">
-                        <option value="Small">Small</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Large">Large</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <!-- Save -->
         <div class="col-span-1 md:col-span-2">
-            <button class="btn-primary" @onclick="SaveSettings" disabled="@_saving">
+            <button class="btn-primary w-full sm:w-auto justify-center" @onclick="SaveSettings" disabled="@_saving">
                 @if (_saving) { <span class="spinner"></span> }
                 Save Settings
             </button>
@@ -93,14 +99,23 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Load server settings
         var s = await SettingsService.LoadAsync();
         _loginTime = s.StandardLoginTime;
         _logoutTime = s.StandardLogoutTime;
         _breakMinutes = s.OvertimeBreakDeductionMinutes;
         _defaultTitle = s.DefaultTitle;
-        _theme = s.ThemeVariant;
         _fontSize = s.FontSizePreset;
+
+        // Load theme from localStorage (local to browser, instant)
+        _theme = await JS.InvokeAsync<string>("getTheme");
         _loading = false;
+    }
+
+    private async Task ToggleTheme()
+    {
+        _theme = _theme == "Dark" ? "Light" : "Dark";
+        await JS.InvokeVoidAsync("setTheme", _theme);
     }
 
     private async Task SaveSettings()

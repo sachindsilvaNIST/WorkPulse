@@ -15,13 +15,27 @@
   --color-nist-info: #106EBE;
   --color-nist-purple: #8B5CF6;
 
-  /* Desktop Light theme colors */
+  /* Desktop Light theme colors (defaults) */
   --color-app-bg: #FFFFFF;
   --color-app-bg-alt: #F5F5F5;
   --color-app-fg: #333333;
   --color-app-fg-secondary: #666666;
   --color-app-divider: #E0E0E0;
   --color-app-sidebar: #1E1E1E;
+}
+
+/* Dark mode overrides — activated by .dark class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Dark theme CSS variable overrides */
+html.dark {
+  --color-app-bg: #1E1E1E;
+  --color-app-bg-alt: #2D2D2D;
+  --color-app-fg: #E0E0E0;
+  --color-app-fg-secondary: #999999;
+  --color-app-divider: #404040;
+  --color-app-sidebar: #141414;
+  color-scheme: dark;
 }
 
 /* Base styles — match desktop Segoe UI / Fluent */
@@ -34,6 +48,13 @@
 
   input, select, textarea {
     font-size: 16px; /* prevent iOS zoom on focus */
+  }
+
+  /* Dark mode base overrides */
+  .dark input, .dark select, .dark textarea {
+    background-color: var(--color-app-bg);
+    color: var(--color-app-fg);
+    border-color: var(--color-app-divider);
   }
 
   /* Safe area for iPhone notch/dynamic island/bottom bar */
@@ -58,6 +79,15 @@
   .row-trip {
     background-color: #E3F2FD !important;
   }
+
+  /* Dark mode component overrides */
+  .dark .row-weekend { background-color: #2D2D2D !important; }
+  .dark .row-leave { background-color: #3D2E00 !important; }
+  .dark .row-holiday { background-color: #1B3D1F !important; }
+  .dark .row-trip { background-color: #1A2744 !important; }
+  .dark .nist-table tbody tr:hover { background-color: #333 !important; }
+  .dark .btn-outline { border-color: var(--color-app-divider); color: var(--color-app-fg); }
+  .dark .btn-outline:hover { background-color: #333; }
 
   /* Dictionary notes rich text */
   .dict-notes-render mark {

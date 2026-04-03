@@ -51,8 +51,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
     <script src="js/markdown-editor.js"></script>
 
-    <!-- Dictionary Notes helper -->
+    <!-- Theme + Dictionary helpers -->
     <script>
+        // Apply saved theme immediately (before Blazor loads) to prevent flash
+        (function() {
+            var t = localStorage.getItem('nist-theme');
+            if (t === 'Dark') document.documentElement.classList.add('dark');
+        })();
+
+        function setTheme(theme) {
+            if (theme === 'Dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            localStorage.setItem('nist-theme', theme);
+        }
+
+        function getTheme() {
+            return localStorage.getItem('nist-theme') || 'Light';
+        }
+
         function dictNotesGetSelection(id) {
             var el = document.getElementById(id);
             if (!el) return [0, 0];
