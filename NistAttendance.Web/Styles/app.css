@@ -154,6 +154,105 @@
     @apply px-6 py-4 border-t border-app-divider flex justify-end gap-2;
   }
 
+  /* ── Markdown Editor ── */
+  .md-tool-btn {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded text-app-fg-secondary
+           hover:bg-gray-100 hover:text-app-fg transition-colors cursor-pointer text-xs font-semibold;
+    border: 1px solid transparent;
+    background: transparent;
+  }
+  .md-tool-active {
+    @apply bg-blue-50 text-nist-primary;
+    border-color: var(--color-nist-primary);
+  }
+
+  /* CodeMirror integration */
+  .md-editor-wrapper .CodeMirror {
+    height: 100%;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    border: none;
+  }
+  .md-editor-wrapper .CodeMirror-gutters {
+    background: var(--color-app-bg-alt);
+    border-right: 1px solid var(--color-app-divider);
+  }
+  .md-editor-wrapper .CodeMirror-linenumber {
+    color: var(--color-app-fg-secondary);
+  }
+  .md-editor-wrapper .CodeMirror-cursor {
+    border-left-color: var(--color-nist-primary);
+  }
+  .md-editor-wrapper .CodeMirror-selected {
+    background: rgba(0, 120, 212, 0.15) !important;
+  }
+
+  /* Divider */
+  .md-divider {
+    @apply flex items-center justify-center shrink-0 cursor-col-resize transition-colors;
+    width: 5px;
+    background: var(--color-app-divider);
+  }
+  .md-divider:hover { background: var(--color-nist-primary); }
+  .md-divider-handle {
+    width: 3px; height: 28px; border-radius: 2px;
+    background: var(--color-app-fg-secondary);
+    opacity: 0.4;
+  }
+  .md-divider:hover .md-divider-handle { opacity: 0; }
+
+  /* View mode toggles */
+  #md-main.md-editor-only #md-preview-pane,
+  #md-main.md-editor-only #md-divider { display: none; }
+  #md-main.md-preview-only #md-editor-pane,
+  #md-main.md-preview-only #md-divider { display: none; }
+
+  /* GitHub-flavored Markdown preview */
+  .md-body {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--color-app-fg);
+    word-wrap: break-word;
+  }
+  .md-body h1, .md-body h2, .md-body h3,
+  .md-body h4, .md-body h5, .md-body h6 {
+    margin-top: 24px; margin-bottom: 16px;
+    font-weight: 600; line-height: 1.25;
+  }
+  .md-body h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid var(--color-app-divider); }
+  .md-body h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--color-app-divider); }
+  .md-body h3 { font-size: 1.25em; }
+  .md-body p { margin-top: 0; margin-bottom: 16px; }
+  .md-body a { color: var(--color-nist-primary); text-decoration: none; }
+  .md-body a:hover { text-decoration: underline; }
+  .md-body strong { font-weight: 600; }
+  .md-body img { max-width: 100%; border-radius: 6px; border: 1px solid var(--color-app-divider); }
+  .md-body code {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.875em; padding: 0.2em 0.4em;
+    background: var(--color-app-bg-alt); border-radius: 4px;
+  }
+  .md-body pre {
+    margin-bottom: 16px; padding: 16px;
+    background: var(--color-app-bg-alt); border-radius: 6px;
+    overflow-x: auto; border: 1px solid var(--color-app-divider);
+  }
+  .md-body pre code { padding: 0; background: transparent; font-size: 0.875em; line-height: 1.5; }
+  .md-body blockquote {
+    margin: 0 0 16px; padding: 0.5em 1em;
+    color: var(--color-app-fg-secondary); border-left: 4px solid var(--color-app-divider);
+  }
+  .md-body ul, .md-body ol { margin-bottom: 16px; padding-left: 2em; }
+  .md-body ul { list-style: disc; }
+  .md-body ol { list-style: decimal; }
+  .md-body li + li { margin-top: 4px; }
+  .md-body li > input[type="checkbox"] { margin-right: 6px; }
+  .md-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+  .md-body th, .md-body td { border: 1px solid var(--color-app-divider); padding: 8px 14px; }
+  .md-body th { font-weight: 600; background: var(--color-app-bg-alt); }
+  .md-body hr { height: 2px; border: none; background: var(--color-app-divider); margin: 24px 0; }
+
   /* Spinner */
   .spinner {
     @apply inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 align-middle;

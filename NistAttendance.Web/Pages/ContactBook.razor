@@ -3,13 +3,15 @@
 @using NistAttendance.Models
 @inject NistAttendance.Web.Services.ApiContactDataService ContactService
 
-<div class="flex justify-between items-center mb-4">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
     <h4 class="text-xl font-semibold text-app-fg">Contact Book</h4>
-    <div class="flex gap-2">
-        <input type="text" class="nist-input w-64" placeholder="Search contacts..."
+    <div class="flex flex-col sm:flex-row gap-2">
+        <input type="text" class="nist-input w-full sm:w-64" placeholder="Search contacts..."
                @bind="_searchText" @bind:event="oninput" @bind:after="ApplyFilter" />
-        <button class="btn-primary" @onclick="AddContact">+ Add</button>
-        <button class="btn-outline" @onclick="ExportContacts" disabled="@_exporting">Export</button>
+        <div class="flex gap-2">
+            <button class="btn-primary flex-1 sm:flex-none justify-center" @onclick="AddContact">+ Add</button>
+            <button class="btn-outline flex-1 sm:flex-none justify-center" @onclick="ExportContacts" disabled="@_exporting">Export</button>
+        </div>
     </div>
 </div>
 

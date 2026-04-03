@@ -5,20 +5,20 @@
 @attribute [Authorize]
 @inject IDataService DataService
 
-<div class="flex justify-between items-center mb-4">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
     <h3 class="text-xl font-semibold text-app-fg">Attendance Dashboard</h3>
-    <button class="btn-primary" @onclick="ShowAddEntry">+ Add Entry</button>
+    <button class="btn-primary w-full sm:w-auto justify-center" @onclick="ShowAddEntry">+ Add Entry</button>
 </div>
 
 <!-- Month Navigator -->
-<div class="flex items-center gap-3 mb-6">
+<div class="flex items-center justify-center sm:justify-start gap-3 mb-6">
     <button class="btn-outline" @onclick="PrevMonth">&lt;</button>
     <h5 class="text-lg font-medium text-app-fg">@_monthLabel @_year</h5>
     <button class="btn-outline" @onclick="NextMonth">&gt;</button>
 </div>
 
 <!-- Summary Cards -->
-<div class="flex gap-4 mb-6">
+<div class="grid grid-cols-3 gap-2 sm:flex sm:gap-4 mb-6">
     <div class="nist-card border-2 border-nist-primary px-4 py-2">
         <small class="text-xs text-app-fg-secondary uppercase">Work Days</small>
         <h5 class="text-lg font-bold text-nist-primary">@(_monthData?.TotalWorkDays ?? 0)</h5>

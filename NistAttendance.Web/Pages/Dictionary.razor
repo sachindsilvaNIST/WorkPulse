@@ -68,7 +68,7 @@ else
             <tbody>
                 @foreach (var entry in _entries)
                 {
-                    <tr>
+                    <tr class="cursor-pointer hover:bg-blue-50/50 transition-colors" @onclick="() => ShowDetail(entry)">
                         <td class="text-lg font-medium">@entry.Japanese</td>
                         <td class="text-app-fg-secondary">@entry.Reading</td>
                         <td>
@@ -87,7 +87,7 @@ else
                             </div>
                         </td>
                         <td>
-                            <div class="flex gap-1">
+                            <div class="flex gap-1" @onclick:stopPropagation="true">
                                 <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => ShowEditEntry(entry)">Edit</button>
                                 <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => ShowDeleteConfirm(entry)">Del</button>
                             </div>
@@ -102,46 +102,107 @@ else
     <div class="md:hidden flex flex-col gap-3">
         @foreach (var entry in _entries)
         {
-            <div class="nist-card">
+            <div class="nist-card cursor-pointer active:bg-gray-50 transition-colors" @onclick="() => ShowDetail(entry)">
                 <div class="nist-card-body">
                     <div class="flex justify-between items-start">
-                        <div class="flex-1">
+                        <div class="flex-1 min-w-0">
                             <div class="text-xl font-medium text-app-fg">@entry.Japanese</div>
                             @if (!string.IsNullOrEmpty(entry.Reading))
                             {
                                 <div class="text-sm text-app-fg-secondary">@entry.Reading</div>
                             }
-                            <div class="mt-2 text-app-fg">@entry.Meaning</div>
-                            @if (!string.IsNullOrEmpty(entry.ExampleJp))
-                            {
-                                <div class="mt-1 text-sm text-app-fg-secondary italic">@entry.ExampleJp</div>
-                            }
-                            @if (!string.IsNullOrEmpty(entry.ExampleEn))
-                            {
-                                <div class="text-sm text-app-fg-secondary italic">@entry.ExampleEn</div>
-                            }
+                            <div class="mt-1 text-app-fg truncate">@entry.Meaning</div>
                         </div>
-                        <div class="flex gap-1 ml-2 shrink-0">
-                            <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => ShowEditEntry(entry)">Edit</button>
-                            <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => ShowDeleteConfirm(entry)">Del</button>
-                        </div>
+                        <svg class="w-5 h-5 text-app-fg-secondary shrink-0 ml-2 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                     </div>
                     @if (entry.Labels.Any())
                     {
-                        <div class="flex flex-wrap gap-1 mt-3">
+                        <div class="flex flex-wrap gap-1 mt-2">
                             @foreach (var label in entry.Labels)
                             {
                                 <span class="inline-block px-2 py-0.5 text-xs rounded-full text-white" style="background-color: @label.Color">@label.Name</span>
                             }
                         </div>
                     }
-                    @if (!string.IsNullOrEmpty(entry.Notes))
-                    {
-                        <div class="mt-2 text-xs text-app-fg-secondary border-t border-app-divider pt-2">@entry.Notes</div>
-                    }
                 </div>
             </div>
         }
+    </div>
+}
+
+@* Detail Panel *@
+@if (_showDetail && _detailEntry != null)
+{
+    <div class="modal-overlay" @onclick="() => _showDetail = false">
+        <div class="modal-panel max-w-lg" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div>
+                    <h5 class="text-2xl font-bold text-app-fg">@_detailEntry.Japanese</h5>
+                    @if (!string.IsNullOrEmpty(_detailEntry.Reading))
+                    {
+                        <p class="text-app-fg-secondary mt-0.5">@_detailEntry.Reading</p>
+                    }
+                </div>
+                <button class="text-app-fg-secondary hover:text-app-fg text-xl" @onclick="() => _showDetail = false">&times;</button>
+            </div>
+            <div class="modal-body space-y-4">
+                <!-- Meaning -->
+                <div>
+                    <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-1">Meaning</div>
+                    <div class="text-app-fg text-lg">@_detailEntry.Meaning</div>
+                </div>
+
+                <!-- Examples -->
+                @if (!string.IsNullOrEmpty(_detailEntry.ExampleJp) || !string.IsNullOrEmpty(_detailEntry.ExampleEn))
+                {
+                    <div class="bg-app-bg-alt rounded-lg p-3 border border-app-divider">
+                        <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-2">Examples</div>
+                        @if (!string.IsNullOrEmpty(_detailEntry.ExampleJp))
+                        {
+                            <div class="text-app-fg">@_detailEntry.ExampleJp</div>
+                        }
+                        @if (!string.IsNullOrEmpty(_detailEntry.ExampleEn))
+                        {
+                            <div class="text-app-fg-secondary text-sm mt-1 italic">@_detailEntry.ExampleEn</div>
+                        }
+                    </div>
+                }
+
+                <!-- Notes -->
+                @if (!string.IsNullOrEmpty(_detailEntry.Notes))
+                {
+                    <div>
+                        <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-1">Notes</div>
+                        <div class="text-app-fg text-sm whitespace-pre-wrap">@_detailEntry.Notes</div>
+                    </div>
+                }
+
+                <!-- Labels -->
+                @if (_detailEntry.Labels.Any())
+                {
+                    <div>
+                        <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-2">Labels</div>
+                        <div class="flex flex-wrap gap-1">
+                            @foreach (var label in _detailEntry.Labels)
+                            {
+                                <span class="inline-block px-3 py-1 text-xs rounded-full text-white" style="background-color: @label.Color">@label.Name</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Meta -->
+                <div class="text-xs text-app-fg-secondary pt-2 border-t border-app-divider">
+                    Added @_detailEntry.CreatedUtc.ToLocalTime().ToString("yyyy-MM-dd") &middot;
+                    Updated @_detailEntry.LastModifiedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="() => { _showDetail = false; ShowEditEntry(_detailEntry); }">Edit</button>
+                <button class="btn-danger" @onclick="() => { _showDetail = false; ShowDeleteConfirm(_detailEntry); }">Delete</button>
+                <button class="btn-primary" @onclick="() => _showDetail = false">Close</button>
+            </div>
+        </div>
     </div>
 }
 
@@ -199,6 +260,9 @@ else
 
     private bool _showLabelManager;
 
+    private bool _showDetail;
+    private NistAttendance.Web.Services.DictEntryDto? _detailEntry;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadLabels();
@@ -231,6 +295,12 @@ else
         _editEntry = entry;
         _isEdit = true;
         _showEntryModal = true;
+    }
+
+    private void ShowDetail(NistAttendance.Web.Services.DictEntryDto entry)
+    {
+        _detailEntry = entry;
+        _showDetail = true;
     }
 
     private async Task HandleEntrySave(NistAttendance.Web.Services.DictEntryCreateDto dto)
