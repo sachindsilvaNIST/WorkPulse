@@ -18,5 +18,7 @@ public class AppSettings
     public bool SyncEnabled { get; set; }
     public string SyncServerUrl { get; set; } = "";
     public string SyncEmail { get; set; } = "";
+    public string? SyncToken { get; set; }
+    public string? SyncRefreshToken { get; set; }
     public DateTime LastSyncedAtUtc { get; set; } = DateTime.MinValue;
 }

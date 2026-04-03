@@ -71,11 +71,13 @@ public class SyncService : ISyncService, IDisposable
 
             Log($"LOGIN OK: Token received, display name: {auth?.DisplayName}");
 
-            // Persist sync config
+            // Persist sync config + tokens
             var settings = await _settingsService.LoadAsync();
             settings.SyncEnabled = true;
             settings.SyncServerUrl = serverUrl;
             settings.SyncEmail = email;
+            settings.SyncToken = auth?.Token;
+            settings.SyncRefreshToken = auth?.RefreshToken;
             await _settingsService.SaveAsync(settings);
 
             // Start auto-sync after successful login
@@ -97,6 +99,8 @@ public class SyncService : ISyncService, IDisposable
         _apiClient.ClearTokens();
         var settings = await _settingsService.LoadAsync();
         settings.SyncEnabled = false;
+        settings.SyncToken = null;
+        settings.SyncRefreshToken = null;
         await _settingsService.SaveAsync(settings);
     }
 
@@ -105,14 +109,51 @@ public class SyncService : ISyncService, IDisposable
         try
         {
             var settings = await _settingsService.LoadAsync();
-            if (!settings.SyncEnabled || string.IsNullOrEmpty(settings.SyncServerUrl) || string.IsNullOrEmpty(settings.SyncEmail))
+            if (!settings.SyncEnabled
+                || string.IsNullOrEmpty(settings.SyncServerUrl)
+                || string.IsNullOrEmpty(settings.SyncToken)
+                || string.IsNullOrEmpty(settings.SyncRefreshToken))
                 return false;
 
+            Log($"AUTO-CONNECT: Restoring session for {settings.SyncEmail} at {settings.SyncServerUrl}");
             _apiClient.SetBaseUrl(settings.SyncServerUrl);
-            return false;
+            _apiClient.SetTokens(settings.SyncToken, settings.SyncRefreshToken);
+
+            // Verify the token still works by attempting a pull
+            try
+            {
+                await _apiClient.PullAsync(settings.LastSyncedAtUtc);
+                Log("AUTO-CONNECT: Token valid, starting auto-sync");
+                StartAutoSync();
+                return true;
+            }
+            catch
+            {
+                // Token expired — try refresh
+                Log("AUTO-CONNECT: Token expired, attempting refresh...");
+                var (refreshed, error) = await _apiClient.RefreshTokenAsync();
+                if (refreshed)
+                {
+                    // Save new tokens
+                    settings.SyncToken = _apiClient.CurrentToken;
+                    settings.SyncRefreshToken = _apiClient.CurrentRefreshToken;
+                    await _settingsService.SaveAsync(settings);
+                    Log("AUTO-CONNECT: Token refreshed, starting auto-sync");
+                    StartAutoSync();
+                    return true;
+                }
+
+                Log($"AUTO-CONNECT: Refresh failed — {error}. User needs to re-login.");
+                _apiClient.ClearTokens();
+                settings.SyncToken = null;
+                settings.SyncRefreshToken = null;
+                await _settingsService.SaveAsync(settings);
+                return false;
+            }
         }
-        catch
+        catch (Exception ex)
         {
+            Log($"AUTO-CONNECT ERROR: {ex.Message}");
             return false;
         }
     }
@@ -242,10 +283,12 @@ public class SyncService : ISyncService, IDisposable
             var pushResponse = await _apiClient.PushAsync(pushRequest);
             Log($"PUSH OK: serverTimestamp={pushResponse?.ServerTimestamp:O}");
 
-            // Update last sync timestamp
+            // Update last sync timestamp + persist latest tokens
             var serverTime = pushResponse?.ServerTimestamp ?? DateTime.UtcNow;
             settings = await _settingsService.LoadAsync();
             settings.LastSyncedAtUtc = serverTime;
+            settings.SyncToken = _apiClient.CurrentToken;
+            settings.SyncRefreshToken = _apiClient.CurrentRefreshToken;
             await _settingsService.SaveAsync(settings);
 
             Log("SYNC COMPLETE: Success");

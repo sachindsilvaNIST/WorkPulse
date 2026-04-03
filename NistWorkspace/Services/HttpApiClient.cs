@@ -17,6 +17,8 @@ public class HttpApiClient : IDisposable
     private string? _refreshToken;
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(_token);
+    public string? CurrentToken => _token;
+    public string? CurrentRefreshToken => _refreshToken;
 
     public HttpApiClient()
     {
