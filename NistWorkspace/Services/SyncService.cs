@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ public class SyncService : ISyncService, IDisposable
     private readonly IContactDataService _contactDataService;
     private readonly ISettingsService _settingsService;
     private readonly HttpApiClient _apiClient;
+    private readonly string _logPath;
 
     private bool _isSyncing;
     private Timer? _autoSyncTimer;
@@ -36,17 +38,38 @@ public class SyncService : ISyncService, IDisposable
         _contactDataService = contactDataService;
         _settingsService = settingsService;
         _apiClient = apiClient;
+
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var folder = Path.Combine(appData, "NistAttendance");
+        Directory.CreateDirectory(folder);
+        _logPath = Path.Combine(folder, "sync.log");
+    }
+
+    private void Log(string message)
+    {
+        try
+        {
+            var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
+            File.AppendAllText(_logPath, line + Environment.NewLine);
+        }
+        catch { /* ignore logging failures */ }
     }
 
     public async Task<(bool Success, string? Error)> LoginAsync(string serverUrl, string email, string password)
     {
         try
         {
+            Log($"LOGIN: Connecting to {serverUrl} as {email}");
             _apiClient.SetBaseUrl(serverUrl);
             var (success, auth, error) = await _apiClient.LoginAsync(email, password);
 
             if (!success)
+            {
+                Log($"LOGIN FAILED: {error}");
                 return (false, error);
+            }
+
+            Log($"LOGIN OK: Token received, display name: {auth?.DisplayName}");
 
             // Persist sync config
             var settings = await _settingsService.LoadAsync();
@@ -62,12 +85,14 @@ public class SyncService : ISyncService, IDisposable
         }
         catch (Exception ex)
         {
+            Log($"LOGIN ERROR: {ex}");
             return (false, $"Connection failed: {ex.Message}");
         }
     }
 
     public async Task LogoutAsync()
     {
+        Log("LOGOUT");
         StopAutoSync();
         _apiClient.ClearTokens();
         var settings = await _settingsService.LoadAsync();
@@ -84,11 +109,6 @@ public class SyncService : ISyncService, IDisposable
                 return false;
 
             _apiClient.SetBaseUrl(settings.SyncServerUrl);
-
-            // We don't store passwords, so we can't auto-login with credentials.
-            // Instead, try to do a pull to check if our saved token still works.
-            // If not, the user will need to re-login from Settings.
-            // For now, just mark as "configured but not authenticated".
             return false;
         }
         catch
@@ -99,11 +119,12 @@ public class SyncService : ISyncService, IDisposable
 
     public void StartAutoSync(int intervalSeconds = 5)
     {
+        Log($"AUTO-SYNC: Starting with {intervalSeconds}s interval");
         StopAutoSync();
         _autoSyncTimer = new Timer(
             _ => _ = SyncInBackground(),
             null,
-            TimeSpan.FromSeconds(5), // Initial delay: sync soon after login
+            TimeSpan.FromSeconds(5),
             TimeSpan.FromSeconds(intervalSeconds));
     }
 
@@ -119,7 +140,6 @@ public class SyncService : ISyncService, IDisposable
     {
         if (!IsLoggedIn) return;
 
-        // Debounce: wait 2 seconds after last change before syncing
         _debounceTimer?.Dispose();
         _debounceTimer = new Timer(
             _ => _ = SyncInBackground(),
@@ -138,7 +158,10 @@ public class SyncService : ISyncService, IDisposable
     public async Task<(bool Success, string? Error)> SyncAsync()
     {
         if (!IsLoggedIn)
+        {
+            Log("SYNC SKIP: Not logged in");
             return (false, "Not logged in");
+        }
 
         if (_isSyncing)
             return (false, "Sync already in progress");
@@ -150,24 +173,26 @@ public class SyncService : ISyncService, IDisposable
         {
             var settings = await _settingsService.LoadAsync();
             var lastSync = settings.LastSyncedAtUtc;
+            Log($"SYNC START: lastSync={lastSync:O}");
 
             // --- Step 1: Pull server changes since last sync ---
+            Log("PULL: Requesting server changes...");
             var pullResponse = await _apiClient.PullAsync(lastSync);
+            Log($"PULL OK: {pullResponse?.Months.Count ?? 0} months, {pullResponse?.Contacts?.Contacts.Count ?? 0} contacts");
 
             if (pullResponse != null)
             {
-                // Merge server months into local (server wins if newer)
                 foreach (var serverMonth in pullResponse.Months)
                 {
                     var localMonth = await _dataService.LoadMonthAsync(serverMonth.Year, serverMonth.Month);
 
                     if (localMonth == null || serverMonth.LastModifiedUtc > localMonth.LastModifiedUtc)
                     {
+                        Log($"PULL MERGE: {serverMonth.Year}-{serverMonth.Month:D2} ({serverMonth.Records.Count} records) — server is newer");
                         await _dataService.SaveMonthAsync(serverMonth);
                     }
                 }
 
-                // Merge contacts (per-contact comparison by Id)
                 if (pullResponse.Contacts != null && pullResponse.Contacts.Contacts.Count > 0)
                 {
                     var localContacts = await _contactDataService.LoadContactsAsync();
@@ -188,6 +213,7 @@ public class SyncService : ISyncService, IDisposable
 
                     localContacts.Contacts = localMap.Values.ToList();
                     await _contactDataService.SaveContactsAsync(localContacts);
+                    Log($"PULL MERGE: {pullResponse.Contacts.Contacts.Count} contacts merged");
                 }
             }
 
@@ -203,6 +229,8 @@ public class SyncService : ISyncService, IDisposable
 
             var contacts = await _contactDataService.LoadContactsAsync();
 
+            Log($"PUSH: Sending {localMonths.Count} months, {contacts.Contacts.Count} contacts...");
+
             var pushRequest = new SyncRequest
             {
                 Months = localMonths,
@@ -212,6 +240,7 @@ public class SyncService : ISyncService, IDisposable
             };
 
             var pushResponse = await _apiClient.PushAsync(pushRequest);
+            Log($"PUSH OK: serverTimestamp={pushResponse?.ServerTimestamp:O}");
 
             // Update last sync timestamp
             var serverTime = pushResponse?.ServerTimestamp ?? DateTime.UtcNow;
@@ -219,11 +248,13 @@ public class SyncService : ISyncService, IDisposable
             settings.LastSyncedAtUtc = serverTime;
             await _settingsService.SaveAsync(settings);
 
+            Log("SYNC COMPLETE: Success");
             return (true, null);
         }
         catch (Exception ex)
         {
             LastError = ex.Message;
+            Log($"SYNC ERROR: {ex}");
             return (false, ex.Message);
         }
         finally
