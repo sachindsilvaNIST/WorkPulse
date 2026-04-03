@@ -113,9 +113,51 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+    {
         db.Database.EnsureCreated();
+    }
     else
+    {
+        // Apply pending migrations for existing tables
         db.Database.Migrate();
+
+        // Ensure new tables exist (handles tables added after last migration)
+        var conn = db.Database.GetDbConnection();
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
+                ""Id"" serial PRIMARY KEY,
+                ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                ""Japanese"" text NOT NULL,
+                ""Reading"" text,
+                ""Meaning"" text NOT NULL,
+                ""ExampleJp"" text,
+                ""ExampleEn"" text,
+                ""Notes"" text,
+                ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now(),
+                ""LastModifiedUtc"" timestamp with time zone NOT NULL DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
+
+            CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
+                ""Id"" serial PRIMARY KEY,
+                ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                ""Name"" text NOT NULL,
+                ""Color"" text NOT NULL DEFAULT '#0078D4',
+                ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now()
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
+
+            CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
+                ""EntryId"" integer NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
+                ""LabelId"" integer NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
+                PRIMARY KEY (""EntryId"", ""LabelId"")
+            );
+            CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
+        ";
+        await cmd.ExecuteNonQueryAsync();
+    }
 
     // Seed Admin role
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
