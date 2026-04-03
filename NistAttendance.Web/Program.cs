@@ -1,7 +1,10 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using NistAttendance.Converters;
 using NistAttendance.Services;
 using NistAttendance.Web;
 using NistAttendance.Web.Auth;
@@ -12,6 +15,19 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
+
+// Configure JSON serialization to match the API
+var jsonOptions = new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true,
+    Converters =
+    {
+        new JsonStringEnumConverter(),
+        new DateOnlyJsonConverter(),
+        new TimeOnlyJsonConverter()
+    }
+};
+builder.Services.AddSingleton(jsonOptions);
 
 // Local storage for JWT tokens
 builder.Services.AddBlazoredLocalStorage();
