@@ -12,9 +12,9 @@ services:
       - key: Jwt__Secret
         generateValue: true
       - key: Jwt__Issuer
-        value: NistAttendanceApi
+        value: WorkPulseApi
       - key: Jwt__Audience
-        value: NistAttendanceApp
+        value: WorkPulseApp
       - key: AllowedOrigins__0
         value: https://nist-attendance.onrender.com
       - key: ASPNETCORE_ENVIRONMENT

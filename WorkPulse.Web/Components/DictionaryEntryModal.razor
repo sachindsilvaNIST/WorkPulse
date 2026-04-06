@@ -1,0 +1,194 @@
+@using WorkPulse.Web.Services
+@inject IJSRuntime JS
+
+<div class="modal-overlay">
+    <div class="modal-panel max-w-2xl">
+        <div class="modal-header">
+            <h5 class="text-lg font-semibold text-app-fg">@(IsEdit ? "Edit Word" : "New Word")</h5>
+            <button class="text-app-fg-secondary hover:text-app-fg text-xl" @onclick="OnCancel">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Japanese *</label>
+                    <input type="text" class="nist-input text-lg" @bind="_japanese" placeholder="e.g., 食べる" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Reading (Hiragana/Katakana)</label>
+                    <input type="text" class="nist-input" @bind="_reading" placeholder="e.g., たべる" />
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Meaning *</label>
+                    <input type="text" class="nist-input" @bind="_meaning" placeholder="e.g., to eat" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Example (Japanese)</label>
+                    <input type="text" class="nist-input" @bind="_exampleJp" placeholder="e.g., 毎日ご飯を食べます。" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Example (English)</label>
+                    <input type="text" class="nist-input" @bind="_exampleEn" placeholder="e.g., I eat rice every day." />
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Notes</label>
+                    <div class="flex gap-1 mb-1">
+                        <button type="button" class="md-tool-btn" title="Bold" @onclick='() => WrapSelection("b")'>
+                            <strong>B</strong>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Italic" @onclick='() => WrapSelection("i")'>
+                            <em>I</em>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Underline" @onclick='() => WrapSelection("u")'>
+                            <span style="text-decoration:underline">U</span>
+                        </button>
+                        <button type="button" class="md-tool-btn" title="Highlight" @onclick='() => WrapSelection("mark")'>
+                            <span style="background:#FFE082;padding:0 3px;border-radius:2px">H</span>
+                        </button>
+                    </div>
+                    <textarea id="dict-notes" class="nist-input font-mono text-sm" rows="3" @bind="_notes" placeholder="Grammar notes, usage hints, etc."></textarea>
+                    @if (!string.IsNullOrWhiteSpace(_notes) && (_notes.Contains("<b>") || _notes.Contains("<i>") || _notes.Contains("<u>") || _notes.Contains("<mark>")))
+                    {
+                        <div class="mt-1 px-3 py-2 border border-app-divider rounded bg-app-bg-alt text-sm">
+                            @((MarkupString)SanitizeHtml(_notes))
+                        </div>
+                    }
+                </div>
+
+                <!-- Labels -->
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-2">Labels</label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var label in Labels)
+                        {
+                            var isSelected = _selectedLabelIds.Contains(label.Id);
+                            <button type="button"
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all @(isSelected ? "text-white ring-2 ring-offset-1" : "bg-gray-100 text-app-fg-secondary hover:bg-gray-200")"
+                                    style="@(isSelected ? $"background-color: {label.Color}; ring-color: {label.Color}" : "")"
+                                    @onclick="() => ToggleLabel(label.Id)">
+                                @label.Name
+                            </button>
+                        }
+                        @if (!Labels.Any())
+                        {
+                            <span class="text-sm text-app-fg-secondary">No labels yet. Create labels from the Labels button.</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="bg-red-50 border border-red-200 text-nist-danger px-4 py-3 rounded-md mt-4">@_error</div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" @onclick="OnCancel">Cancel</button>
+            <button class="btn-primary" @onclick="Save">Save</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public DictEntryDto? Entry { get; set; }
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public List<DictLabelDto> Labels { get; set; } = new();
+    [Parameter] public EventCallback<DictEntryCreateDto> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string _japanese = "";
+    private string _reading = "";
+    private string _meaning = "";
+    private string _exampleJp = "";
+    private string _exampleEn = "";
+    private string _notes = "";
+    private HashSet<int> _selectedLabelIds = new();
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        if (Entry != null)
+        {
+            _japanese = Entry.Japanese;
+            _reading = Entry.Reading ?? "";
+            _meaning = Entry.Meaning;
+            _exampleJp = Entry.ExampleJp ?? "";
+            _exampleEn = Entry.ExampleEn ?? "";
+            _notes = Entry.Notes ?? "";
+            _selectedLabelIds = new HashSet<int>(Entry.Labels.Select(l => l.Id));
+        }
+        else
+        {
+            _japanese = "";
+            _reading = "";
+            _meaning = "";
+            _exampleJp = "";
+            _exampleEn = "";
+            _notes = "";
+            _selectedLabelIds = new();
+        }
+    }
+
+    private void ToggleLabel(int labelId)
+    {
+        if (!_selectedLabelIds.Remove(labelId))
+            _selectedLabelIds.Add(labelId);
+    }
+
+    private async Task WrapSelection(string tag)
+    {
+        // Get selection from textarea via JS, wrap with tag, update _notes
+        var result = await JS.InvokeAsync<int[]>("dictNotesGetSelection", "dict-notes");
+        if (result is { Length: 2 })
+        {
+            var start = result[0];
+            var end = result[1];
+            if (start >= 0 && end >= start && end <= _notes.Length)
+            {
+                var selected = _notes.Substring(start, end - start);
+                if (string.IsNullOrEmpty(selected)) selected = "text";
+                _notes = _notes[..start] + $"<{tag}>{selected}</{tag}>" + _notes[end..];
+            }
+        }
+    }
+
+    private static string SanitizeHtml(string html)
+    {
+        // Only allow b, i, u, mark tags
+        var sanitized = html
+            .Replace("<script", "&lt;script")
+            .Replace("</script", "&lt;/script")
+            .Replace("onerror", "")
+            .Replace("onclick", "")
+            .Replace("onload", "");
+        return sanitized;
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_japanese))
+        {
+            _error = "Japanese word/phrase is required.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_meaning))
+        {
+            _error = "Meaning is required.";
+            return;
+        }
+
+        var dto = new DictEntryCreateDto
+        {
+            Japanese = _japanese.Trim(),
+            Reading = string.IsNullOrWhiteSpace(_reading) ? null : _reading.Trim(),
+            Meaning = _meaning.Trim(),
+            ExampleJp = string.IsNullOrWhiteSpace(_exampleJp) ? null : _exampleJp.Trim(),
+            ExampleEn = string.IsNullOrWhiteSpace(_exampleEn) ? null : _exampleEn.Trim(),
+            Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+            LabelIds = _selectedLabelIds.ToList()
+        };
+
+        await OnSave.InvokeAsync(dto);
+    }
+}

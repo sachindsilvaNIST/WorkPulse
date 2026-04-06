@@ -1,0 +1,61 @@
+@page "/login"
+@inject WorkPulse.Web.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<div class="flex justify-center mt-8 sm:mt-16 px-4 sm:px-0">
+    <div class="w-full max-w-sm">
+        <div class="nist-card">
+            <div class="nist-card-body">
+                <h3 class="text-center text-xl font-semibold text-app-fg mb-6">Login</h3>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="bg-red-50 border border-red-200 text-nist-danger px-4 py-3 rounded-md mb-4">@_error</div>
+                }
+
+                <EditForm Model="_model" OnValidSubmit="HandleLogin">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-app-fg-secondary mb-1">Email</label>
+                        <InputText class="nist-input" @bind-Value="_model.Email" placeholder="you@example.com" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-app-fg-secondary mb-1">Password</label>
+                        <InputText class="nist-input" type="password" @bind-Value="_model.Password" />
+                    </div>
+                    <button type="submit" class="btn-primary w-full justify-center" disabled="@_loading">
+                        @if (_loading) { <span class="spinner"></span> }
+                        Login
+                    </button>
+                </EditForm>
+
+                <p class="text-center mt-4 text-sm text-app-fg-secondary">
+                    Don't have an account? <a href="register" class="text-nist-primary hover:underline">Register</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel _model = new();
+    private string? _error;
+    private bool _loading;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+        var (success, error) = await Auth.LoginAsync(_model.Email, _model.Password);
+        if (success)
+            Nav.NavigateTo("/");
+        else
+            _error = "Invalid email or password.";
+        _loading = false;
+    }
+
+    private class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

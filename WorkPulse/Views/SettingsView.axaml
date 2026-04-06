@@ -1,0 +1,244 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WorkPulse.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="WorkPulse.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="24" MaxWidth="640" Margin="0,8">
+
+            <!-- Page Title -->
+            <TextBlock Text="Settings" FontSize="26" FontWeight="Bold"
+                       Foreground="{DynamicResource AppForeground}"/>
+
+            <!-- ===== Appearance Card ===== -->
+            <Border Background="{DynamicResource AppBackground}"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppForeground}"/>
+
+                    <!-- Theme Toggle -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Dark Theme" FontSize="14"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBlock Text="Switch between light and dark appearance"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"/>
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsDarkTheme}"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource AppDivider}"/>
+
+                    <!-- Font Size -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="Font Size" FontSize="14"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBlock Text="Adjust the text size across the application"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"/>
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding FontSizeOptions}"
+                                  SelectedIndex="{Binding FontSizeIndex}"
+                                  Width="140" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Keyboard Shortcuts Card ===== -->
+            <Border Background="{DynamicResource AppBackground}"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppForeground}"/>
+
+                    <!-- Shortcuts Table -->
+                    <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+                        <!-- Header -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Shortcut" FontWeight="Bold"
+                                   FontSize="13" Foreground="{DynamicResource AppForegroundSecondary}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Action" FontWeight="Bold"
+                                   FontSize="13" Foreground="{DynamicResource AppForegroundSecondary}"
+                                   Margin="0,0,0,8"/>
+
+                        <!-- Ctrl+1 -->
+                        <Border Grid.Row="1" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 1" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="Attendance Dashboard"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- Ctrl+2 -->
+                        <Border Grid.Row="2" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 2" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Contact Book"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- Ctrl+3 -->
+                        <Border Grid.Row="3" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + 3" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="File Search"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- Ctrl+H -->
+                        <Border Grid.Row="4" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + H" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="Home"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- Ctrl+F -->
+                        <Border Grid.Row="5" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + F" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="Focus Search Bar"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- Ctrl+, -->
+                        <Border Grid.Row="6" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="Ctrl + ," FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="Settings"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+
+                        <!-- F1 -->
+                        <Border Grid.Row="7" Grid.Column="0" Margin="0,2" HorizontalAlignment="Left">
+                            <TextBlock Text="F1" FontFamily="Consolas,Monospace" FontSize="13"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </Border>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="Keyboard Shortcuts Guide"
+                                   FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}" Margin="0,2"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Cloud Sync Card ===== -->
+            <Border Background="{DynamicResource AppBackground}"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="#22C55E"
+                                     IsVisible="{Binding IsNetworkConnected}"/>
+                            <Ellipse Width="8" Height="8" Fill="#EF4444"
+                                     IsVisible="{Binding !IsNetworkConnected}"/>
+                            <TextBlock Text="{Binding NetworkStatusText}" FontSize="12"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="Sync your data with the WorkPulse web app."
+                               FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+
+                    <!-- Login Form (shown when not connected) -->
+                    <StackPanel Spacing="12" IsVisible="{Binding !IsSyncLoggedIn}">
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Server URL"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="0" Grid.Column="1"
+                                     Text="{Binding SyncServerUrl}"
+                                     Watermark="https://your-server.onrender.com"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1"
+                                     Text="{Binding SyncEmail}"
+                                     Watermark="your@email.com"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Password"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                            <TextBox Grid.Row="2" Grid.Column="1"
+                                     Text="{Binding SyncPassword}"
+                                     PasswordChar="*"
+                                     Watermark="Password"/>
+                        </Grid>
+
+                        <Button Content="Connect" Command="{Binding SyncLoginCommand}"
+                                HorizontalAlignment="Left" Classes="accent"/>
+                    </StackPanel>
+
+                    <!-- Connected state -->
+                    <StackPanel Spacing="12" IsVisible="{Binding IsSyncLoggedIn}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock FontSize="13"
+                                           Foreground="{DynamicResource AppForeground}">
+                                    <Run Text="Connected as "/>
+                                    <Run Text="{Binding SyncEmail}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock FontSize="12"
+                                           Foreground="{DynamicResource AppForegroundSecondary}">
+                                    <Run Text="Last synced: "/>
+                                    <Run Text="{Binding LastSyncDisplay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Sync Now" Command="{Binding SyncNowCommand}"
+                                    IsEnabled="{Binding !IsSyncing}" Classes="accent"/>
+                            <Button Content="Disconnect" Command="{Binding SyncLogoutCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Sync status message -->
+                    <TextBlock Text="{Binding SyncStatusMessage}" FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"
+                               IsVisible="{Binding SyncStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== About Card ===== -->
+            <Border Background="{DynamicResource AppBackground}"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="About" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppForeground}"/>
+                    <TextBlock Text="{Binding VersionDisplay}" FontSize="14"
+                               Foreground="{DynamicResource AppForeground}"/>
+                    <TextBlock Text="Attendance, Contact Book, and File Search — all in one place."
+                               FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Status -->
+            <TextBlock Text="{Binding StatusMessage}" FontSize="12"
+                       Foreground="{DynamicResource AppForegroundSecondary}"
+                       Margin="0,0,0,16"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,124 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WorkPulse.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="520"
+        x:Class="WorkPulse.Views.ContactEntryDialog"
+        x:DataType="vm:ContactEntryViewModel"
+        Title="{Binding WindowTitle}"
+        Width="450" Height="680"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="20">
+        <StackPanel Spacing="14">
+            <!-- Validation Error -->
+            <Border Background="{DynamicResource AppErrorPanel}" Padding="12" CornerRadius="4"
+                    IsVisible="{Binding HasValidationError}">
+                <TextBlock Text="{Binding ValidationError}" FontWeight="SemiBold"
+                           Foreground="#D13438"/>
+            </Border>
+
+            <!-- Affiliation -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Affiliation" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Affiliation}"
+                                 ItemsSource="{Binding AffiliationSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="e.g. CRD General Manager"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Family Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Family Name (性)" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding FamilyName}"
+                                 ItemsSource="{Binding FamilyNameSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="Surname"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Given Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Given Name (名)" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding GivenName}"
+                                 ItemsSource="{Binding GivenNameSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="First name"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Department -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Department (部名)" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Department}"
+                                 ItemsSource="{Binding DepartmentSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="Department name"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Email -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Email ID" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Email}"
+                                 ItemsSource="{Binding EmailSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="email@example.com"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Intercom -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Intercom" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Intercom}"
+                                 ItemsSource="{Binding IntercomSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="e.g. 3456"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Contact Number -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Contact Number" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding ContactNumber}"
+                                 ItemsSource="{Binding ContactNumberSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="e.g. 090-1234-5678"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Notes -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Side Notes" FontWeight="SemiBold" FontSize="13"/>
+                <AutoCompleteBox Text="{Binding Notes}"
+                                 ItemsSource="{Binding NotesSuggestions}"
+                                 FilterMode="Contains"
+                                 Watermark="Optional notes"
+                                 MinimumPrefixLength="1"
+                                 Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Spacing="8" Margin="0,8,0,0">
+                <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        Padding="16,6"
+                        Background="{DynamicResource AppButtonNeutral}" Foreground="{DynamicResource AppForeground}"/>
+                <Button Content="Save" Command="{Binding SaveCommand}"
+                        Padding="16,6" FontWeight="Bold"
+                        Background="#107C10" Foreground="White"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

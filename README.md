@@ -62,12 +62,12 @@ cd NISTAttendanceManagementSystem
 
 3. Build for `Ubuntu` 
 ```bash
-dotnet publish NistWorkspace/NistWorkspace.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish WorkPulse/WorkPulse.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 4. Build for `Windows`
 ```bash
-dotnet publish NistWorkspace/NistWorkspace.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish WorkPulse/WorkPulse.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 ## `Deployment on Local Machine [Ubuntu / Windows]`
@@ -77,20 +77,20 @@ dotnet publish NistWorkspace/NistWorkspace.csproj -c Release -r win-x64 --self-c
 
 1. Copy the binary to a permanent location:
 ```bash 
-sudo mkdir -p /opt/nist-attendance
+sudo mkdir -p /opt/workpulse
 ```
 
 ```bash
-sudo cp NistWorkspace/bin/Release/net8.0/linux-x64/publish/NistWorkspace /opt/nist-attendance/
+sudo cp WorkPulse/bin/Release/net8.0/linux-x64/publish/WorkPulse /opt/workpulse/
 ```
 
 ```bash
-sudo chmod +x /opt/nist-attendance/NistWorkspace
+sudo chmod +x /opt/workpulse/WorkPulse
 ```
 
 2. Create a desktop entry for the application launcher:
 ```bash
-nano ~/.local/share/applications/nist-attendance.desktop
+nano ~/.local/share/applications/workpulse.desktop
 ```
 
 3. Refresh the launcher:
@@ -102,29 +102,29 @@ update-desktop-database ~/.local/share/applications/
 
 ## Ubuntu (Build + Install)
 ```bash
-dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/NistWorkspace.csproj" -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true && sudo cp "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/bin/Release/net8.0/linux-x64/publish/NistWorkspace" /opt/nist-attendance/NistWorkspace
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/WorkPulse/WorkPulse.csproj" -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true && sudo cp "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/WorkPulse/bin/Release/net8.0/linux-x64/publish/WorkPulse" /opt/workpulse/WorkPulse
 ```
 
 ## Windows EXE: (Build)
 ```bash
-dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/NistWorkspace/NistWorkspace.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish "/home/sankyo/Sachin Files/01 NIST - AEM979/NIST Projects/2026/NISTAttendanceManagementSystem/WorkPulse/WorkPulse.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 ### Windows EXE Output Location:
 ```bash
-NistWorkspace/bin/Release/net8.0/win-x64/publish/NistWorkspace.exe
+WorkPulse/bin/Release/net8.0/win-x64/publish/WorkPulse.exe
 ```
 
 
 ### Windows Users
 
-1. Create a folder: `C:\Program Files\NistWorkspace\`
+1. Create a folder: `C:\Program Files\WorkPulse\`
 
-2. Copy `NistWorkspace.exe` from `NistWorkspace/bin/Release/net8.0/win-x64/publish` into it
+2. Copy `WorkPulse.exe` from `WorkPulse/bin/Release/net8.0/win-x64/publish` into it
 
 3. Create a Desktop Shortcut:
     - Right-click `Desktop -> New -> Shortcut`
-    - Target: `C:\Program Files\NistWorkspace\NistWorkspace.exe`
+    - Target: `C:\Program Files\WorkPulse\WorkPulse.exe`
     - Name: **`NIST Workspace`**
 
 4. *(Optional)* Pin to `Start Menu`: Open Start Menu, search **`NIST Workspace`**, right-click -> `Pin to Start`
@@ -136,6 +136,6 @@ NistWorkspace/bin/Release/net8.0/win-x64/publish/NistWorkspace.exe
 
 Attendance data is stored as JSON (JavaScript Object Notation) files (one file per month) at:
 
-* **Ubuntu**: `~/.local/share/NistWorkspace/`
-* **Windows**: `%LOCALAPPDATA%/NistWorkspace/`
+* **Ubuntu**: `~/.local/share/WorkPulse/`
+* **Windows**: `%LOCALAPPDATA%/WorkPulse/`
 

@@ -1,0 +1,105 @@
+using System.Collections.Generic;
+
+namespace WorkPulse.Models;
+
+public static class TripData
+{
+    public static List<string> Prefectures { get; } = new()
+    {
+        "北海道 - Hokkaido",
+        "青森県 - Aomori Prefecture",
+        "岩手県 - Iwate Prefecture",
+        "宮城県 - Miyagi Prefecture",
+        "秋田県 - Akita Prefecture",
+        "山形県 - Yamagata Prefecture",
+        "福島県 - Fukushima Prefecture",
+        "茨城県 - Ibaraki Prefecture",
+        "栃木県 - Tochigi Prefecture",
+        "群馬県 - Gunma Prefecture",
+        "埼玉県 - Saitama Prefecture",
+        "千葉県 - Chiba Prefecture",
+        "東京都 - Tokyo",
+        "神奈川県 - Kanagawa Prefecture",
+        "新潟県 - Niigata Prefecture",
+        "富山県 - Toyama Prefecture",
+        "石川県 - Ishikawa Prefecture",
+        "福井県 - Fukui Prefecture",
+        "山梨県 - Yamanashi Prefecture",
+        "長野県 - Nagano Prefecture",
+        "岐阜県 - Gifu Prefecture",
+        "静岡県 - Shizuoka Prefecture",
+        "愛知県 - Aichi Prefecture",
+        "三重県 - Mie Prefecture",
+        "滋賀県 - Shiga Prefecture",
+        "京都府 - Kyoto",
+        "大阪府 - Osaka",
+        "兵庫県 - Hyogo Prefecture",
+        "奈良県 - Nara Prefecture",
+        "和歌山県 - Wakayama Prefecture",
+        "鳥取県 - Tottori Prefecture",
+        "島根県 - Shimane Prefecture",
+        "岡山県 - Okayama Prefecture",
+        "広島県 - Hiroshima Prefecture",
+        "山口県 - Yamaguchi Prefecture",
+        "徳島県 - Tokushima Prefecture",
+        "香川県 - Kagawa Prefecture",
+        "愛媛県 - Ehime Prefecture",
+        "高知県 - Kochi Prefecture",
+        "福岡県 - Fukuoka Prefecture",
+        "佐賀県 - Saga Prefecture",
+        "長崎県 - Nagasaki Prefecture",
+        "熊本県 - Kumamoto Prefecture",
+        "大分県 - Oita Prefecture",
+        "宮崎県 - Miyazaki Prefecture",
+        "鹿児島県 - Kagoshima Prefecture",
+        "沖縄県 - Okinawa Prefecture"
+    };
+
+    public static List<string> Countries { get; } = new()
+    {
+        "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+        "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+        "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados",
+        "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+        "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei",
+        "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+        "Cameroon", "Canada", "Central African Republic", "Chad", "Chile",
+        "China", "Colombia", "Comoros", "Congo (DRC)", "Congo (Republic)",
+        "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic",
+        "Denmark", "Djibouti", "Dominica", "Dominican Republic",
+        // E-I
+        "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea",
+        "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland",
+        "France", "Gabon", "Gambia", "Georgia", "Germany",
+        "Ghana", "Greece", "Grenada", "Guatemala", "Guinea",
+        "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary",
+        "Iceland", "India", "Indonesia", "Iraq", "Ireland",
+        "Israel", "Italy", "Ivory Coast",
+        // J-M
+        "Jamaica", "Jordan", "Kazakhstan", "Kenya",
+        "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
+        "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein",
+        "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia",
+        "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania",
+        "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco",
+        "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
+        // N-R
+        "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand",
+        "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway",
+        "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea",
+        "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+        "Qatar", "Romania", "Russia", "Rwanda",
+        // S-Z
+        "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines",
+        "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal",
+        "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia",
+        "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea",
+        "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname",
+        "Sweden", "Switzerland", "Taiwan", "Tajikistan", "Tanzania",
+        "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago",
+        "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda",
+        "Ukraine", "United Arab Emirates", "United Kingdom", "United States",
+        "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
+        "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+    };
+}

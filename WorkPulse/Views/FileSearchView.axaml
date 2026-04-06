@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WorkPulse.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+             x:Class="WorkPulse.Views.FileSearchView"
+             x:DataType="vm:FileSearchViewModel">
+
+    <DockPanel>
+        <!-- Search Bar + Stats -->
+        <Border DockPanel.Dock="Top" Padding="0,0,0,12">
+            <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
+                <!-- Search Box -->
+                <TextBox Grid.Column="0" Grid.Row="0"
+                         Text="{Binding SearchText}"
+                         Watermark="Type a filename to search..."
+                         FontSize="16"
+                         Padding="14,10"
+                         CornerRadius="6"
+                         BorderBrush="{DynamicResource AppDivider}"
+                         Margin="0,0,8,0"/>
+
+                <!-- Clear Search Button -->
+                <Button Grid.Column="1" Grid.Row="0"
+                        Command="{Binding ClearSearchCommand}"
+                        Padding="8,6"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,0"
+                        ToolTip.Tip="Clear search">
+                    <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource AppForegroundSecondary}"/>
+                </Button>
+
+                <!-- Result Count -->
+                <Border Grid.Column="2" Grid.Row="0"
+                        Background="{DynamicResource AppBackgroundAlt}"
+                        CornerRadius="6" Padding="16,8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Results:" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForegroundSecondary}"/>
+                        <TextBlock Text="{Binding ResultCount}" FontWeight="Bold"
+                                   VerticalAlignment="Center" FontSize="16"
+                                   Foreground="#8B5CF6"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Indexing Progress -->
+                <TextBlock Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1"
+                           Text="{Binding IndexingProgress}"
+                           IsVisible="{Binding IsIndexing}"
+                           FontSize="12" Foreground="#8B5CF6"
+                           Margin="0,4,0,0" FontStyle="Italic"/>
+            </Grid>
+        </Border>
+
+        <!-- Index Timestamp Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource AppBackgroundAlt}"
+                Padding="12,6" CornerRadius="6" Margin="0,8,0,0">
+            <TextBlock Text="{Binding IndexTimestamp}" FontSize="11"
+                       Foreground="{DynamicResource AppForegroundSecondary}"/>
+        </Border>
+
+        <!-- Results DataGrid + No Results Overlay -->
+        <Grid>
+            <DataGrid ItemsSource="{Binding SearchResults}"
+                      SelectedItem="{Binding SelectedResult}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserSortColumns="True"
+                      CanUserResizeColumns="True"
+                      GridLinesVisibility="Horizontal"
+                      BorderThickness="1"
+                      BorderBrush="{DynamicResource AppDivider}"
+                      CornerRadius="6"
+                      HeadersVisibility="Column"
+                      SelectionMode="Single"
+                      FontSize="14"
+                      x:Name="ResultsGrid">
+
+                <DataGrid.Styles>
+                    <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+                        <Setter Property="Fill" Value="#007AFF"/>
+                        <Setter Property="Opacity" Value="1"/>
+                    </Style>
+                    <Style Selector="DataGridRow:selected /template/ Rectangle#InvalidVisualElement">
+                        <Setter Property="Fill" Value="#007AFF"/>
+                    </Style>
+                    <Style Selector="DataGridRow:selected DataGridCell TextBlock">
+                        <Setter Property="Foreground" Value="White"/>
+                    </Style>
+                    <Style Selector="DataGridRow:selected DataGridCell SelectableTextBlock">
+                        <Setter Property="Foreground" Value="White"/>
+                    </Style>
+                </DataGrid.Styles>
+
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Open File" Click="OpenFile_Click"/>
+                        <MenuItem Header="Open Containing Folder" Click="OpenFolder_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Copy Path" Click="CopyPath_Click"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding FileName}" Width="280"/>
+                    <DataGridTextColumn Header="Path" Binding="{Binding DirectoryPath}" Width="*"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeDisplay}" Width="100"/>
+                    <DataGridTextColumn Header="Date Modified"
+                                        Binding="{Binding LastModifiedDisplay}"
+                                        Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- No Results Message -->
+            <TextBlock Text="No files found matching your search."
+                       IsVisible="{Binding HasNoResults}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="18"
+                       Foreground="{DynamicResource AppForegroundSecondary}"
+                       FontWeight="SemiBold"/>
+        </Grid>
+    </DockPanel>
+</UserControl>

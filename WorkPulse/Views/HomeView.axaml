@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WorkPulse.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="WorkPulse.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+
+    <Border Background="{DynamicResource AppBackground}">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="32">
+            <!-- App Title -->
+            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="WorkPulse"
+                           FontSize="32" FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppForeground}"/>
+                <TextBlock Text="Select a module to get started"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppForegroundSecondary}"/>
+                <TextBlock Text="{Binding VersionDisplay}"
+                           FontSize="12"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppForegroundSecondary}"
+                           Opacity="0.6"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Navigation Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="24" HorizontalAlignment="Center">
+                <!-- Attendance Dashboard -->
+                <Button Command="{Binding GoToAttendanceCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Manage daily attendance, overtime, and monthly reports">
+                    <Border Background="#0078D4" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="Attendance" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Track login, logout, overtime&#x0a;and monthly reports"
+                                       FontSize="12" Foreground="#D0E8FF"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Contact Book -->
+                <Button Command="{Binding GoToContactBookCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Manage team contacts, departments, and email directory">
+                    <Border Background="#107C10" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="Contact" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Book" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Search contacts, departments&#x0a;and email directory"
+                                       FontSize="12" Foreground="#C8E6C8"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- File Search -->
+                <Button Command="{Binding GoToFileSearchCommand}"
+                        Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Search files across the entire filesystem instantly">
+                    <Border Background="#8B5CF6" CornerRadius="12" Padding="32,40"
+                            Width="260" MinHeight="180">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <TextBlock Text="File" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Search" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Find any file instantly&#x0a;across the filesystem"
+                                       FontSize="12" Foreground="#DDD6FE"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+            </StackPanel>
+
+            <!-- Settings Gear Button -->
+            <Button Command="{Binding GoToSettingsCommand}"
+                    Padding="0" Background="Transparent" BorderThickness="0"
+                    HorizontalAlignment="Center"
+                    ToolTip.Tip="Application Settings">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <PathIcon Data="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"
+                              Width="20" Height="20"
+                              Foreground="{DynamicResource AppForegroundSecondary}"/>
+                    <TextBlock Text="Settings" FontSize="14"
+                               Foreground="{DynamicResource AppForegroundSecondary}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Border>
+</UserControl>

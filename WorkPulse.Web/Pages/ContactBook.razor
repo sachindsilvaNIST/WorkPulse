@@ -1,0 +1,212 @@
+@page "/contacts"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using WorkPulse.Models
+@inject WorkPulse.Web.Services.ApiContactDataService ContactService
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+    <h4 class="text-xl font-semibold text-app-fg">Contact Book</h4>
+    <div class="flex flex-col sm:flex-row gap-2">
+        <input type="text" class="nist-input w-full sm:w-64" placeholder="Search contacts..."
+               @bind="_searchText" @bind:event="oninput" @bind:after="ApplyFilter" />
+        <div class="flex gap-2">
+            <button class="btn-primary flex-1 sm:flex-none justify-center" @onclick="AddContact">+ Add</button>
+            <button class="btn-outline flex-1 sm:flex-none justify-center" @onclick="ExportContacts" disabled="@_exporting">Export</button>
+        </div>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-12">
+        <div class="spinner-primary"></div>
+    </div>
+}
+else
+{
+    <div class="overflow-x-auto">
+        <table class="nist-table">
+            <thead>
+                <tr>
+                    <th>Affiliation</th>
+                    <th>Family Name</th>
+                    <th>Given Name</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th>Intercom</th>
+                    <th>Contact Number</th>
+                    <th>Notes</th>
+                    <th class="w-24">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!_filtered.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-app-fg-secondary py-8">No contacts found.</td></tr>
+                }
+                @foreach (var c in _filtered)
+                {
+                    <tr>
+                        <td>@c.Affiliation</td>
+                        <td>@c.FamilyName</td>
+                        <td>@c.GivenName</td>
+                        <td>@c.Department</td>
+                        <td>@c.Email</td>
+                        <td>@c.Intercom</td>
+                        <td>@c.ContactNumber</td>
+                        <td>@c.Notes</td>
+                        <td class="flex gap-1">
+                            <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => EditContact(c)">Edit</button>
+                            <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => DeleteContact(c)">Del</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <small class="text-app-fg-secondary mt-2 block">@_filtered.Count of @_contacts.Count contacts</small>
+}
+
+@if (_showModal)
+{
+    <ContactEntryModal Contact="@_editingContact" IsEdit="@_isEdit"
+                       OnSave="HandleSave" OnCancel="CloseModal" />
+}
+
+@if (_showDeleteConfirm)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-md">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold text-app-fg">Delete Contact</h5>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete <strong>@_deletingContact?.FullName</strong>?
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="() => _showDeleteConfirm = false">Cancel</button>
+                <button class="btn-danger" @onclick="ConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@implements IDisposable
+
+@code {
+    private List<ContactRecord> _contacts = new();
+    private List<ContactRecord> _filtered = new();
+    private string _searchText = "";
+    private bool _loading = true;
+    private bool _exporting;
+
+    private bool _showModal;
+    private bool _isEdit;
+    private ContactRecord? _editingContact;
+
+    private bool _showDeleteConfirm;
+    private ContactRecord? _deletingContact;
+    private System.Threading.Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadContacts();
+
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                var data = await ContactService.LoadContactsAsync();
+                _contacts = data.Contacts;
+                ApplyFilter();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+
+    private async Task LoadContacts()
+    {
+        _loading = true;
+        var data = await ContactService.LoadContactsAsync();
+        _contacts = data.Contacts;
+        ApplyFilter();
+        _loading = false;
+    }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            _filtered = _contacts.ToList();
+        else
+        {
+            var q = _searchText.ToLowerInvariant();
+            _filtered = _contacts.Where(c => c.SearchText.Contains(q)).ToList();
+        }
+    }
+
+    private void AddContact()
+    {
+        _editingContact = null;
+        _isEdit = false;
+        _showModal = true;
+    }
+
+    private void EditContact(ContactRecord c)
+    {
+        _editingContact = c;
+        _isEdit = true;
+        _showModal = true;
+    }
+
+    private async Task HandleSave(ContactRecord contact)
+    {
+        if (_isEdit && _editingContact != null)
+        {
+            var idx = _contacts.FindIndex(c => c.Id == _editingContact.Id);
+            if (idx >= 0)
+            {
+                contact.Id = _editingContact.Id;
+                _contacts[idx] = contact;
+            }
+        }
+        else
+        {
+            _contacts.Add(contact);
+        }
+
+        await ContactService.SaveContactsAsync(new ContactBookData { Contacts = _contacts });
+        ApplyFilter();
+        _showModal = false;
+    }
+
+    private void CloseModal() => _showModal = false;
+
+    private void DeleteContact(ContactRecord c)
+    {
+        _deletingContact = c;
+        _showDeleteConfirm = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deletingContact != null)
+        {
+            _contacts.RemoveAll(c => c.Id == _deletingContact.Id);
+            await ContactService.SaveContactsAsync(new ContactBookData { Contacts = _contacts });
+            ApplyFilter();
+        }
+        _showDeleteConfirm = false;
+    }
+
+    private Task ExportContacts()
+    {
+        _exporting = true;
+        // TODO: call Excel export API endpoint and trigger download
+        _exporting = false;
+        return Task.CompletedTask;
+    }
+}

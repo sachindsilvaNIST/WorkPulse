@@ -5,7 +5,7 @@
 **/.vscode/
 **/.idea/
 **/node_modules/
-NistWorkspace/
+WorkPulse/
 *.user
 *.suo
 .git

@@ -8,23 +8,23 @@ RUN apt-get update && apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy project files first for layer caching
-COPY NistAttendance.Shared/NistAttendance.Shared.csproj NistAttendance.Shared/
-COPY NistAttendance.Api/NistAttendance.Api.csproj NistAttendance.Api/
-COPY NistAttendance.Web/NistAttendance.Web.csproj NistAttendance.Web/
+COPY WorkPulse.Shared/WorkPulse.Shared.csproj WorkPulse.Shared/
+COPY WorkPulse.Api/WorkPulse.Api.csproj WorkPulse.Api/
+COPY WorkPulse.Web/WorkPulse.Web.csproj WorkPulse.Web/
 
 # Install npm dependencies for Tailwind
-COPY NistAttendance.Web/package.json NistAttendance.Web/package-lock.json* NistAttendance.Web/
-RUN cd NistAttendance.Web && npm install
+COPY WorkPulse.Web/package.json WorkPulse.Web/package-lock.json* WorkPulse.Web/
+RUN cd WorkPulse.Web && npm install
 
-RUN dotnet restore NistAttendance.Api/NistAttendance.Api.csproj
+RUN dotnet restore WorkPulse.Api/WorkPulse.Api.csproj
 
 # Copy all source
-COPY NistAttendance.Shared/ NistAttendance.Shared/
-COPY NistAttendance.Api/ NistAttendance.Api/
-COPY NistAttendance.Web/ NistAttendance.Web/
+COPY WorkPulse.Shared/ WorkPulse.Shared/
+COPY WorkPulse.Api/ WorkPulse.Api/
+COPY WorkPulse.Web/ WorkPulse.Web/
 
 # Publish API (includes Blazor WASM via ProjectReference, MSBuild target runs Tailwind)
-RUN dotnet publish NistAttendance.Api/NistAttendance.Api.csproj \
+RUN dotnet publish WorkPulse.Api/WorkPulse.Api.csproj \
     -c Release -o /app/api
 
 # Runtime image
@@ -36,4 +36,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "NistAttendance.Api.dll"]
+ENTRYPOINT ["dotnet", "WorkPulse.Api.dll"]

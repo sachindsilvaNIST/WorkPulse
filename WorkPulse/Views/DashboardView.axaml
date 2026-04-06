@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WorkPulse.ViewModels"
+             xmlns:conv="using:WorkPulse.Converters"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+             x:Class="WorkPulse.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <UserControl.Resources>
+        <conv:OvertimeFlagToBackgroundConverter x:Key="OtBgConverter"/>
+        <conv:OvertimeFlagToForegroundConverter x:Key="OtFgConverter"/>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Month Navigation + Edit Mode Indicator + Save -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
+            <!-- Month Navigation -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Content="&#9664;" Command="{Binding NavigateMonthCommand}" CommandParameter="prev"
+                        FontSize="16" Padding="8,4" ToolTip.Tip="Previous Month"/>
+                <TextBlock Text="{Binding MonthYearDisplay}" FontSize="20" FontWeight="Bold"
+                           VerticalAlignment="Center" MinWidth="200" TextAlignment="Center"/>
+                <Button Content="&#9654;" Command="{Binding NavigateMonthCommand}" CommandParameter="next"
+                        FontSize="16" Padding="8,4" ToolTip.Tip="Next Month"/>
+            </StackPanel>
+
+            <!-- Edit Mode Indicator + Save Button -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <!-- Edit Mode Badge -->
+                <Border IsVisible="{Binding IsEditMode}"
+                        Padding="12,4" CornerRadius="4">
+                    <Border.Background>
+                        <DynamicResourceExtension ResourceKey="AppInfoPanel"/>
+                    </Border.Background>
+                    <TextBlock Text="EDIT MODE" FontWeight="Bold" Foreground="#FF8C00" FontSize="13"/>
+                </Border>
+
+                <!-- Save Button (visible in edit mode) -->
+                <Button Classes="btn-green" Content="Save" Command="{Binding SaveAllChangesCommand}"
+                        IsVisible="{Binding IsEditMode}"
+                        Padding="16,6" FontWeight="Bold"
+                        Background="#107C10" Foreground="White"
+                        ToolTip.Tip="Save all changes to disk"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Search Bar -->
+        <Border DockPanel.Dock="Top" Padding="0,0,0,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0"
+                         Text="{Binding SearchText}"
+                         Watermark="Search by date, day, status, holiday..."
+                         FontSize="14"
+                         Padding="12,8"
+                         CornerRadius="6"
+                         BorderBrush="{DynamicResource AppDivider}"
+                         Margin="0,0,8,0"/>
+                <Button Grid.Column="1"
+                        Command="{Binding ClearSearchCommand}"
+                        Padding="8,6"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Clear search">
+                    <PathIcon Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                              Width="16" Height="16"
+                              Foreground="{DynamicResource AppForegroundSecondary}"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Summary Panel -->
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource AppBackgroundAlt}"
+                Padding="16" CornerRadius="6" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="48">
+                <StackPanel>
+                    <TextBlock Text="Work Days" FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+                    <TextBlock Text="{Binding TotalWorkDays}" FontSize="24" FontWeight="Bold" Foreground="#0078D4"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Overtime Count" FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+                    <TextBlock Text="{Binding OvertimeCount}" FontSize="24" FontWeight="Bold" Foreground="#FF8C00"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Total Overtime" FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+                    <TextBlock Text="{Binding TotalOvertimeDuration}" FontSize="24" FontWeight="Bold" Foreground="#D13438"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Attendance DataGrid + No Results Overlay -->
+        <Grid>
+        <DataGrid x:Name="AttendanceGrid"
+                  ItemsSource="{Binding FilteredRecords}"
+                  SelectedItem="{Binding SelectedRecord}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserSortColumns="False"
+                  CanUserResizeColumns="False"
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource AppDivider}"
+                  CornerRadius="6"
+                  HeadersVisibility="Column"
+                  SelectionMode="Single"
+                  FontSize="14"
+                  RowHeight="36">
+            <DataGrid.Styles>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Style>
+                <Style Selector="DataGridRow:selected /template/ Rectangle#InvalidVisualElement">
+                    <Setter Property="Fill" Value="#007AFF"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell TextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+                <Style Selector="DataGridRow:selected DataGridCell SelectableTextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+            </DataGrid.Styles>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Day" Binding="{Binding DayAbbreviation}" Width="70"
+                                    FontWeight="SemiBold" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120"
+                                    IsReadOnly="True"/>
+                <DataGridTextColumn Header="Login" Binding="{Binding LoginDisplay}" Width="120"/>
+                <DataGridTextColumn Header="Logout" Binding="{Binding LogoutDisplay}" Width="110"/>
+                <DataGridTextColumn Header="Overtime Hours" Binding="{Binding OvertimeHoursDisplay}" Width="145"/>
+                <DataGridTextColumn Header="Overtime Minutes" Binding="{Binding OvertimeMinutesDisplay}" Width="145"/>
+                <DataGridTemplateColumn Header="Overtime" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Background="{Binding OvertimeFlag, Converter={StaticResource OtBgConverter}}"
+                                    CornerRadius="3" Margin="2,2" Padding="8,0"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <TextBlock Text="{Binding OvertimeFlag}"
+                                           Foreground="{Binding OvertimeFlag, Converter={StaticResource OtFgConverter}}"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                                           FontWeight="Bold"/>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- No Search Results Message -->
+        <TextBlock Text="No records matching your search."
+                   IsVisible="{Binding HasNoSearchResults}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="18"
+                   Foreground="{DynamicResource AppForegroundSecondary}"
+                   FontWeight="SemiBold"/>
+        </Grid>
+    </DockPanel>
+</UserControl>
