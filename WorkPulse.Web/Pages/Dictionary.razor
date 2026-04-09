@@ -1,6 +1,7 @@
 @page "/dictionary"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject WorkPulse.Web.Services.ApiDictionaryService DictService
+@inject IJSRuntime JS
 
 <!-- Header -->
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
@@ -25,6 +26,15 @@
         {
             <option value="@label.Id">@label.Name (@label.EntryCount)</option>
         }
+    </select>
+
+    <select class="nist-input sm:w-36" @bind="_selectedJlpt" @bind:after="LoadEntries">
+        <option value="">All JLPT</option>
+        <option value="N5">N5</option>
+        <option value="N4">N4</option>
+        <option value="N3">N3</option>
+        <option value="N2">N2</option>
+        <option value="N1">N1</option>
     </select>
 </div>
 
@@ -69,7 +79,17 @@ else
                 @foreach (var entry in _entries)
                 {
                     <tr class="cursor-pointer hover:bg-blue-50/50 transition-colors" @onclick="() => ShowDetail(entry)">
-                        <td class="text-lg font-medium">@entry.Japanese</td>
+                        <td class="text-lg font-medium">
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <span>@entry.Japanese</span>
+                                <button type="button" class="text-app-fg-secondary hover:text-nist-primary text-base" title="Play pronunciation"
+                                        @onclick:stopPropagation="true" @onclick="() => Speak(entry.Japanese)">🔊</button>
+                                @if (!string.IsNullOrEmpty(entry.JlptLevel))
+                                {
+                                    <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded text-white" style="background-color: @JlptColor(entry.JlptLevel)">@entry.JlptLevel</span>
+                                }
+                            </div>
+                        </td>
                         <td class="text-app-fg-secondary">@entry.Reading</td>
                         <td>
                             <div>@entry.Meaning</div>
@@ -106,7 +126,15 @@ else
                 <div class="nist-card-body">
                     <div class="flex justify-between items-start">
                         <div class="flex-1 min-w-0">
-                            <div class="text-xl font-medium text-app-fg">@entry.Japanese</div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <div class="text-xl font-medium text-app-fg">@entry.Japanese</div>
+                                <button type="button" class="text-app-fg-secondary hover:text-nist-primary text-lg" title="Play pronunciation"
+                                        @onclick:stopPropagation="true" @onclick="() => Speak(entry.Japanese)">🔊</button>
+                                @if (!string.IsNullOrEmpty(entry.JlptLevel))
+                                {
+                                    <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded text-white" style="background-color: @JlptColor(entry.JlptLevel)">@entry.JlptLevel</span>
+                                }
+                            </div>
                             @if (!string.IsNullOrEmpty(entry.Reading))
                             {
                                 <div class="text-sm text-app-fg-secondary">@entry.Reading</div>
@@ -137,7 +165,15 @@ else
         <div class="modal-panel max-w-lg" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <div>
-                    <h5 class="text-2xl font-bold text-app-fg">@_detailEntry.Japanese</h5>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h5 class="text-2xl font-bold text-app-fg">@_detailEntry.Japanese</h5>
+                        <button type="button" class="text-app-fg-secondary hover:text-nist-primary text-xl" title="Play pronunciation"
+                                @onclick="() => Speak(_detailEntry!.Japanese)">🔊</button>
+                        @if (!string.IsNullOrEmpty(_detailEntry.JlptLevel))
+                        {
+                            <span class="inline-block px-2 py-0.5 text-xs font-bold rounded text-white" style="background-color: @JlptColor(_detailEntry.JlptLevel)">@_detailEntry.JlptLevel</span>
+                        }
+                    </div>
                     @if (!string.IsNullOrEmpty(_detailEntry.Reading))
                     {
                         <p class="text-app-fg-secondary mt-0.5">@_detailEntry.Reading</p>
@@ -159,7 +195,11 @@ else
                         <div class="text-xs font-semibold text-app-fg-secondary uppercase tracking-wide mb-2">Examples</div>
                         @if (!string.IsNullOrEmpty(_detailEntry.ExampleJp))
                         {
-                            <div class="text-app-fg">@_detailEntry.ExampleJp</div>
+                            <div class="flex items-start gap-2">
+                                <div class="text-app-fg flex-1">@_detailEntry.ExampleJp</div>
+                                <button type="button" class="text-app-fg-secondary hover:text-nist-primary" title="Play example"
+                                        @onclick="() => Speak(_detailEntry!.ExampleJp!)">🔊</button>
+                            </div>
                         }
                         @if (!string.IsNullOrEmpty(_detailEntry.ExampleEn))
                         {
@@ -250,6 +290,7 @@ else
     private bool _loading = true;
     private string _searchText = "";
     private int _selectedLabelId;
+    private string _selectedJlpt = "";
 
     private bool _showEntryModal;
     private bool _isEdit;
@@ -274,9 +315,20 @@ else
         _loading = true;
         _entries = await DictService.GetEntriesAsync(
             string.IsNullOrWhiteSpace(_searchText) ? null : _searchText,
-            _selectedLabelId > 0 ? _selectedLabelId : null);
+            _selectedLabelId > 0 ? _selectedLabelId : null,
+            string.IsNullOrWhiteSpace(_selectedJlpt) ? null : _selectedJlpt);
         _loading = false;
     }
+
+    private static string JlptColor(string? level) => level switch
+    {
+        "N5" => "#10B981",
+        "N4" => "#84CC16",
+        "N3" => "#EAB308",
+        "N2" => "#F97316",
+        "N1" => "#EF4444",
+        _ => "#6B7280"
+    };
 
     private async Task LoadLabels()
     {
@@ -337,6 +389,12 @@ else
         _showLabelManager = false;
         await LoadLabels();
         await LoadEntries();
+    }
+
+    private async Task Speak(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        await JS.InvokeVoidAsync("speakText", text, "ja-JP");
     }
 
     private static string SanitizeHtml(string html)

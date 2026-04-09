@@ -22,6 +22,17 @@
                     <input type="text" class="nist-input" @bind="_meaning" placeholder="e.g., to eat" />
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">JLPT Level</label>
+                    <select class="nist-input" @bind="_jlptLevel">
+                        <option value="">— None —</option>
+                        <option value="N5">N5 (Beginner)</option>
+                        <option value="N4">N4 (Elementary)</option>
+                        <option value="N3">N3 (Intermediate)</option>
+                        <option value="N2">N2 (Upper Int.)</option>
+                        <option value="N1">N1 (Advanced)</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Example (Japanese)</label>
                     <input type="text" class="nist-input" @bind="_exampleJp" placeholder="e.g., 毎日ご飯を食べます。" />
                 </div>
@@ -101,6 +112,7 @@
     private string _exampleJp = "";
     private string _exampleEn = "";
     private string _notes = "";
+    private string _jlptLevel = "";
     private HashSet<int> _selectedLabelIds = new();
     private string? _error;
 
@@ -114,6 +126,7 @@
             _exampleJp = Entry.ExampleJp ?? "";
             _exampleEn = Entry.ExampleEn ?? "";
             _notes = Entry.Notes ?? "";
+            _jlptLevel = Entry.JlptLevel ?? "";
             _selectedLabelIds = new HashSet<int>(Entry.Labels.Select(l => l.Id));
         }
         else
@@ -124,6 +137,7 @@
             _exampleJp = "";
             _exampleEn = "";
             _notes = "";
+            _jlptLevel = "";
             _selectedLabelIds = new();
         }
     }
@@ -186,6 +200,7 @@
             ExampleJp = string.IsNullOrWhiteSpace(_exampleJp) ? null : _exampleJp.Trim(),
             ExampleEn = string.IsNullOrWhiteSpace(_exampleEn) ? null : _exampleEn.Trim(),
             Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+            JlptLevel = string.IsNullOrWhiteSpace(_jlptLevel) ? null : _jlptLevel,
             LabelIds = _selectedLabelIds.ToList()
         };
 

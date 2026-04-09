@@ -10,6 +10,7 @@ public class DictionaryEntryEntity
     public string? ExampleJp { get; set; }
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
+    public string? JlptLevel { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
 

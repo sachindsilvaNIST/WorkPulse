@@ -15,7 +15,7 @@ public class DictionaryController : ApiControllerBase
     // ===== ENTRIES =====
 
     [HttpGet("entries")]
-    public async Task<ActionResult<List<DictEntryDto>>> GetEntries([FromQuery] string? search, [FromQuery] int? labelId)
+    public async Task<ActionResult<List<DictEntryDto>>> GetEntries([FromQuery] string? search, [FromQuery] int? labelId, [FromQuery] string? jlptLevel)
     {
         var query = _db.DictionaryEntries
             .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
@@ -34,6 +34,11 @@ public class DictionaryController : ApiControllerBase
         if (labelId.HasValue)
         {
             query = query.Where(e => e.EntryLabels.Any(el => el.LabelId == labelId.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(jlptLevel))
+        {
+            query = query.Where(e => e.JlptLevel == jlptLevel);
         }
 
         var entries = await query
@@ -65,7 +70,8 @@ public class DictionaryController : ApiControllerBase
             Meaning = dto.Meaning,
             ExampleJp = dto.ExampleJp,
             ExampleEn = dto.ExampleEn,
-            Notes = dto.Notes
+            Notes = dto.Notes,
+            JlptLevel = dto.JlptLevel
         };
 
         _db.DictionaryEntries.Add(entry);
@@ -108,6 +114,7 @@ public class DictionaryController : ApiControllerBase
         entry.ExampleJp = dto.ExampleJp;
         entry.ExampleEn = dto.ExampleEn;
         entry.Notes = dto.Notes;
+        entry.JlptLevel = dto.JlptLevel;
         entry.LastModifiedUtc = DateTime.UtcNow;
 
         // Update labels
@@ -221,6 +228,7 @@ public class DictionaryController : ApiControllerBase
         ExampleJp = e.ExampleJp,
         ExampleEn = e.ExampleEn,
         Notes = e.Notes,
+        JlptLevel = e.JlptLevel,
         CreatedUtc = e.CreatedUtc,
         LastModifiedUtc = e.LastModifiedUtc,
         Labels = e.EntryLabels.Select(el => new DictLabelDto
@@ -243,6 +251,7 @@ public class DictEntryDto
     public string? ExampleJp { get; set; }
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
+    public string? JlptLevel { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime LastModifiedUtc { get; set; }
     public List<DictLabelDto> Labels { get; set; } = new();
@@ -256,6 +265,7 @@ public class DictEntryCreateDto
     public string? ExampleJp { get; set; }
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
+    public string? JlptLevel { get; set; }
     public List<int>? LabelIds { get; set; }
 }
 

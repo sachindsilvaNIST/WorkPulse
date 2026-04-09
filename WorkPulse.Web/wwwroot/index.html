@@ -77,6 +77,23 @@
             if (!el) return [0, 0];
             return [el.selectionStart, el.selectionEnd];
         }
+
+        function speakText(text, lang) {
+            if (!('speechSynthesis' in window) || !text) return false;
+            try {
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(text);
+                u.lang = lang || 'ja-JP';
+                u.rate = 0.9;
+                u.pitch = 1.0;
+                var voices = window.speechSynthesis.getVoices();
+                var match = voices.find(function (v) { return v.lang === u.lang; })
+                         || voices.find(function (v) { return v.lang && v.lang.indexOf(u.lang.split('-')[0]) === 0; });
+                if (match) u.voice = match;
+                window.speechSynthesis.speak(u);
+                return true;
+            } catch (e) { return false; }
+        }
     </script>
 
     <script src="_framework/blazor.webassembly.js"></script>

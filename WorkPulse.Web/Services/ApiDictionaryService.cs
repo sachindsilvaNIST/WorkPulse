@@ -16,12 +16,13 @@ public class ApiDictionaryService
 
     // ===== ENTRIES =====
 
-    public async Task<List<DictEntryDto>> GetEntriesAsync(string? search = null, int? labelId = null)
+    public async Task<List<DictEntryDto>> GetEntriesAsync(string? search = null, int? labelId = null, string? jlptLevel = null)
     {
         var url = "api/dictionary/entries";
         var queryParams = new List<string>();
         if (!string.IsNullOrWhiteSpace(search)) queryParams.Add($"search={Uri.EscapeDataString(search)}");
         if (labelId.HasValue) queryParams.Add($"labelId={labelId}");
+        if (!string.IsNullOrWhiteSpace(jlptLevel)) queryParams.Add($"jlptLevel={Uri.EscapeDataString(jlptLevel)}");
         if (queryParams.Count > 0) url += "?" + string.Join("&", queryParams);
 
         return await _http.GetFromJsonAsync<List<DictEntryDto>>(url, _json) ?? new();
@@ -81,6 +82,7 @@ public class DictEntryDto
     public string? ExampleJp { get; set; }
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
+    public string? JlptLevel { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime LastModifiedUtc { get; set; }
     public List<DictLabelDto> Labels { get; set; } = new();
@@ -94,6 +96,7 @@ public class DictEntryCreateDto
     public string? ExampleJp { get; set; }
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
+    public string? JlptLevel { get; set; }
     public List<int>? LabelIds { get; set; }
 }
 
