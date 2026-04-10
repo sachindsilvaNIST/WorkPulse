@@ -57,5 +57,6 @@ builder.Services.AddScoped<IDataService>(sp => sp.GetRequiredService<ApiDataServ
 builder.Services.AddScoped<ApiContactDataService>();
 builder.Services.AddScoped<ApiSettingsService>();
 builder.Services.AddScoped<ApiDictionaryService>();
+builder.Services.AddScoped<FeatureService>();
 
 await builder.Build().RunAsync();

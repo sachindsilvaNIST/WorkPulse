@@ -164,14 +164,24 @@ using (var scope = app.Services.CreateScope())
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-    // Make the first user an admin if no admins exist
+    // Promote the designated owner email to Admin if they exist (idempotent).
+    // Falls back to "first user" if the owner email isn't registered yet.
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-    var admins = await userManager.GetUsersInRoleAsync("Admin");
-    if (admins.Count == 0)
+    const string ownerEmail = "sachinronson16@gmail.com";
+    var owner = await userManager.FindByEmailAsync(ownerEmail);
+    if (owner != null && !await userManager.IsInRoleAsync(owner, "Admin"))
     {
-        var firstUser = db.Users.OrderBy(u => u.Id).FirstOrDefault();
-        if (firstUser != null)
-            await userManager.AddToRoleAsync(firstUser, "Admin");
+        await userManager.AddToRoleAsync(owner, "Admin");
+    }
+    else if (owner == null)
+    {
+        var admins = await userManager.GetUsersInRoleAsync("Admin");
+        if (admins.Count == 0)
+        {
+            var firstUser = db.Users.OrderBy(u => u.Id).FirstOrDefault();
+            if (firstUser != null)
+                await userManager.AddToRoleAsync(firstUser, "Admin");
+        }
     }
 }
 

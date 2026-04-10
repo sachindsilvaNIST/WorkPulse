@@ -1,19 +1,223 @@
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ dotnet tool update --global dotnet-ef --version 8.*
-Since you just installed the .NET SDK, you will need to logout or restart your session before running the tool you installed.
-You can invoke the tool using the following command: dotnet-ef
-Tool 'dotnet-ef' (version '8.0.25') was successfully installed.
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ dotnet ef --version
-Could not execute because the specified command or file was not found.
-Possible reasons for this include:
-  * You misspelled a built-in dotnet command.
-  * You intended to execute a .NET program, but dotnet-ef does not exist.
-  * You intended to run a global tool, but a dotnet-prefixed executable with this name could not be found on the PATH.
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ export PATH="$PATH:$HOME/.dotnet/tools"
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ 
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ dotnet ef --version
-Entity Framework Core .NET Command-line Tools
-8.0.25
-sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ dotnet ef migrations add AddJlptLevelToDictionaryEntry --project WorkPulse.Api
+sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ dotnet ef database update --project WorkPulse.Api
 Build started...
 Build succeeded.
-Done. To undo this action, use 'ef migrations remove'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      PRAGMA journal_mode = 'wal';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "__EFMigrationsHistory" (
+          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+          "ProductVersion" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20402]
+      Applying migration '20260317022327_InitialCreate'.
+Applying migration '20260317022327_InitialCreate'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetRoles" (
+          "Id" text NOT NULL CONSTRAINT "PK_AspNetRoles" PRIMARY KEY,
+          "Name" character varying(256) NULL,
+          "NormalizedName" character varying(256) NULL,
+          "ConcurrencyStamp" text NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetUsers" (
+          "Id" text NOT NULL CONSTRAINT "PK_AspNetUsers" PRIMARY KEY,
+          "DisplayName" text NOT NULL,
+          "RefreshToken" text NULL,
+          "RefreshTokenExpiryUtc" timestamp with time zone NULL,
+          "UserName" character varying(256) NULL,
+          "NormalizedUserName" character varying(256) NULL,
+          "Email" character varying(256) NULL,
+          "NormalizedEmail" character varying(256) NULL,
+          "EmailConfirmed" boolean NOT NULL,
+          "PasswordHash" text NULL,
+          "SecurityStamp" text NULL,
+          "ConcurrencyStamp" text NULL,
+          "PhoneNumber" text NULL,
+          "PhoneNumberConfirmed" boolean NOT NULL,
+          "TwoFactorEnabled" boolean NOT NULL,
+          "LockoutEnd" timestamp with time zone NULL,
+          "LockoutEnabled" boolean NOT NULL,
+          "AccessFailedCount" integer NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetRoleClaims" (
+          "Id" integer NOT NULL CONSTRAINT "PK_AspNetRoleClaims" PRIMARY KEY,
+          "RoleId" text NOT NULL,
+          "ClaimType" text NULL,
+          "ClaimValue" text NULL,
+          CONSTRAINT "FK_AspNetRoleClaims_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetUserClaims" (
+          "Id" integer NOT NULL CONSTRAINT "PK_AspNetUserClaims" PRIMARY KEY,
+          "UserId" text NOT NULL,
+          "ClaimType" text NULL,
+          "ClaimValue" text NULL,
+          CONSTRAINT "FK_AspNetUserClaims_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetUserLogins" (
+          "LoginProvider" text NOT NULL,
+          "ProviderKey" text NOT NULL,
+          "ProviderDisplayName" text NULL,
+          "UserId" text NOT NULL,
+          CONSTRAINT "PK_AspNetUserLogins" PRIMARY KEY ("LoginProvider", "ProviderKey"),
+          CONSTRAINT "FK_AspNetUserLogins_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetUserRoles" (
+          "UserId" text NOT NULL,
+          "RoleId" text NOT NULL,
+          CONSTRAINT "PK_AspNetUserRoles" PRIMARY KEY ("UserId", "RoleId"),
+          CONSTRAINT "FK_AspNetUserRoles_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE,
+          CONSTRAINT "FK_AspNetUserRoles_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AspNetUserTokens" (
+          "UserId" text NOT NULL,
+          "LoginProvider" text NOT NULL,
+          "Name" text NOT NULL,
+          "Value" text NULL,
+          CONSTRAINT "PK_AspNetUserTokens" PRIMARY KEY ("UserId", "LoginProvider", "Name"),
+          CONSTRAINT "FK_AspNetUserTokens_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AttendanceMonths" (
+          "Id" integer NOT NULL CONSTRAINT "PK_AttendanceMonths" PRIMARY KEY,
+          "UserId" text NOT NULL,
+          "Year" integer NOT NULL,
+          "Month" integer NOT NULL,
+          "MonthLabel" text NOT NULL,
+          "Title" text NOT NULL,
+          "LastModifiedUtc" timestamp with time zone NOT NULL,
+          CONSTRAINT "FK_AttendanceMonths_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Contacts" (
+          "Id" text NOT NULL CONSTRAINT "PK_Contacts" PRIMARY KEY,
+          "UserId" text NOT NULL,
+          "Affiliation" text NOT NULL,
+          "FamilyName" text NOT NULL,
+          "GivenName" text NOT NULL,
+          "Department" text NOT NULL,
+          "Email" text NOT NULL,
+          "Intercom" text NOT NULL,
+          "ContactNumber" text NOT NULL,
+          "Notes" text NOT NULL,
+          "LastModifiedUtc" timestamp with time zone NOT NULL,
+          CONSTRAINT "FK_Contacts_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "UserSettings" (
+          "Id" integer NOT NULL CONSTRAINT "PK_UserSettings" PRIMARY KEY,
+          "UserId" text NOT NULL,
+          "StandardLoginTime" time without time zone NOT NULL,
+          "StandardLogoutTime" time without time zone NOT NULL,
+          "OvertimeBreakDeductionMinutes" integer NOT NULL,
+          "DefaultTitle" text NOT NULL,
+          "LastOpenedMonth" text NULL,
+          "ThemeVariant" text NOT NULL,
+          "FontSizePreset" text NOT NULL,
+          CONSTRAINT "FK_UserSettings_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "AttendanceRecords" (
+          "Id" integer NOT NULL CONSTRAINT "PK_AttendanceRecords" PRIMARY KEY,
+          "MonthId" integer NOT NULL,
+          "Date" date NOT NULL,
+          "DayType" text NOT NULL,
+          "HolidayName" text NULL,
+          "TripCategory" text NULL,
+          "TripRegion" text NULL,
+          "LoginTime" time without time zone NULL,
+          "LogoutTime" time without time zone NULL,
+          "OvertimeHours" integer NOT NULL,
+          "OvertimeMinutes" integer NOT NULL,
+          "IsOvertime" boolean NOT NULL,
+          "IsOvertimeDecided" boolean NOT NULL,
+          CONSTRAINT "FK_AttendanceRecords_AttendanceMonths_MonthId" FOREIGN KEY ("MonthId") REFERENCES "AttendanceMonths" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_AspNetRoleClaims_RoleId" ON "AspNetRoleClaims" ("RoleId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "RoleNameIndex" ON "AspNetRoles" ("NormalizedName");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_AspNetUserClaims_UserId" ON "AspNetUserClaims" ("UserId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_AspNetUserLogins_UserId" ON "AspNetUserLogins" ("UserId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_AspNetUserRoles_RoleId" ON "AspNetUserRoles" ("RoleId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "EmailIndex" ON "AspNetUsers" ("NormalizedEmail");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "UserNameIndex" ON "AspNetUsers" ("NormalizedUserName");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_AttendanceMonths_UserId_Year_Month" ON "AttendanceMonths" ("UserId", "Year", "Month");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_AttendanceRecords_MonthId_Date" ON "AttendanceRecords" ("MonthId", "Date");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_Contacts_UserId" ON "Contacts" ("UserId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_UserSettings_UserId" ON "UserSettings" ("UserId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+      VALUES ('20260317022327_InitialCreate', '8.0.25');
+info: Microsoft.EntityFrameworkCore.Migrations[20402]
+      Applying migration '20260409071332_AddJlptLevelToDictionaryEntry'.
+Applying migration '20260409071332_AddJlptLevelToDictionaryEntry'.
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "DictionaryEntries" ADD "JlptLevel" TEXT NULL;
+Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "DictionaryEntries" ADD "JlptLevel" TEXT NULL;
+Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 1: 'no such table: DictionaryEntries'.
+   at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+   at Microsoft.Data.Sqlite.SqliteCommand.PrepareAndEnumerateStatements()+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteCommand.GetStatements()+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader()
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQuery(RelationalCommandParameterObject parameterObject)
+   at Microsoft.EntityFrameworkCore.Migrations.MigrationCommand.ExecuteNonQuery(IRelationalConnection connection, IReadOnlyDictionary`2 parameterValues)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteNonQuery(IEnumerable`1 migrationCommands, IRelationalConnection connection)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.Migrate(String targetMigration)
+   at Microsoft.EntityFrameworkCore.Design.Internal.MigrationsOperations.UpdateDatabase(String targetMigration, String connectionString, String contextType)
+   at Microsoft.EntityFrameworkCore.Design.OperationExecutor.UpdateDatabaseImpl(String targetMigration, String connectionString, String contextType)
+   at Microsoft.EntityFrameworkCore.Design.OperationExecutor.UpdateDatabase.<>c__DisplayClass0_0.<.ctor>b__0()
+   at Microsoft.EntityFrameworkCore.Design.OperationExecutor.OperationBase.Execute(Action action)
+SQLite Error 1: 'no such table: DictionaryEntries'.
+sankyo@sankyo-FRONTIER:~/Sachin Files/01 NIST - AEM979/NIST Projects/2026/WorkPulse$ 

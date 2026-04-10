@@ -98,6 +98,10 @@ public class AuthController : ControllerBase
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 
+        // Per-user disabled features (admin-controlled). Admins are exempt: never disable for them.
+        if (!roles.Contains("Admin") && !string.IsNullOrWhiteSpace(user.DisabledFeaturesCsv))
+            claims.Add(new Claim("disabled_features", user.DisabledFeaturesCsv));
+
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"] ?? "WorkPulseApi",
             audience: _config["Jwt:Audience"] ?? "WorkPulseApp",

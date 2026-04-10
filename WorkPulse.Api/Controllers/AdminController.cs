@@ -54,12 +54,24 @@ public class AdminController : ControllerBase
         user.UserName = dto.Email;
         await _userManager.UpdateAsync(user);
 
-        // Update admin role
+        // Update admin role with self-demotion + last-admin protection
         var isAdmin = (await _userManager.GetRolesAsync(user)).Contains("Admin");
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (dto.IsAdmin && !isAdmin)
+        {
             await _userManager.AddToRoleAsync(user, "Admin");
+        }
         else if (!dto.IsAdmin && isAdmin)
+        {
+            if (user.Id == currentUserId)
+                return BadRequest(new { error = "You cannot remove your own admin role." });
+
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            if (admins.Count <= 1)
+                return BadRequest(new { error = "At least one admin must remain." });
+
             await _userManager.RemoveFromRoleAsync(user, "Admin");
+        }
 
         return Ok();
     }
@@ -85,6 +97,52 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync();
 
         await _userManager.DeleteAsync(user);
+        return Ok();
+    }
+
+    // ===== Per-user feature flags =====
+
+    /// <summary>Catalog of toggleable feature keys. Attendance/Settings/Home are core and not listed.</summary>
+    public static readonly string[] FeatureCatalog = new[]
+    {
+        "calendar",
+        "contacts",
+        "dictionary",
+        "notes",
+        "notifications"
+    };
+
+    [HttpGet("users/{id}/features")]
+    public async Task<ActionResult<UserFeaturesDto>> GetUserFeatures(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null) return NotFound();
+
+        var disabled = (user.DisabledFeaturesCsv ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+        return Ok(new UserFeaturesDto
+        {
+            Catalog = FeatureCatalog.ToList(),
+            Disabled = disabled
+        });
+    }
+
+    [HttpPut("users/{id}/features")]
+    public async Task<IActionResult> UpdateUserFeatures(string id, [FromBody] UserFeaturesUpdateDto dto)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null) return NotFound();
+
+        // Only persist keys that are part of the catalog (defensive against arbitrary input)
+        var sanitized = (dto.Disabled ?? new())
+            .Where(k => FeatureCatalog.Contains(k))
+            .Distinct()
+            .ToList();
+
+        user.DisabledFeaturesCsv = sanitized.Count == 0 ? null : string.Join(",", sanitized);
+        await _userManager.UpdateAsync(user);
         return Ok();
     }
 
@@ -123,4 +181,15 @@ public class AdminUserUpdateDto
 public class AdminPasswordResetDto
 {
     public string NewPassword { get; set; } = "";
+}
+
+public class UserFeaturesDto
+{
+    public List<string> Catalog { get; set; } = new();
+    public List<string> Disabled { get; set; } = new();
+}
+
+public class UserFeaturesUpdateDto
+{
+    public List<string> Disabled { get; set; } = new();
 }
