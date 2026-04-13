@@ -10,11 +10,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Affiliation</label>
-                    <input type="text" class="nist-input" @bind="_affiliation" placeholder="e.g., Company" />
+                    <AutocompleteInput @bind-Value="_affiliation" Suggestions="AffiliationSuggestions" Placeholder="e.g., Company" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Department</label>
-                    <input type="text" class="nist-input" @bind="_department" />
+                    <AutocompleteInput @bind-Value="_department" Suggestions="DepartmentSuggestions" Placeholder="e.g., Engineering" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Family Name *</label>
@@ -57,8 +57,17 @@
 @code {
     [Parameter] public ContactRecord? Contact { get; set; }
     [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public List<ContactRecord> ExistingContacts { get; set; } = new();
     [Parameter] public EventCallback<ContactRecord> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    private List<string> AffiliationSuggestions => ExistingContacts
+        .Select(c => c.Affiliation).Where(a => !string.IsNullOrWhiteSpace(a))
+        .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(a => a).ToList();
+
+    private List<string> DepartmentSuggestions => ExistingContacts
+        .Select(c => c.Department).Where(d => !string.IsNullOrWhiteSpace(d))
+        .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(d => d).ToList();
 
     private string _affiliation = "";
     private string _familyName = "";
@@ -70,8 +79,13 @@
     private string _notes = "";
     private string? _error;
 
+    private bool _initialized;
+
     protected override void OnParametersSet()
     {
+        if (_initialized) return;
+        _initialized = true;
+
         if (Contact != null)
         {
             _affiliation = Contact.Affiliation;

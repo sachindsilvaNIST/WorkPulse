@@ -1,0 +1,96 @@
+<div class="relative">
+    <input type="@InputType" class="nist-input w-full" placeholder="@Placeholder"
+           value="@Value" @oninput="OnInput" @onfocus="OnFocus" @onblur="OnBlur" @onkeydown="OnKeyDown" />
+
+    @if (_showSuggestions && _filtered.Any())
+    {
+        <div class="absolute z-20 left-0 right-0 mt-1 bg-app-bg border border-app-divider rounded-lg shadow-lg max-h-40 overflow-y-auto">
+            @for (var i = 0; i < _filtered.Count; i++)
+            {
+                var suggestion = _filtered[i];
+                var idx = i;
+                <button type="button"
+                        class="w-full text-left px-3 py-2 text-sm text-app-fg hover:bg-app-bg-alt transition-colors @(idx == _selectedIndex ? "bg-app-bg-alt" : "")"
+                        @onmousedown="() => Select(suggestion)"
+                        @onmousedown:preventDefault="true">
+                    @suggestion
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public List<string> Suggestions { get; set; } = new();
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public string InputType { get; set; } = "text";
+
+    private List<string> _filtered = new();
+    private bool _showSuggestions;
+    private int _selectedIndex = -1;
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        Value = val;
+        await ValueChanged.InvokeAsync(val);
+        FilterSuggestions(val);
+        _showSuggestions = true;
+    }
+
+    private void OnFocus()
+    {
+        FilterSuggestions(Value);
+        _showSuggestions = _filtered.Any();
+    }
+
+    private async Task OnBlur()
+    {
+        // Small delay to allow mousedown on suggestion to fire first
+        await Task.Delay(150);
+        _showSuggestions = false;
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (!_showSuggestions || !_filtered.Any()) return;
+
+        if (e.Key == "ArrowDown")
+            _selectedIndex = Math.Min(_selectedIndex + 1, _filtered.Count - 1);
+        else if (e.Key == "ArrowUp")
+            _selectedIndex = Math.Max(_selectedIndex - 1, 0);
+        else if (e.Key == "Enter" && _selectedIndex >= 0 && _selectedIndex < _filtered.Count)
+        {
+            await Select(_filtered[_selectedIndex]);
+        }
+        else if (e.Key == "Escape")
+            _showSuggestions = false;
+    }
+
+    private async Task Select(string value)
+    {
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        _showSuggestions = false;
+        _selectedIndex = -1;
+    }
+
+    private void FilterSuggestions(string input)
+    {
+        _selectedIndex = -1;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            _filtered = Suggestions.Take(8).ToList();
+        }
+        else
+        {
+            var q = input.ToLower();
+            _filtered = Suggestions
+                .Where(s => s.ToLower().Contains(q) && !s.Equals(input, StringComparison.OrdinalIgnoreCase))
+                .Take(8)
+                .ToList();
+        }
+    }
+}
