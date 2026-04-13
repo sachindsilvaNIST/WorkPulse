@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@inject WorkPulse.Web.Services.FeatureService Features
+@inject AuthenticationStateProvider AuthState
+@inject IJSRuntime JS
+
+@if (_isOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" @onclick="Close" @onkeydown="HandleKey">
+        <div class="fixed inset-0 bg-black/40"></div>
+        <div class="relative bg-app-bg border border-app-divider rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" @onclick:stopPropagation="true">
+            <!-- Search input -->
+            <div class="flex items-center gap-3 px-4 py-3 border-b border-app-divider">
+                <svg class="w-5 h-5 text-app-fg-secondary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input @ref="_inputRef" type="text" class="flex-1 bg-transparent text-app-fg outline-none text-base placeholder-app-fg-secondary"
+                       placeholder="Type a command or search..." @bind="_query" @bind:event="oninput" @bind:after="Filter" @onkeydown="HandleInputKey" />
+                <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-app-bg-alt border border-app-divider rounded text-app-fg-secondary">ESC</kbd>
+            </div>
+
+            <!-- Results -->
+            <div class="max-h-72 overflow-y-auto">
+                @if (!_filtered.Any())
+                {
+                    <div class="px-4 py-6 text-center text-app-fg-secondary text-sm">No matching commands</div>
+                }
+                else
+                {
+                    @for (var i = 0; i < _filtered.Count; i++)
+                    {
+                        var cmd = _filtered[i];
+                        var idx = i;
+                        <button class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-app-bg-alt transition-colors @(idx == _selectedIndex ? "bg-app-bg-alt" : "")"
+                                @onclick="() => Execute(cmd)">
+                            <span class="text-lg w-6 text-center">@cmd.Icon</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-app-fg">@cmd.Label</div>
+                                <div class="text-xs text-app-fg-secondary truncate">@cmd.Description</div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(cmd.Shortcut))
+                            {
+                                <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-app-bg-alt border border-app-divider rounded text-app-fg-secondary">@cmd.Shortcut</kbd>
+                            }
+                        </button>
+                    }
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="px-4 py-2 border-t border-app-divider flex items-center gap-4 text-[10px] text-app-fg-secondary">
+                <span>↑↓ navigate</span>
+                <span>↵ select</span>
+                <span>esc close</span>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isOpen;
+    private string _query = "";
+    private int _selectedIndex;
+    private ElementReference _inputRef;
+    private List<PaletteCommand> _allCommands = new();
+    private List<PaletteCommand> _filtered = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BuildCommands();
+    }
+
+    private async Task BuildCommands()
+    {
+        var disabled = await Features.GetDisabledAsync();
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var isAdmin = state.User.IsInRole("Admin");
+
+        _allCommands = new List<PaletteCommand>
+        {
+            new("Home", "Go to home page", "/", "⌂"),
+            new("Attendance", "Track daily attendance and overtime", "/dashboard", "📅"),
+        };
+
+        if (!disabled.Contains("calendar"))
+            _allCommands.Add(new("Calendar", "View calendar", "/calendar", "📆"));
+        if (!disabled.Contains("contacts"))
+            _allCommands.Add(new("Contacts", "Manage contact book", "/contacts", "👥"));
+        if (!disabled.Contains("dictionary"))
+            _allCommands.Add(new("JP Dictionary", "Search Japanese words", "/dictionary", "📖"));
+        if (!disabled.Contains("notes"))
+            _allCommands.Add(new("Markdown Editor", "Write and preview notes", "/markdown-editor", "✏"));
+        _allCommands.Add(new("Settings", "Configure preferences", "/settings", "⚙"));
+        if (isAdmin)
+            _allCommands.Add(new("Admin", "Manage users and features", "/admin", "🔧"));
+
+        _filtered = _allCommands.ToList();
+    }
+
+    public async Task Toggle()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            _query = "";
+            _selectedIndex = 0;
+            await BuildCommands();
+            _filtered = _allCommands.ToList();
+            await Task.Delay(50);
+            try { await _inputRef.FocusAsync(); } catch { }
+        }
+    }
+
+    private void Close() => _isOpen = false;
+
+    private void Filter()
+    {
+        if (string.IsNullOrWhiteSpace(_query))
+        {
+            _filtered = _allCommands.ToList();
+        }
+        else
+        {
+            var q = _query.ToLower();
+            _filtered = _allCommands.Where(c =>
+                c.Label.ToLower().Contains(q) ||
+                c.Description.ToLower().Contains(q))
+                .ToList();
+        }
+        _selectedIndex = 0;
+    }
+
+    private void HandleInputKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown")
+            _selectedIndex = Math.Min(_selectedIndex + 1, _filtered.Count - 1);
+        else if (e.Key == "ArrowUp")
+            _selectedIndex = Math.Max(_selectedIndex - 1, 0);
+        else if (e.Key == "Enter" && _filtered.Count > 0)
+            Execute(_filtered[_selectedIndex]);
+        else if (e.Key == "Escape")
+            Close();
+    }
+
+    private void HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Close();
+    }
+
+    private void Execute(PaletteCommand cmd)
+    {
+        _isOpen = false;
+        Nav.NavigateTo(cmd.Href);
+    }
+
+    private record PaletteCommand(string Label, string Description, string Href, string Icon, string? Shortcut = null);
+}

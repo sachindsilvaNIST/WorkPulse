@@ -36,11 +36,67 @@ public class AdminController : ControllerBase
                 Email = user.Email ?? "",
                 DisplayName = user.DisplayName,
                 IsAdmin = roles.Contains("Admin"),
-                CreatedAt = user.LockoutEnd?.UtcDateTime // Not ideal, but Identity doesn't track creation date
+                IsDisabled = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow
             });
         }
 
         return Ok(result);
+    }
+
+    [HttpPost("users/{id}/toggle-disable")]
+    public async Task<IActionResult> ToggleDisable(string id)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null) return NotFound();
+
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (user.Id == currentUserId)
+            return BadRequest(new { error = "You cannot disable your own account." });
+
+        var isDisabled = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
+
+        if (isDisabled)
+        {
+            // Re-enable
+            await _userManager.SetLockoutEndDateAsync(user, null);
+            await _userManager.ResetAccessFailedCountAsync(user);
+        }
+        else
+        {
+            // Disable: lockout until year 2100
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+        }
+
+        return Ok(new { isDisabled = !isDisabled });
+    }
+
+    [HttpPost("users")]
+    public async Task<ActionResult<AdminUserDto>> CreateUser([FromBody] AdminUserCreateDto dto)
+    {
+        var user = new AppUser
+        {
+            UserName = dto.Email,
+            Email = dto.Email,
+            DisplayName = dto.DisplayName
+        };
+
+        var result = await _userManager.CreateAsync(user, dto.Password);
+        if (!result.Succeeded)
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+
+        if (dto.IsAdmin)
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(new AdminUserDto
+        {
+            Id = user.Id,
+            Email = user.Email ?? "",
+            DisplayName = user.DisplayName,
+            IsAdmin = roles.Contains("Admin"),
+            IsDisabled = false
+        });
     }
 
     [HttpPut("users/{id}")]
@@ -168,7 +224,15 @@ public class AdminUserDto
     public string Email { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public bool IsAdmin { get; set; }
-    public DateTime? CreatedAt { get; set; }
+    public bool IsDisabled { get; set; }
+}
+
+public class AdminUserCreateDto
+{
+    public string Email { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Password { get; set; } = "";
+    public bool IsAdmin { get; set; }
 }
 
 public class AdminUserUpdateDto

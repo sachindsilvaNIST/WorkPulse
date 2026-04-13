@@ -58,5 +58,6 @@ builder.Services.AddScoped<ApiContactDataService>();
 builder.Services.AddScoped<ApiSettingsService>();
 builder.Services.AddScoped<ApiDictionaryService>();
 builder.Services.AddScoped<FeatureService>();
+builder.Services.AddScoped<ToastService>();
 
 await builder.Build().RunAsync();

@@ -2,13 +2,17 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Admin")]
 @inject HttpClient Http
+@inject WorkPulse.Web.Services.ToastService Toast
 
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <div>
         <h3 class="text-xl font-semibold text-app-fg">User Management</h3>
         <p class="text-sm text-app-fg-secondary mt-1">Manage registered user accounts</p>
     </div>
-    <span class="badge-info">@_users.Count accounts</span>
+    <div class="flex items-center gap-2">
+        <span class="badge-info">@_users.Count accounts</span>
+        <button class="btn-primary" @onclick="ShowCreateUser">+ Create User</button>
+    </div>
 </div>
 
 @if (_loading)
@@ -26,17 +30,18 @@ else
                     <th>Display Name</th>
                     <th>Email</th>
                     <th>Role</th>
-                    <th class="w-48">Actions</th>
+                    <th>Status</th>
+                    <th class="w-64">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @if (!_users.Any())
                 {
-                    <tr><td colspan="4" class="text-center text-app-fg-secondary py-8">No users found.</td></tr>
+                    <tr><td colspan="5" class="text-center text-app-fg-secondary py-8">No users found.</td></tr>
                 }
                 @foreach (var user in _users)
                 {
-                    <tr>
+                    <tr class="@(user.IsDisabled ? "opacity-50" : "")">
                         <td class="font-medium">@user.DisplayName</td>
                         <td>@user.Email</td>
                         <td>
@@ -50,9 +55,22 @@ else
                             }
                         </td>
                         <td>
-                            <div class="flex gap-1">
+                            @if (user.IsDisabled)
+                            {
+                                <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Disabled</span>
+                            }
+                            else
+                            {
+                                <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Active</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
                                 <button class="btn-info text-xs !px-2 !py-1" @onclick="() => EditUser(user)">Edit</button>
                                 <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => ShowFeatures(user)" disabled="@user.IsAdmin" title="@(user.IsAdmin ? "Admins always have all features" : "Manage feature access")">Features</button>
+                                <button class="@(user.IsDisabled ? "btn-green" : "btn-outline") text-xs !px-2 !py-1" @onclick="() => ToggleDisable(user)" disabled="@user.IsCurrentUser" title="@(user.IsDisabled ? "Re-enable account" : "Disable account")">
+                                    @(user.IsDisabled ? "Enable" : "Disable")
+                                </button>
                                 <button class="btn-warning text-xs !px-2 !py-1" @onclick="() => ShowResetPassword(user)">Reset PW</button>
                                 <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => ShowDeleteConfirm(user)" disabled="@user.IsCurrentUser">Delete</button>
                             </div>
@@ -61,6 +79,47 @@ else
                 }
             </tbody>
         </table>
+    </div>
+}
+
+@* Create User Modal *@
+@if (_showCreateModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-md">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold">Create User</h5>
+                <button class="text-app-fg-secondary hover:text-app-fg text-xl" @onclick="() => _showCreateModal = false">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-app-fg mb-1">Display Name *</label>
+                        <input type="text" class="nist-input" @bind="_createDisplayName" placeholder="e.g., Sachin Dsilva" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-app-fg mb-1">Email *</label>
+                        <input type="email" class="nist-input" @bind="_createEmail" placeholder="e.g., user@example.com" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-app-fg mb-1">Password * (min 6 chars)</label>
+                        <input type="password" class="nist-input" @bind="_createPassword" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="createIsAdmin" @bind="_createIsAdmin" class="w-4 h-4" />
+                        <label for="createIsAdmin" class="text-sm text-app-fg">Admin Role</label>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(_createError))
+                {
+                    <div class="mt-3 text-sm text-nist-danger">@_createError</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="() => _showCreateModal = false">Cancel</button>
+                <button class="btn-primary" @onclick="CreateUser">Create</button>
+            </div>
+        </div>
     </div>
 }
 
@@ -195,6 +254,13 @@ else
     private List<UserInfo> _users = new();
     private bool _loading = true;
 
+    private bool _showCreateModal;
+    private string _createDisplayName = "";
+    private string _createEmail = "";
+    private string _createPassword = "";
+    private bool _createIsAdmin;
+    private string? _createError;
+
     private bool _showEditModal;
     private bool _showResetModal;
     private bool _showDeleteModal;
@@ -231,11 +297,85 @@ else
                 Email = u.Email,
                 DisplayName = u.DisplayName,
                 IsAdmin = u.IsAdmin,
-                IsCurrentUser = false // We can't easily determine this client-side
+                IsDisabled = u.IsDisabled,
+                IsCurrentUser = false
             }).ToList() ?? new();
         }
         catch { }
         _loading = false;
+    }
+
+    private void ShowCreateUser()
+    {
+        _createDisplayName = "";
+        _createEmail = "";
+        _createPassword = "";
+        _createIsAdmin = false;
+        _createError = null;
+        _showCreateModal = true;
+    }
+
+    private async Task CreateUser()
+    {
+        _createError = null;
+        if (string.IsNullOrWhiteSpace(_createDisplayName) || string.IsNullOrWhiteSpace(_createEmail))
+        {
+            _createError = "Display name and email are required.";
+            return;
+        }
+        if (_createPassword.Length < 6)
+        {
+            _createError = "Password must be at least 6 characters.";
+            return;
+        }
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/admin/users", new
+            {
+                Email = _createEmail,
+                DisplayName = _createDisplayName,
+                Password = _createPassword,
+                IsAdmin = _createIsAdmin
+            });
+            if (response.IsSuccessStatusCode)
+            {
+                _showCreateModal = false;
+                Toast.Success($"User '{_createDisplayName}' created.");
+                await LoadUsers();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _createError = error.Contains("errors") ? "Failed: check password requirements (uppercase, number, special char)." : "Failed to create user.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _createError = ex.Message;
+        }
+    }
+
+    private async Task ToggleDisable(UserInfo user)
+    {
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/users/{user.Id}/toggle-disable", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var action = user.IsDisabled ? "enabled" : "disabled";
+                Toast.Success($"User '{user.DisplayName}' {action}.");
+                await LoadUsers();
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                Toast.Error(body.Contains("own account") ? "Cannot disable your own account." : "Failed to toggle user status.");
+            }
+        }
+        catch
+        {
+            Toast.Error("Failed to toggle user status.");
+        }
     }
 
     private void EditUser(UserInfo user)
@@ -262,11 +402,15 @@ else
             if (response.IsSuccessStatusCode)
             {
                 _showEditModal = false;
+                Toast.Success($"User '{_editDisplayName}' updated.");
                 await LoadUsers();
             }
             else
             {
-                _editError = "Failed to update user.";
+                var body = await response.Content.ReadAsStringAsync();
+                _editError = body.Contains("admin role") ? "Cannot remove your own admin role."
+                           : body.Contains("one admin") ? "At least one admin must remain."
+                           : "Failed to update user.";
             }
         }
         catch (Exception ex)
@@ -297,6 +441,7 @@ else
             if (response.IsSuccessStatusCode)
             {
                 _showResetModal = false;
+                Toast.Success($"Password reset for '{_targetUser.DisplayName}'.");
             }
             else
             {
@@ -342,9 +487,14 @@ else
             var response = await Http.PutAsJsonAsync($"api/admin/users/{_targetUser!.Id}/features",
                 new { Disabled = _disabledFeatures.ToList() });
             if (response.IsSuccessStatusCode)
+            {
                 _showFeaturesModal = false;
+                Toast.Success($"Features updated for '{_targetUser!.DisplayName}'.");
+            }
             else
+            {
                 _featuresError = "Failed to update features.";
+            }
         }
         catch (Exception ex)
         {
@@ -362,11 +512,23 @@ else
     {
         try
         {
-            await Http.DeleteAsync($"api/admin/users/{_targetUser!.Id}");
+            var name = _targetUser!.DisplayName;
+            var response = await Http.DeleteAsync($"api/admin/users/{_targetUser.Id}");
             _showDeleteModal = false;
-            await LoadUsers();
+            if (response.IsSuccessStatusCode)
+            {
+                Toast.Success($"User '{name}' deleted.");
+                await LoadUsers();
+            }
+            else
+            {
+                Toast.Error("Failed to delete user.");
+            }
         }
-        catch { }
+        catch
+        {
+            Toast.Error("Failed to delete user.");
+        }
     }
 
     private class UserInfo
@@ -375,6 +537,7 @@ else
         public string Email { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public bool IsAdmin { get; set; }
+        public bool IsDisabled { get; set; }
         public bool IsCurrentUser { get; set; }
     }
 
@@ -384,6 +547,7 @@ else
         public string Email { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public bool IsAdmin { get; set; }
+        public bool IsDisabled { get; set; }
     }
 
     private class UserFeaturesResponse

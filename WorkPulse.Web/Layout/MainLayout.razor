@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
 <div class="flex h-[100dvh] relative">
     <!-- Mobile overlay -->
@@ -27,6 +28,8 @@
         <main class="flex-1 overflow-auto p-4 sm:p-6 bg-app-bg-alt">
             @Body
         </main>
+        <WorkPulse.Web.Components.ToastContainer />
+        <WorkPulse.Web.Components.CommandPalette @ref="_palette" />
         <div class="px-4 py-2 bg-app-bg-alt border-t border-app-divider text-xs text-app-fg-secondary hidden sm:block">
             WorkPulse
         </div>
@@ -35,8 +38,34 @@
 
 @code {
     private bool _sidebarOpen;
+    private WorkPulse.Web.Components.CommandPalette? _palette;
+    private DotNetObjectReference<MainLayout>? _selfRef;
 
     private string SidebarClass => _sidebarOpen
         ? "fixed inset-y-0 left-0 z-40 w-56 transition-transform duration-200 md:relative md:translate-x-0"
         : "fixed inset-y-0 left-0 z-40 w-56 -translate-x-full transition-transform duration-200 md:relative md:translate-x-0";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerCommandPalette", _selfRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task TogglePalette()
+    {
+        if (_palette != null)
+        {
+            await _palette.Toggle();
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        _selfRef?.Dispose();
+    }
 }

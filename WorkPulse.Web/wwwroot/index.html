@@ -72,6 +72,16 @@
             return localStorage.getItem('nist-theme') || 'Light';
         }
 
+        // Global Ctrl+K / Cmd+K command palette trigger
+        window.registerCommandPalette = function(dotnetRef) {
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    dotnetRef.invokeMethodAsync('TogglePalette');
+                }
+            });
+        };
+
         function dictNotesGetSelection(id) {
             var el = document.getElementById(id);
             if (!el) return [0, 0];
