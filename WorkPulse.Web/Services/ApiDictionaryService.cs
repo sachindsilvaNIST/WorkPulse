@@ -47,6 +47,34 @@ public class ApiDictionaryService
         await _http.DeleteAsync($"api/dictionary/entries/{id}");
     }
 
+    // ===== SRS =====
+
+    public async Task<List<DictEntryDto>> GetSrsQueueAsync(int limit = 20)
+    {
+        return await _http.GetFromJsonAsync<List<DictEntryDto>>($"api/dictionary/srs/queue?limit={limit}", _json) ?? new();
+    }
+
+    public async Task<SrsStatsDto?> GetSrsStatsAsync()
+    {
+        try { return await _http.GetFromJsonAsync<SrsStatsDto>("api/dictionary/srs/stats", _json); }
+        catch { return null; }
+    }
+
+    public async Task<DictEntryDto?> ReviewEntryAsync(int id, int grade)
+    {
+        var response = await _http.PostAsJsonAsync($"api/dictionary/srs/review/{id}", new { Grade = grade }, _json);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<DictEntryDto>(_json);
+    }
+
+    public async Task<List<DictExampleDto>?> GenerateExamplesAsync(string japanese, string? reading, string meaning)
+    {
+        var response = await _http.PostAsJsonAsync("api/dictionary/generate-examples", new { Japanese = japanese, Reading = reading, Meaning = meaning }, _json);
+        if (!response.IsSuccessStatusCode) return null;
+        var body = await response.Content.ReadFromJsonAsync<GenerateExamplesResponse>(_json);
+        return body?.Examples;
+    }
+
     // ===== LABELS =====
 
     public async Task<List<DictLabelDto>> GetLabelsAsync()
@@ -85,7 +113,20 @@ public class DictEntryDto
     public string? JlptLevel { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime LastModifiedUtc { get; set; }
+    public int SrsRepetitions { get; set; }
+    public int SrsIntervalDays { get; set; }
+    public DateTime? SrsNextReviewUtc { get; set; }
+    public int SrsReviewCount { get; set; }
     public List<DictLabelDto> Labels { get; set; } = new();
+}
+
+public class SrsStatsDto
+{
+    public int Total { get; set; }
+    public int DueNow { get; set; }
+    public int New { get; set; }
+    public int Learning { get; set; }
+    public int Mature { get; set; }
 }
 
 public class DictEntryCreateDto
@@ -112,4 +153,15 @@ public class DictLabelCreateDto
 {
     public string Name { get; set; } = "";
     public string? Color { get; set; }
+}
+
+public class DictExampleDto
+{
+    public string Jp { get; set; } = "";
+    public string En { get; set; } = "";
+}
+
+public class GenerateExamplesResponse
+{
+    public List<DictExampleDto> Examples { get; set; } = new();
 }

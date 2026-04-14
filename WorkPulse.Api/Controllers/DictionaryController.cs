@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
+using WorkPulse.Api.Services;
 
 namespace WorkPulse.Api.Controllers;
 
@@ -9,8 +10,13 @@ namespace WorkPulse.Api.Controllers;
 public class DictionaryController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly AnthropicService _anthropic;
 
-    public DictionaryController(AppDbContext db) => _db = db;
+    public DictionaryController(AppDbContext db, AnthropicService anthropic)
+    {
+        _db = db;
+        _anthropic = anthropic;
+    }
 
     // ===== ENTRIES =====
 
@@ -153,6 +159,83 @@ public class DictionaryController : ApiControllerBase
         return Ok();
     }
 
+    // ===== SRS: Spaced Repetition =====
+
+    [HttpGet("srs/queue")]
+    public async Task<ActionResult<List<DictEntryDto>>> GetSrsQueue([FromQuery] int limit = 20)
+    {
+        var now = DateTime.UtcNow;
+        var entries = await _db.DictionaryEntries
+            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
+            .Where(e => e.UserId == UserId &&
+                        (e.SrsNextReviewUtc == null || e.SrsNextReviewUtc <= now))
+            .OrderBy(e => e.SrsNextReviewUtc == null ? 1 : 0)   // due cards first, new cards after
+            .ThenBy(e => e.SrsNextReviewUtc)
+            .Take(Math.Clamp(limit, 1, 100))
+            .ToListAsync();
+
+        return Ok(entries.Select(ToDto).ToList());
+    }
+
+    [HttpGet("srs/stats")]
+    public async Task<ActionResult<SrsStatsDto>> GetSrsStats()
+    {
+        var now = DateTime.UtcNow;
+        var userEntries = _db.DictionaryEntries.Where(e => e.UserId == UserId);
+
+        var total = await userEntries.CountAsync();
+        var dueNow = await userEntries.CountAsync(e => e.SrsNextReviewUtc == null || e.SrsNextReviewUtc <= now);
+        var newCards = await userEntries.CountAsync(e => e.SrsNextReviewUtc == null);
+        var learning = await userEntries.CountAsync(e => e.SrsRepetitions > 0 && e.SrsRepetitions < 3);
+        var mature = await userEntries.CountAsync(e => e.SrsRepetitions >= 3);
+
+        return Ok(new SrsStatsDto
+        {
+            Total = total,
+            DueNow = dueNow,
+            New = newCards,
+            Learning = learning,
+            Mature = mature
+        });
+    }
+
+    [HttpPost("srs/review/{id}")]
+    public async Task<ActionResult<DictEntryDto>> ReviewEntry(int id, [FromBody] SrsReviewDto dto)
+    {
+        var entry = await _db.DictionaryEntries
+            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
+            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
+
+        if (entry == null) return NotFound();
+        if (!Enum.IsDefined(typeof(ReviewGrade), dto.Grade))
+            return BadRequest(new { error = "Invalid grade (must be 1, 3, 4, or 5)." });
+
+        SrsScheduler.ApplyReview(entry, (ReviewGrade)dto.Grade);
+        await _db.SaveChangesAsync();
+        return Ok(ToDto(entry));
+    }
+
+    // ===== AI: Generate example sentences =====
+
+    [HttpPost("generate-examples")]
+    public async Task<ActionResult<GenerateExamplesResponseDto>> GenerateExamples([FromBody] GenerateExamplesRequestDto dto)
+    {
+        if (!_anthropic.IsConfigured)
+            return StatusCode(503, new { error = "AI features are not configured on the server." });
+
+        if (string.IsNullOrWhiteSpace(dto.Japanese) || string.IsNullOrWhiteSpace(dto.Meaning))
+            return BadRequest(new { error = "Japanese and Meaning are required." });
+
+        var examples = await _anthropic.GenerateExamplesAsync(dto.Japanese, dto.Reading, dto.Meaning);
+        if (examples == null || examples.Count == 0)
+            return StatusCode(502, new { error = "Failed to generate examples. Please try again." });
+
+        return Ok(new GenerateExamplesResponseDto
+        {
+            Examples = examples.Select(e => new DictExampleDto { Jp = e.Jp, En = e.En }).ToList()
+        });
+    }
+
     // ===== LABELS =====
 
     [HttpGet("labels")]
@@ -231,6 +314,10 @@ public class DictionaryController : ApiControllerBase
         JlptLevel = e.JlptLevel,
         CreatedUtc = e.CreatedUtc,
         LastModifiedUtc = e.LastModifiedUtc,
+        SrsRepetitions = e.SrsRepetitions,
+        SrsIntervalDays = e.SrsIntervalDays,
+        SrsNextReviewUtc = e.SrsNextReviewUtc,
+        SrsReviewCount = e.SrsReviewCount,
         Labels = e.EntryLabels.Select(el => new DictLabelDto
         {
             Id = el.Label.Id,
@@ -254,7 +341,26 @@ public class DictEntryDto
     public string? JlptLevel { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime LastModifiedUtc { get; set; }
+    public int SrsRepetitions { get; set; }
+    public int SrsIntervalDays { get; set; }
+    public DateTime? SrsNextReviewUtc { get; set; }
+    public int SrsReviewCount { get; set; }
     public List<DictLabelDto> Labels { get; set; } = new();
+}
+
+public class SrsReviewDto
+{
+    /// <summary>1 = Again, 3 = Hard, 4 = Good, 5 = Easy</summary>
+    public int Grade { get; set; }
+}
+
+public class SrsStatsDto
+{
+    public int Total { get; set; }
+    public int DueNow { get; set; }
+    public int New { get; set; }
+    public int Learning { get; set; }
+    public int Mature { get; set; }
 }
 
 public class DictEntryCreateDto
@@ -281,4 +387,22 @@ public class DictLabelCreateDto
 {
     public string Name { get; set; } = "";
     public string? Color { get; set; }
+}
+
+public class GenerateExamplesRequestDto
+{
+    public string Japanese { get; set; } = "";
+    public string? Reading { get; set; }
+    public string Meaning { get; set; } = "";
+}
+
+public class GenerateExamplesResponseDto
+{
+    public List<DictExampleDto> Examples { get; set; } = new();
+}
+
+public class DictExampleDto
+{
+    public string Jp { get; set; } = "";
+    public string En { get; set; } = "";
 }

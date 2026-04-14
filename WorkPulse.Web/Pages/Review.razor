@@ -1,0 +1,236 @@
+@page "/review"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject WorkPulse.Web.Services.ApiDictionaryService DictService
+@inject WorkPulse.Web.Services.ToastService Toast
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using WorkPulse.Web.Services
+
+<PageTitle>WorkPulse · Review</PageTitle>
+
+<div class="max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-semibold text-app-fg">Review</h3>
+        @if (_stats != null)
+        {
+            <div class="text-sm text-app-fg-secondary">
+                <span class="font-medium text-app-fg">@_done</span> reviewed
+                · <span class="font-medium text-app-fg">@_remaining</span> remaining
+            </div>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <div class="text-center py-12"><div class="spinner-primary"></div></div>
+    }
+    else if (_queue.Count == 0)
+    {
+        <div class="nist-card">
+            <div class="nist-card-body text-center py-12">
+                <div class="text-5xl mb-4">✨</div>
+                <p class="text-app-fg text-lg font-medium">All caught up!</p>
+                <p class="text-app-fg-secondary text-sm mt-2">You have no cards due for review right now.</p>
+                @if (_stats != null && _stats.Total == 0)
+                {
+                    <p class="text-app-fg-secondary text-sm mt-4">
+                        <a href="dictionary" class="text-nist-primary hover:underline">Add some words</a> to start building your review deck.
+                    </p>
+                }
+                else if (_stats != null)
+                {
+                    <div class="mt-4 text-sm text-app-fg-secondary">
+                        <div>Total deck: @_stats.Total</div>
+                        <div>Learning: @_stats.Learning · Mature: @_stats.Mature</div>
+                    </div>
+                    <button class="btn-outline mt-4" @onclick="GoToDictionary">Back to Dictionary</button>
+                }
+            </div>
+        </div>
+    }
+    else if (_current != null)
+    {
+        <!-- Progress bar -->
+        <div class="w-full bg-app-bg-alt rounded-full h-1 mb-4">
+            <div class="h-1 rounded-full bg-nist-primary transition-all" style="width: @(Math.Min(100, _done * 100 / Math.Max(1, _done + _queue.Count))).ToString()%"></div>
+        </div>
+
+        <!-- Card -->
+        <div class="nist-card">
+            <div class="nist-card-body min-h-[300px] flex flex-col">
+                <!-- Front: Japanese -->
+                <div class="flex-1 flex flex-col items-center justify-center text-center py-8">
+                    <div class="flex items-center gap-3">
+                        <div class="text-5xl font-bold text-app-fg">@_current.Japanese</div>
+                        <button type="button" class="text-app-fg-secondary hover:text-nist-primary text-2xl" title="Play pronunciation" @onclick="() => Speak(_current!.Japanese)">🔊</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_current.JlptLevel))
+                    {
+                        <span class="mt-3 inline-block px-2 py-0.5 text-xs font-bold rounded text-white" style="background-color: @JlptColor(_current.JlptLevel)">@_current.JlptLevel</span>
+                    }
+
+                    <!-- Back: revealed -->
+                    @if (_revealed)
+                    {
+                        <div class="mt-6 pt-6 border-t border-app-divider w-full space-y-3">
+                            @if (!string.IsNullOrEmpty(_current.Reading))
+                            {
+                                <div class="text-xl text-app-fg-secondary">@_current.Reading</div>
+                            }
+                            <div class="text-2xl text-app-fg">@_current.Meaning</div>
+                            @if (!string.IsNullOrEmpty(_current.ExampleJp))
+                            {
+                                <div class="mt-4 px-3 py-2 bg-app-bg-alt rounded text-sm">
+                                    <div class="text-app-fg">@_current.ExampleJp</div>
+                                    @if (!string.IsNullOrEmpty(_current.ExampleEn))
+                                    {
+                                        <div class="text-app-fg-secondary italic mt-1">@_current.ExampleEn</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Actions -->
+                @if (!_revealed)
+                {
+                    <button class="btn-primary w-full py-3 text-base" @onclick="Reveal">
+                        Show Answer <span class="text-xs opacity-70 ml-2">(Space)</span>
+                    </button>
+                }
+                else
+                {
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="btn-danger py-3 flex flex-col items-center" @onclick="() => Grade(1)" disabled="@_grading">
+                            <span class="font-semibold">Again</span>
+                            <span class="text-xs opacity-80">1</span>
+                        </button>
+                        <button class="btn-warning py-3 flex flex-col items-center" @onclick="() => Grade(3)" disabled="@_grading">
+                            <span class="font-semibold">Hard</span>
+                            <span class="text-xs opacity-80">2</span>
+                        </button>
+                        <button class="btn-primary py-3 flex flex-col items-center" @onclick="() => Grade(4)" disabled="@_grading">
+                            <span class="font-semibold">Good</span>
+                            <span class="text-xs opacity-80">3</span>
+                        </button>
+                        <button class="btn-green py-3 flex flex-col items-center" @onclick="() => Grade(5)" disabled="@_grading">
+                            <span class="font-semibold">Easy</span>
+                            <span class="text-xs opacity-80">4</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="mt-4 text-xs text-app-fg-secondary text-center">
+            Keyboard: <kbd class="px-1 border border-app-divider rounded">Space</kbd> reveal &middot;
+            <kbd class="px-1 border border-app-divider rounded">1</kbd>–<kbd class="px-1 border border-app-divider rounded">4</kbd> grade
+        </div>
+    }
+</div>
+
+@code {
+    private List<DictEntryDto> _queue = new();
+    private DictEntryDto? _current;
+    private SrsStatsDto? _stats;
+    private bool _loading = true;
+    private bool _revealed;
+    private bool _grading;
+    private int _done;
+    private int _remaining => _queue.Count;
+
+    private DotNetObjectReference<Review>? _selfRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadQueue();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerReviewKeyboard", _selfRef);
+        }
+    }
+
+    private async Task LoadQueue()
+    {
+        _loading = true;
+        _stats = await DictService.GetSrsStatsAsync();
+        _queue = await DictService.GetSrsQueueAsync(50);
+        _current = _queue.FirstOrDefault();
+        _revealed = false;
+        _loading = false;
+    }
+
+    private void Reveal() => _revealed = true;
+
+    [JSInvokable]
+    public async Task HandleKey(string key)
+    {
+        if (_current == null || _grading) return;
+        if (key == " " || key == "Space" || key == "Enter")
+        {
+            if (!_revealed) { _revealed = true; StateHasChanged(); }
+            return;
+        }
+        if (_revealed)
+        {
+            var grade = key switch { "1" => 1, "2" => 3, "3" => 4, "4" => 5, _ => 0 };
+            if (grade > 0) await Grade(grade);
+        }
+    }
+
+    private async Task Grade(int grade)
+    {
+        if (_current == null || _grading) return;
+        _grading = true;
+
+        var updated = await DictService.ReviewEntryAsync(_current.Id, grade);
+        if (updated == null)
+        {
+            Toast.Error("Failed to save review. Try again.");
+            _grading = false;
+            return;
+        }
+
+        // If graded Again, append to end of queue (show again this session)
+        if (grade == 1)
+        {
+            _queue.Add(updated);
+        }
+
+        _queue.RemoveAt(0);
+        _current = _queue.FirstOrDefault();
+        _revealed = false;
+        _done++;
+        _grading = false;
+
+        if (_current == null)
+        {
+            // Reload stats when done
+            _stats = await DictService.GetSrsStatsAsync();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task Speak(string text) => await JS.InvokeVoidAsync("speakText", text, "ja-JP");
+
+    private void GoToDictionary() => Nav.NavigateTo("dictionary");
+
+    private static string JlptColor(string? level) => level switch
+    {
+        "N5" => "#10B981",
+        "N4" => "#84CC16",
+        "N3" => "#EAB308",
+        "N2" => "#F97316",
+        "N1" => "#EF4444",
+        _ => "#6B7280"
+    };
+
+    public void Dispose() => _selfRef?.Dispose();
+}

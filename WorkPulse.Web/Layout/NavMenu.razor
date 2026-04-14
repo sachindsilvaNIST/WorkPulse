@@ -2,7 +2,9 @@
 @inject AuthenticationStateProvider AuthState
 @inject WorkPulse.Web.Services.AuthService Auth
 @inject WorkPulse.Web.Services.FeatureService Features
+@inject WorkPulse.Web.Services.ApiDictionaryService DictService
 @inject NavigationManager Nav
+@implements IDisposable
 
 <nav class="flex flex-col bg-app-sidebar text-white p-4 w-56 h-[100dvh] overflow-y-auto">
     <div class="flex items-center justify-center gap-2 mb-6">
@@ -58,6 +60,18 @@
                         <NavLink class="flex items-center gap-2 px-3 py-2 rounded-md text-white/80 hover:bg-white/10 hover:text-white transition-colors" href="dictionary">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                             JP Dictionary
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink class="flex items-center justify-between gap-2 px-3 py-2 rounded-md text-white/80 hover:bg-white/10 hover:text-white transition-colors" href="review">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                                Review
+                            </span>
+                            @if (_dueCount > 0)
+                            {
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-nist-warning text-white">@_dueCount</span>
+                            }
                         </NavLink>
                     </li>
                 }
@@ -123,19 +137,43 @@
     [Parameter] public EventCallback OnNavigated { get; set; }
 
     private HashSet<string> _enabled = new(WorkPulse.Web.Services.FeatureService.Catalog, StringComparer.OrdinalIgnoreCase);
+    private int _dueCount;
+    private System.Threading.Timer? _dueTimer;
 
     protected override async Task OnInitializedAsync()
     {
-        Nav.LocationChanged += (_, _) => OnNavigated.InvokeAsync();
+        Nav.LocationChanged += HandleLocationChanged;
         await RefreshEnabledAsync();
+        await RefreshDueCountAsync();
         if (AuthState is WorkPulse.Web.Services.JwtAuthStateProvider jasp)
         {
             jasp.AuthenticationStateChanged += async _ =>
             {
                 await RefreshEnabledAsync();
+                await RefreshDueCountAsync();
                 await InvokeAsync(StateHasChanged);
             };
         }
+        // Refresh due count every 2 minutes
+        _dueTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await RefreshDueCountAsync();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        OnNavigated.InvokeAsync();
+        // Refresh due count on navigation (after a review session user may have 0 due)
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshDueCountAsync();
+            StateHasChanged();
+        });
     }
 
     private async Task RefreshEnabledAsync()
@@ -144,6 +182,23 @@
         _enabled = WorkPulse.Web.Services.FeatureService.Catalog
             .Where(f => !disabled.Contains(f))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task RefreshDueCountAsync()
+    {
+        if (!_enabled.Contains("dictionary")) { _dueCount = 0; return; }
+        try
+        {
+            var stats = await DictService.GetSrsStatsAsync();
+            _dueCount = stats?.DueNow ?? 0;
+        }
+        catch { _dueCount = 0; }
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= HandleLocationChanged;
+        _dueTimer?.Dispose();
     }
 
     private async Task Logout()

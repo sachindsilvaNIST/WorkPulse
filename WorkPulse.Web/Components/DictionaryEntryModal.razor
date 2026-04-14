@@ -1,5 +1,7 @@
 @using WorkPulse.Web.Services
 @inject IJSRuntime JS
+@inject ApiDictionaryService DictService
+@inject ToastService Toast
 
 <div class="modal-overlay">
     <div class="modal-panel max-w-2xl">
@@ -32,13 +34,36 @@
                         <option value="N1">N1 (Advanced)</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Example (Japanese)</label>
-                    <input type="text" class="nist-input" @bind="_exampleJp" placeholder="e.g., 毎日ご飯を食べます。" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-app-fg-secondary mb-1">Example (English)</label>
-                    <input type="text" class="nist-input" @bind="_exampleEn" placeholder="e.g., I eat rice every day." />
+                <div class="sm:col-span-2">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-app-fg-secondary">Examples</label>
+                        <button type="button" class="text-xs px-2 py-1 rounded border border-nist-primary text-nist-primary hover:bg-nist-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                @onclick="GenerateExamples"
+                                disabled="@(_aiLoading || string.IsNullOrWhiteSpace(_japanese) || string.IsNullOrWhiteSpace(_meaning))"
+                                title="Fill in Japanese and Meaning first, then click to generate examples with AI">
+                            @if (_aiLoading) { <span class="spinner !w-3 !h-3 !border-nist-primary/30 !border-t-nist-primary"></span> }
+                            ✨ Suggest with AI
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" class="nist-input" @bind="_exampleJp" placeholder="Japanese example, e.g., 毎日ご飯を食べます。" />
+                        <input type="text" class="nist-input" @bind="_exampleEn" placeholder="English translation, e.g., I eat rice every day." />
+                    </div>
+                    @if (_aiSuggestions != null && _aiSuggestions.Any())
+                    {
+                        <div class="mt-2 space-y-1 border border-app-divider rounded p-2 bg-app-bg-alt">
+                            <div class="text-xs text-app-fg-secondary mb-1">Click to use:</div>
+                            @foreach (var ex in _aiSuggestions)
+                            {
+                                var example = ex;
+                                <button type="button" class="w-full text-left px-2 py-1.5 rounded hover:bg-app-bg transition-colors text-sm"
+                                        @onclick="() => ApplyExample(example)">
+                                    <div class="text-app-fg">@example.Jp</div>
+                                    <div class="text-xs text-app-fg-secondary italic">@example.En</div>
+                                </button>
+                            }
+                        </div>
+                    }
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-app-fg-secondary mb-1">Notes</label>
@@ -115,6 +140,41 @@
     private string _jlptLevel = "";
     private HashSet<int> _selectedLabelIds = new();
     private string? _error;
+
+    private bool _aiLoading;
+    private List<DictExampleDto>? _aiSuggestions;
+
+    private async Task GenerateExamples()
+    {
+        if (string.IsNullOrWhiteSpace(_japanese) || string.IsNullOrWhiteSpace(_meaning)) return;
+        _aiLoading = true;
+        _aiSuggestions = null;
+        try
+        {
+            var reading = string.IsNullOrWhiteSpace(_reading) ? null : _reading;
+            var results = await DictService.GenerateExamplesAsync(_japanese.Trim(), reading, _meaning.Trim());
+            if (results == null || results.Count == 0)
+            {
+                Toast.Error("AI couldn't generate examples. Check the API key or try again.");
+            }
+            else
+            {
+                _aiSuggestions = results;
+                Toast.Success($"Generated {results.Count} example(s).");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.Error($"Generation failed: {ex.Message}");
+        }
+        _aiLoading = false;
+    }
+
+    private void ApplyExample(DictExampleDto ex)
+    {
+        _exampleJp = ex.Jp;
+        _exampleEn = ex.En;
+    }
 
     protected override void OnParametersSet()
     {

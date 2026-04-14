@@ -85,7 +85,10 @@
         if (!disabled.Contains("contacts"))
             _allCommands.Add(new("Contacts", "Manage contact book", "/contacts", "👥"));
         if (!disabled.Contains("dictionary"))
+        {
             _allCommands.Add(new("JP Dictionary", "Search Japanese words", "/dictionary", "📖"));
+            _allCommands.Add(new("Review", "Spaced repetition review", "/review", "🧠"));
+        }
         if (!disabled.Contains("notes"))
             _allCommands.Add(new("Markdown Editor", "Write and preview notes", "/markdown-editor", "✏"));
         _allCommands.Add(new("Settings", "Configure preferences", "/settings", "⚙"));

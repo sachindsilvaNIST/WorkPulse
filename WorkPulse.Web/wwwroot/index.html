@@ -57,7 +57,24 @@
         (function() {
             var t = localStorage.getItem('nist-theme');
             if (t === 'Dark') document.documentElement.classList.add('dark');
+
+            var accent = localStorage.getItem('nist-accent');
+            if (accent) document.documentElement.style.setProperty('--color-nist-primary', accent);
         })();
+
+        function setAccent(hex) {
+            document.documentElement.style.setProperty('--color-nist-primary', hex);
+            localStorage.setItem('nist-accent', hex);
+        }
+
+        function getAccent() {
+            return localStorage.getItem('nist-accent') || '#0078D4';
+        }
+
+        function resetAccent() {
+            document.documentElement.style.removeProperty('--color-nist-primary');
+            localStorage.removeItem('nist-accent');
+        }
 
         function setTheme(theme) {
             if (theme === 'Dark') {
@@ -75,9 +92,42 @@
         // Global Ctrl+K / Cmd+K command palette trigger
         window.registerCommandPalette = function(dotnetRef) {
             document.addEventListener('keydown', function(e) {
+                var tag = (e.target && e.target.tagName) || '';
+                var isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable);
+
+                // Ctrl+K / Cmd+K -> palette (always works, even inside inputs)
                 if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                     e.preventDefault();
                     dotnetRef.invokeMethodAsync('TogglePalette');
+                    return;
+                }
+
+                // Escape -> close topmost modal overlay
+                if (e.key === 'Escape' && !isTyping) {
+                    var overlays = document.querySelectorAll('.modal-overlay');
+                    if (overlays.length > 0) {
+                        var top = overlays[overlays.length - 1];
+                        var closeBtn = top.querySelector('[data-modal-close], .modal-header button');
+                        if (closeBtn) { closeBtn.click(); e.preventDefault(); }
+                    }
+                    return;
+                }
+
+                // Skip further shortcuts while typing
+                if (isTyping) return;
+
+                // "/" -> focus first visible search input
+                if (e.key === '/') {
+                    var inputs = document.querySelectorAll('input[type="text"], input[type="search"]');
+                    for (var i = 0; i < inputs.length; i++) {
+                        var el = inputs[i];
+                        var ph = (el.getAttribute('placeholder') || '').toLowerCase();
+                        if (ph.indexOf('search') !== -1 && el.offsetParent !== null) {
+                            e.preventDefault();
+                            el.focus();
+                            return;
+                        }
+                    }
                 }
             });
         };
@@ -87,6 +137,21 @@
             if (!el) return [0, 0];
             return [el.selectionStart, el.selectionEnd];
         }
+
+        // Review page keyboard shortcuts (Space to reveal, 1-4 to grade)
+        window.registerReviewKeyboard = function(dotnetRef) {
+            var handler = function(e) {
+                var tag = (e.target && e.target.tagName) || '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+                if (!window.location.pathname.endsWith('/review')) return;
+                var key = e.key;
+                if (key === ' ' || key === 'Enter' || key === '1' || key === '2' || key === '3' || key === '4') {
+                    e.preventDefault();
+                    dotnetRef.invokeMethodAsync('HandleKey', key);
+                }
+            };
+            document.addEventListener('keydown', handler);
+        };
 
         function speakText(text, lang) {
             if (!('speechSynthesis' in window) || !text) return false;

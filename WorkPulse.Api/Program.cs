@@ -83,6 +83,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Anthropic API client for AI features
+builder.Services.AddHttpClient<WorkPulse.Api.Services.AnthropicService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {

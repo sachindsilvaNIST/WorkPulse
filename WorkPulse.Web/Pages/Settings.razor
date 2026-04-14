@@ -4,6 +4,8 @@
 @inject WorkPulse.Web.Services.ApiSettingsService SettingsService
 @inject IJSRuntime JS
 
+<PageTitle>WorkPulse · Settings</PageTitle>
+
 <h4 class="text-xl font-semibold text-app-fg mb-6">Settings</h4>
 
 @if (_loading)
@@ -42,6 +44,32 @@ else
                         <option value="Medium">Medium</option>
                         <option value="Large">Large</option>
                     </select>
+                </div>
+
+                <!-- Accent Color -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="text-sm font-medium text-app-fg">Accent Color</div>
+                            <div class="text-xs text-app-fg-secondary">Customize primary color used across UI</div>
+                        </div>
+                        <button class="text-xs text-nist-primary hover:underline" @onclick="ResetAccent">Reset</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var preset in _accentPresets)
+                        {
+                            var color = preset;
+                            <button type="button"
+                                    class="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 @(string.Equals(_accent, color, StringComparison.OrdinalIgnoreCase) ? "border-app-fg ring-2 ring-offset-2 ring-app-fg/30" : "border-app-divider")"
+                                    style="background-color: @color"
+                                    title="@color"
+                                    @onclick="() => SetAccent(color)"></button>
+                        }
+                        <label class="w-8 h-8 rounded-full border-2 border-app-divider cursor-pointer flex items-center justify-center text-xs overflow-hidden relative" title="Custom color">
+                            <input type="color" class="absolute inset-0 opacity-0 cursor-pointer" value="@_accent" @onchange="OnAccentPicked" />
+                            <span class="text-app-fg-secondary">+</span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,6 +124,19 @@ else
     private string _defaultTitle = "MSW SETTLEMENT";
     private string _theme = "Light";
     private string _fontSize = "Medium";
+    private string _accent = "#0078D4";
+
+    private readonly string[] _accentPresets =
+    {
+        "#0078D4", // NIST blue (default)
+        "#107C10", // green
+        "#8B5CF6", // purple
+        "#D13438", // red
+        "#FF8C00", // orange
+        "#E91E63", // pink
+        "#00838F", // teal
+        "#424242"  // slate
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,8 +148,9 @@ else
         _defaultTitle = s.DefaultTitle;
         _fontSize = s.FontSizePreset;
 
-        // Load theme from localStorage (local to browser, instant)
+        // Load theme + accent from localStorage (local to browser, instant)
         _theme = await JS.InvokeAsync<string>("getTheme");
+        _accent = await JS.InvokeAsync<string>("getAccent");
         _loading = false;
     }
 
@@ -116,6 +158,25 @@ else
     {
         _theme = _theme == "Dark" ? "Light" : "Dark";
         await JS.InvokeVoidAsync("setTheme", _theme);
+    }
+
+    private async Task SetAccent(string hex)
+    {
+        _accent = hex;
+        await JS.InvokeVoidAsync("setAccent", hex);
+    }
+
+    private async Task OnAccentPicked(ChangeEventArgs e)
+    {
+        var hex = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(hex))
+            await SetAccent(hex);
+    }
+
+    private async Task ResetAccent()
+    {
+        _accent = "#0078D4";
+        await JS.InvokeVoidAsync("resetAccent");
     }
 
     private async Task SaveSettings()
