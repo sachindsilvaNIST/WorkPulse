@@ -15,7 +15,7 @@ namespace WorkPulse.Api.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.25");
+            modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -359,6 +359,36 @@ namespace WorkPulse.Api.Migrations
                     b.ToTable("Contacts");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.DailyReportEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("ReportDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ReportDate");
+
+                    b.ToTable("DailyReports");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.DictionaryEntryEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -467,6 +497,133 @@ namespace WorkPulse.Api.Migrations
                     b.ToTable("DictionaryLabels");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.QuickLinkEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Keywords")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("QuickLinks");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripDocumentEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TripReportId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TripReportId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TripDocuments");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripReportEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "StartDate");
+
+                    b.ToTable("TripReports");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.UserSettingsEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -507,6 +664,36 @@ namespace WorkPulse.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("UserSettings");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.WeeklyReportEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("WeekStartDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "WeekStartDate");
+
+                    b.ToTable("WeeklyReports");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -593,6 +780,17 @@ namespace WorkPulse.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.DailyReportEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.DictionaryEntryEntity", b =>
                 {
                     b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
@@ -634,11 +832,55 @@ namespace WorkPulse.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.QuickLinkEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripDocumentEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.TripReportEntity", "TripReport")
+                        .WithMany("Documents")
+                        .HasForeignKey("TripReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TripReport");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripReportEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.UserSettingsEntity", b =>
                 {
                     b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
                         .WithOne("Settings")
                         .HasForeignKey("WorkPulse.Api.Data.Entities.UserSettingsEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.WeeklyReportEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -667,6 +909,11 @@ namespace WorkPulse.Api.Migrations
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.DictionaryLabelEntity", b =>
                 {
                     b.Navigation("EntryLabels");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripReportEntity", b =>
+                {
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

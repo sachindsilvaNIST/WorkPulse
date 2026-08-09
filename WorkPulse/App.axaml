@@ -6,6 +6,16 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <!-- Apple/Notes-aligned accent to match the web app's nist-primary token -->
+            <Color x:Key="SystemAccentColor">#0078D4</Color>
+
+            <!-- Card/button corner radius tokens (Apple-style, generous rounding) -->
+            <CornerRadius x:Key="CardCornerRadius">14</CornerRadius>
+            <CornerRadius x:Key="ButtonCornerRadius">10</CornerRadius>
+
+            <!-- SF-Pro-like fallback chain, matching the web app's font-family order -->
+            <FontFamily x:Key="AppFontFamily">Segoe UI Variable,Segoe UI,-apple-system,BlinkMacSystemFont,Helvetica Neue,Arial,sans-serif</FontFamily>
+
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="AppBackground" Color="White"/>
@@ -19,6 +29,7 @@
                     <SolidColorBrush x:Key="AppErrorPanel" Color="#FDECEA"/>
                     <SolidColorBrush x:Key="AppButtonNeutral" Color="#E5E5EA"/>
                     <SolidColorBrush x:Key="AppInputBackground" Color="White"/>
+                    <SolidColorBrush x:Key="AppToolbarGlass" Color="#CCF5F5F5"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="AppBackground" Color="#1E1E1E"/>
@@ -32,6 +43,7 @@
                     <SolidColorBrush x:Key="AppErrorPanel" Color="#3D1418"/>
                     <SolidColorBrush x:Key="AppButtonNeutral" Color="#404040"/>
                     <SolidColorBrush x:Key="AppInputBackground" Color="#2D2D2D"/>
+                    <SolidColorBrush x:Key="AppToolbarGlass" Color="#CC1E1E1E"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <x:Double x:Key="DefaultFontSize">14</x:Double>
@@ -46,26 +58,35 @@
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
 
-        <!-- Button hover/press animations -->
+        <!-- Button hover/press animations — spring-like bounce (BackEaseOut) to match the web app's motion -->
         <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="{DynamicResource ButtonCornerRadius}"/>
             <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
             <Setter Property="Opacity" Value="1.0"/>
             <Setter Property="Transitions">
                 <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.8" Easing="CubicEaseInOut"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35" Easing="BackEaseOut"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button:pointerover">
-            <Setter Property="Opacity" Value="0.7"/>
+            <Setter Property="Opacity" Value="0.88"/>
             <Setter Property="RenderTransform">
-                <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
+                <TransformOperations>scale(1.03)</TransformOperations>
             </Setter>
         </Style>
         <Style Selector="Button:pressed">
-            <Setter Property="Opacity" Value="0.55"/>
+            <Setter Property="Opacity" Value="0.7"/>
             <Setter Property="RenderTransform">
-                <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                <TransformOperations>scale(0.96)</TransformOperations>
+            </Setter>
+        </Style>
+
+        <!-- Smooth crossfade when the main content area switches views -->
+        <Style Selector="TransitioningContentControl">
+            <Setter Property="PageTransition">
+                <CrossFade Duration="0:0:0.25"/>
             </Setter>
         </Style>
     </Application.Styles>

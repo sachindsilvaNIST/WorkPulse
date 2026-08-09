@@ -110,6 +110,141 @@ public static class EntityMapper
         };
     }
 
+    // --- QuickLink <-> QuickLinkEntity ---
+
+    public static QuickLink ToQuickLink(this QuickLinkEntity entity)
+    {
+        return new QuickLink
+        {
+            Id = entity.Id,
+            Label = entity.Label,
+            Url = entity.Url,
+            Category = entity.Category,
+            Keywords = entity.Keywords,
+            SortOrder = entity.SortOrder,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
+
+    public static QuickLinkEntity ToEntity(this QuickLink record, string userId)
+    {
+        return new QuickLinkEntity
+        {
+            Id = string.IsNullOrEmpty(record.Id) ? Guid.NewGuid().ToString() : record.Id,
+            UserId = userId,
+            Label = record.Label,
+            Url = record.Url,
+            Category = record.Category,
+            Keywords = record.Keywords,
+            SortOrder = record.SortOrder,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+    }
+
+    // --- DailyReport <-> DailyReportEntity ---
+
+    public static DailyReport ToDailyReport(this DailyReportEntity entity)
+    {
+        return new DailyReport
+        {
+            Id = entity.Id,
+            ReportDate = entity.ReportDate,
+            Title = entity.Title,
+            Body = entity.Body,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
+
+    public static DailyReportEntity ToEntity(this DailyReport record, string userId)
+    {
+        return new DailyReportEntity
+        {
+            Id = string.IsNullOrEmpty(record.Id) ? Guid.NewGuid().ToString() : record.Id,
+            UserId = userId,
+            ReportDate = record.ReportDate,
+            Title = record.Title,
+            Body = record.Body,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+    }
+
+    // --- WeeklyReport <-> WeeklyReportEntity ---
+
+    public static WeeklyReport ToWeeklyReport(this WeeklyReportEntity entity)
+    {
+        return new WeeklyReport
+        {
+            Id = entity.Id,
+            WeekStartDate = entity.WeekStartDate,
+            Title = entity.Title,
+            Body = entity.Body,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
+
+    public static WeeklyReportEntity ToEntity(this WeeklyReport record, string userId)
+    {
+        return new WeeklyReportEntity
+        {
+            Id = string.IsNullOrEmpty(record.Id) ? Guid.NewGuid().ToString() : record.Id,
+            UserId = userId,
+            WeekStartDate = record.WeekStartDate,
+            Title = record.Title,
+            Body = record.Body,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+    }
+
+    // --- TripReport <-> TripReportEntity ---
+
+    public static TripReport ToTripReport(this TripReportEntity entity)
+    {
+        return new TripReport
+        {
+            Id = entity.Id,
+            Category = Enum.TryParse<TripCategory>(entity.Category, out var tc) ? tc : TripCategory.Domestic,
+            Destination = entity.Destination,
+            StartDate = entity.StartDate,
+            EndDate = entity.EndDate,
+            Purpose = entity.Purpose,
+            Notes = entity.Notes,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
+
+    public static TripReportEntity ToEntity(this TripReport record, string userId)
+    {
+        return new TripReportEntity
+        {
+            Id = string.IsNullOrEmpty(record.Id) ? Guid.NewGuid().ToString() : record.Id,
+            UserId = userId,
+            Category = record.Category.ToString(),
+            Destination = record.Destination,
+            StartDate = record.StartDate,
+            EndDate = record.EndDate,
+            Purpose = record.Purpose,
+            Notes = record.Notes,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+    }
+
+    // --- TripDocumentMeta <-> TripDocumentEntity ---
+
+    public static TripDocumentMeta ToMeta(this TripDocumentEntity entity)
+    {
+        return new TripDocumentMeta
+        {
+            Id = entity.Id,
+            TripReportId = entity.TripReportId,
+            Category = Enum.TryParse<DocCategory>(entity.Category, out var dc) ? dc : DocCategory.Other,
+            Label = entity.Label,
+            FileName = entity.FileName,
+            ContentType = entity.ContentType,
+            SizeBytes = entity.SizeBytes,
+            UploadedUtc = entity.UploadedUtc
+        };
+    }
+
     // --- UserSettings <-> AppSettings ---
 
     public static AppSettings ToAppSettings(this UserSettingsEntity entity)

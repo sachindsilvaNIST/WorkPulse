@@ -1,0 +1,166 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WorkPulse.ViewModels"
+        xmlns:m="using:WorkPulse.Models"
+        xmlns:conv="using:WorkPulse.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="560"
+        x:Class="WorkPulse.Views.BookmarkLibraryWindow"
+        x:DataType="vm:QuickLinksViewModel"
+        Title="Bookmark Library"
+        Width="780" Height="600"
+        MinWidth="520" MinHeight="420"
+        Background="Transparent"
+        TransparencyLevelHint="Mica,AcrylicBlur,None"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <Window.Resources>
+        <conv:CategoryToAccentBrushConverter x:Key="CategoryAccent"/>
+        <conv:CategoryToTintBrushConverter x:Key="CategoryTint"/>
+        <conv:CategoryToBorderBrushConverter x:Key="CategoryBorderTint"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- The invisible full-card hit-target button must never show its own hover/press visuals —
+             the ambient hover feedback lives on the card Border instead. Without this reset, the
+             theme's default pointerover highlight (sized to the button, inset by the card padding)
+             shows through as a smaller box floating inside the card — i.e. a stray "outer margin". -->
+        <Style Selector="Button.bm-hit, Button.bm-hit:pointerover, Button.bm-hit:pressed">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="RenderTransform" Value="none"/>
+        </Style>
+
+        <!-- Ambient hover for bookmark cards: accent-tinted wash + border glow + gentle lift -->
+        <Style Selector="Border.bm-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.25"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" Easing="BackEaseOut"/>
+                    <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.25"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.bm-card:pointerover">
+            <Setter Property="RenderTransform">
+                <TransformOperations>scale(1.025)</TransformOperations>
+            </Setter>
+            <Setter Property="BoxShadow" Value="0 8 24 -6 #40000000"/>
+        </Style>
+
+        <!-- Category chips: each carries its own category color (bound in the template),
+             so "selected" is shown via a bolder ring + lift rather than a color swap. -->
+        <Style Selector="Button.bm-chip">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                    <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.bm-chip.selected">
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel Margin="20">
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,14">
+            <TextBlock Text="Bookmark Library" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Every link you've saved, in one searchable place. Type a name, a synonym, or a category to find it instantly."
+                       FontSize="12" Opacity="0.65"/>
+        </StackPanel>
+
+        <!-- Search + Add + Import -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,16">
+            <TextBox Grid.Column="0" Text="{Binding SearchText}"
+                     Watermark="Search bookmarks — try &quot;drive&quot;, &quot;wiki&quot;, a category..."
+                     Padding="10,7" CornerRadius="8"
+                     BorderBrush="{DynamicResource AppDivider}"
+                     Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="Import from Chrome"
+                    Click="ImportButton_Click"
+                    Padding="14,7" CornerRadius="8" Margin="0,0,8,0"
+                    Background="{DynamicResource AppButtonNeutral}" Foreground="{DynamicResource AppForeground}"/>
+            <Button Grid.Column="2" Content="+ Add Bookmark"
+                    Command="{Binding AddLinkCommand}"
+                    Padding="14,7" CornerRadius="8"
+                    Background="#007AFF" Foreground="White"/>
+        </Grid>
+
+        <!-- Category chips — Finder-style: no visible scrollbar track, just glide -->
+        <ScrollViewer DockPanel.Dock="Top" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,18">
+            <ItemsControl ItemsSource="{Binding Categories}" Margin="0,0,0,4">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <Button Content="{Binding}" Click="CategoryChip_Click" Tag="{Binding}"
+                                Classes="bm-chip"
+                                Padding="14,6" CornerRadius="14" BorderThickness="1"
+                                Background="{Binding Converter={StaticResource CategoryTint}}"
+                                BorderBrush="{Binding Converter={StaticResource CategoryBorderTint}}"
+                                Foreground="{Binding Converter={StaticResource CategoryAccent}}"
+                                FontSize="12" FontWeight="SemiBold"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Status -->
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}"
+                    FontSize="11" Opacity="0.6" Margin="0,10,0,0"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <!-- Flash-card grid -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding FilteredLinks}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:QuickLink">
+                        <Border Classes="bm-card" Width="220" Height="110" Margin="8" Padding="14" CornerRadius="14"
+                                Background="{Binding Category, Converter={StaticResource CategoryTint}}"
+                                BorderBrush="{Binding Category, Converter={StaticResource CategoryBorderTint}}" BorderThickness="1">
+                            <Grid RowDefinitions="Auto,*,Auto">
+                                <Border Grid.Row="0" HorizontalAlignment="Left"
+                                        Background="{Binding Category, Converter={StaticResource CategoryBorderTint}}" CornerRadius="10" Padding="8,2"
+                                        IsVisible="{Binding Category, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                    <TextBlock Text="{Binding Category}" FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{Binding Category, Converter={StaticResource CategoryAccent}}"/>
+                                </Border>
+                                <TextBlock Grid.Row="1" Classes="bm-label" Text="{Binding Label}" FontWeight="SemiBold" FontSize="15"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,6"
+                                           Foreground="{DynamicResource AppForeground}"/>
+                                <TextBlock Grid.Row="2" Text="{Binding Url}" FontSize="11" Opacity="0.55"
+                                           TextTrimming="CharacterEllipsis"/>
+
+                                <Button Grid.RowSpan="3" Classes="bm-hit" Background="Transparent" BorderThickness="0"
+                                        Click="OpenCard_Click" Tag="{Binding}" HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch">
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit" Click="EditLink_Click" Tag="{Binding}"/>
+                                            <MenuItem Header="Delete" Click="DeleteLink_Click" Tag="{Binding}"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

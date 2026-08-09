@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WorkPulse.ViewModels"
+        xmlns:m="using:WorkPulse.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="560"
+        x:Class="WorkPulse.Views.TripDocumentsWindow"
+        x:DataType="vm:TripDocumentsViewModel"
+        Title="Documents"
+        Width="640" Height="560" MinWidth="480" MinHeight="400"
+        WindowStartupLocation="CenterOwner">
+
+    <DockPanel Margin="16">
+        <!-- Upload bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource AppBackgroundAlt}"
+                CornerRadius="6" Padding="12" Margin="0,0,0,12">
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <ComboBox Grid.Column="0" SelectedIndex="{Binding SelectedCategoryIndex}"
+                              ItemsSource="{Binding Categories}" Width="130" Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1" Text="{Binding Label}" Watermark="Optional label (e.g. Visa, Hotel)"
+                              Padding="8,6" CornerRadius="4" Margin="0,0,8,0"/>
+                    <Button Grid.Column="2" Content="Upload File…" Command="{Binding UploadCommand}"
+                            IsEnabled="{Binding IsConnected}"
+                            Background="#0078D4" Foreground="White" Padding="12,6"/>
+                </Grid>
+                <TextBox Text="{Binding SearchText}" Watermark="Search documents..." Padding="8,6" CornerRadius="4"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" FontSize="12" Margin="0,8,0,0"
+                   Foreground="{DynamicResource AppForegroundSecondary}"/>
+
+        <ListBox ItemsSource="{Binding Documents}" BorderThickness="1" BorderBrush="{DynamicResource AppDivider}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="m:TripDocumentMeta">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="4,6">
+                        <Border Grid.Column="0" Background="#0078D4" CornerRadius="10" Padding="8,2" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding Category}" Foreground="White" FontSize="10"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Label}" FontSize="11"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"
+                                       IsVisible="{Binding Label, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Download" Click="DownloadButton_Click" Tag="{Binding}"
+                                Padding="8,4" Margin="0,0,4,0" FontSize="11"/>
+                        <Button Grid.Column="3" Content="Delete" Click="DeleteButton_Click" Tag="{Binding}"
+                                Padding="8,4" FontSize="11" Foreground="#D13438"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>

@@ -13,6 +13,10 @@ public class SyncService : ISyncService, IDisposable
 {
     private readonly IDataService _dataService;
     private readonly IContactDataService _contactDataService;
+    private readonly IQuickLinkDataService _quickLinkDataService;
+    private readonly IDailyReportDataService _dailyReportDataService;
+    private readonly IWeeklyReportDataService _weeklyReportDataService;
+    private readonly ITripReportDataService _tripReportDataService;
     private readonly ISettingsService _settingsService;
     private readonly HttpApiClient _apiClient;
     private readonly string _logPath;
@@ -31,11 +35,19 @@ public class SyncService : ISyncService, IDisposable
     public SyncService(
         IDataService dataService,
         IContactDataService contactDataService,
+        IQuickLinkDataService quickLinkDataService,
+        IDailyReportDataService dailyReportDataService,
+        IWeeklyReportDataService weeklyReportDataService,
+        ITripReportDataService tripReportDataService,
         ISettingsService settingsService,
         HttpApiClient apiClient)
     {
         _dataService = dataService;
         _contactDataService = contactDataService;
+        _quickLinkDataService = quickLinkDataService;
+        _dailyReportDataService = dailyReportDataService;
+        _weeklyReportDataService = weeklyReportDataService;
+        _tripReportDataService = tripReportDataService;
         _settingsService = settingsService;
         _apiClient = apiClient;
 
@@ -256,6 +268,94 @@ public class SyncService : ISyncService, IDisposable
                     await _contactDataService.SaveContactsAsync(localContacts);
                     Log($"PULL MERGE: {pullResponse.Contacts.Contacts.Count} contacts merged");
                 }
+
+                if (pullResponse.QuickLinks != null && pullResponse.QuickLinks.Count > 0)
+                {
+                    var localLinks = await _quickLinkDataService.LoadAllAsync();
+                    var localLinkMap = localLinks.ToDictionary(l => l.Id);
+
+                    foreach (var serverLink in pullResponse.QuickLinks)
+                    {
+                        if (localLinkMap.TryGetValue(serverLink.Id, out var local))
+                        {
+                            if (serverLink.LastModifiedUtc > local.LastModifiedUtc)
+                                localLinkMap[serverLink.Id] = serverLink;
+                        }
+                        else
+                        {
+                            localLinkMap[serverLink.Id] = serverLink;
+                        }
+                    }
+
+                    await _quickLinkDataService.SaveAllAsync(localLinkMap.Values.ToList());
+                    Log($"PULL MERGE: {pullResponse.QuickLinks.Count} quick links merged");
+                }
+
+                if (pullResponse.DailyReports != null && pullResponse.DailyReports.Count > 0)
+                {
+                    var localReports = await _dailyReportDataService.LoadAllAsync();
+                    var localMap = localReports.ToDictionary(r => r.Id);
+
+                    foreach (var serverReport in pullResponse.DailyReports)
+                    {
+                        if (localMap.TryGetValue(serverReport.Id, out var local))
+                        {
+                            if (serverReport.LastModifiedUtc > local.LastModifiedUtc)
+                                localMap[serverReport.Id] = serverReport;
+                        }
+                        else
+                        {
+                            localMap[serverReport.Id] = serverReport;
+                        }
+                    }
+
+                    await _dailyReportDataService.SaveAllAsync(localMap.Values.ToList());
+                    Log($"PULL MERGE: {pullResponse.DailyReports.Count} daily reports merged");
+                }
+
+                if (pullResponse.WeeklyReports != null && pullResponse.WeeklyReports.Count > 0)
+                {
+                    var localReports = await _weeklyReportDataService.LoadAllAsync();
+                    var localMap = localReports.ToDictionary(r => r.Id);
+
+                    foreach (var serverReport in pullResponse.WeeklyReports)
+                    {
+                        if (localMap.TryGetValue(serverReport.Id, out var local))
+                        {
+                            if (serverReport.LastModifiedUtc > local.LastModifiedUtc)
+                                localMap[serverReport.Id] = serverReport;
+                        }
+                        else
+                        {
+                            localMap[serverReport.Id] = serverReport;
+                        }
+                    }
+
+                    await _weeklyReportDataService.SaveAllAsync(localMap.Values.ToList());
+                    Log($"PULL MERGE: {pullResponse.WeeklyReports.Count} weekly reports merged");
+                }
+
+                if (pullResponse.TripReports != null && pullResponse.TripReports.Count > 0)
+                {
+                    var localReports = await _tripReportDataService.LoadAllAsync();
+                    var localMap = localReports.ToDictionary(r => r.Id);
+
+                    foreach (var serverReport in pullResponse.TripReports)
+                    {
+                        if (localMap.TryGetValue(serverReport.Id, out var local))
+                        {
+                            if (serverReport.LastModifiedUtc > local.LastModifiedUtc)
+                                localMap[serverReport.Id] = serverReport;
+                        }
+                        else
+                        {
+                            localMap[serverReport.Id] = serverReport;
+                        }
+                    }
+
+                    await _tripReportDataService.SaveAllAsync(localMap.Values.ToList());
+                    Log($"PULL MERGE: {pullResponse.TripReports.Count} trip reports merged");
+                }
             }
 
             // --- Step 2: Push local data to server ---
@@ -269,13 +369,21 @@ public class SyncService : ISyncService, IDisposable
             }
 
             var contacts = await _contactDataService.LoadContactsAsync();
+            var quickLinks = await _quickLinkDataService.LoadAllAsync();
+            var dailyReports = await _dailyReportDataService.LoadAllAsync();
+            var weeklyReports = await _weeklyReportDataService.LoadAllAsync();
+            var tripReports = await _tripReportDataService.LoadAllAsync();
 
-            Log($"PUSH: Sending {localMonths.Count} months, {contacts.Contacts.Count} contacts...");
+            Log($"PUSH: Sending {localMonths.Count} months, {contacts.Contacts.Count} contacts, {quickLinks.Count} quick links, {dailyReports.Count} daily reports, {weeklyReports.Count} weekly reports, {tripReports.Count} trip reports...");
 
             var pushRequest = new SyncRequest
             {
                 Months = localMonths,
                 Contacts = contacts,
+                QuickLinks = quickLinks,
+                DailyReports = dailyReports,
+                WeeklyReports = weeklyReports,
+                TripReports = tripReports,
                 Settings = null,
                 LastSyncedAt = lastSync
             };

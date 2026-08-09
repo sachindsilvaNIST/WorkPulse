@@ -1,0 +1,165 @@
+@using WorkPulse.Models
+@inject WorkPulse.Web.Services.ApiQuickLinkService LinkService
+@inject WorkPulse.Web.Services.ToastService Toast
+
+@if (Show)
+{
+    <div class="modal-overlay !justify-end !items-stretch !p-0" @onclick="Close">
+        <div class="nist-card-translucent !rounded-none h-full w-full sm:w-80 flex flex-col p-4"
+             @onclick:stopPropagation="true">
+            <div class="flex items-center justify-between mb-3">
+                <h5 class="text-lg font-semibold text-app-fg">Quick Links</h5>
+                <button class="text-app-fg-secondary hover:text-app-fg text-xl leading-none" @onclick="Close">&times;</button>
+            </div>
+
+            <input class="nist-input mb-3" placeholder="Search links..." value="@_search" @oninput="OnSearchInput" />
+
+            <div class="nist-card nist-card-body flex flex-col gap-2 mb-3">
+                <input class="nist-input" placeholder="Label" @bind="_formLabel" />
+                <input class="nist-input" placeholder="https://example.com" @bind="_formUrl" />
+                <input class="nist-input" placeholder="Category (optional)" @bind="_formCategory" />
+                <input class="nist-input" placeholder="Search keywords, comma-separated (optional)" @bind="_formKeywords" />
+                <div class="flex gap-2">
+                    <button class="btn-primary flex-1 justify-center" @onclick="SaveLink">@(_editingId == null ? "Add" : "Update")</button>
+                    @if (_editingId != null)
+                    {
+                        <button class="btn-outline" @onclick="ResetForm">Cancel</button>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="text-sm text-nist-danger">@_formError</div>
+                }
+            </div>
+
+            <div class="flex-1 overflow-y-auto flex flex-col gap-1">
+                @foreach (var link in _filtered)
+                {
+                    <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-app-bg-alt">
+                        <a href="@NormalizeUrl(link.Url)" target="_blank" rel="noopener noreferrer"
+                           class="text-app-fg text-sm truncate flex-1">@link.Label</a>
+                        <button class="text-xs text-app-fg-secondary hover:text-nist-primary" @onclick="() => EditLink(link)">Edit</button>
+                        <button class="text-xs text-app-fg-secondary hover:text-nist-danger" @onclick="() => DeleteLink(link)">Del</button>
+                    </div>
+                }
+                @if (!_filtered.Any())
+                {
+                    <div class="text-center text-app-fg-secondary text-sm py-6">No links yet.</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private List<QuickLink> _links = new();
+    private List<QuickLink> _filtered = new();
+    private string _search = "";
+    private string _formLabel = "";
+    private string _formUrl = "";
+    private string _formCategory = "";
+    private string _formKeywords = "";
+    private string _formError = "";
+    private string? _editingId;
+    private bool _loaded;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show && !_loaded)
+        {
+            await LoadLinks();
+            _loaded = true;
+        }
+        else if (!Show)
+        {
+            _loaded = false;
+        }
+    }
+
+    private async Task LoadLinks()
+    {
+        _links = await LinkService.GetAllAsync();
+        ApplyFilter();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_search)
+            ? _links.OrderBy(l => l.SortOrder).ThenBy(l => l.Label).ToList()
+            : _links.Where(l => l.SearchText.Contains(_search.ToLowerInvariant()))
+                    .OrderBy(l => l.SortOrder).ThenBy(l => l.Label).ToList();
+    }
+
+    private static string NormalizeUrl(string url) =>
+        url.StartsWith("http://") || url.StartsWith("https://") ? url : $"https://{url}";
+
+    private void EditLink(QuickLink link)
+    {
+        _editingId = link.Id;
+        _formLabel = link.Label;
+        _formUrl = link.Url;
+        _formCategory = link.Category;
+        _formKeywords = link.Keywords;
+        _formError = "";
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        _formLabel = "";
+        _formUrl = "";
+        _formCategory = "";
+        _formKeywords = "";
+        _formError = "";
+    }
+
+    private async Task SaveLink()
+    {
+        if (string.IsNullOrWhiteSpace(_formLabel) || string.IsNullOrWhiteSpace(_formUrl))
+        {
+            _formError = "Please enter both a label and a URL.";
+            return;
+        }
+
+        var record = new QuickLink
+        {
+            Id = _editingId ?? Guid.NewGuid().ToString(),
+            Label = _formLabel.Trim(),
+            Url = _formUrl.Trim(),
+            Category = _formCategory.Trim(),
+            Keywords = _formKeywords.Trim()
+        };
+
+        var saved = _editingId == null
+            ? await LinkService.CreateAsync(record)
+            : await LinkService.UpdateAsync(record.Id, record);
+
+        if (saved == null)
+        {
+            Toast.Error("Failed to save link.");
+            return;
+        }
+
+        Toast.Success(_editingId == null ? "Link added." : "Link updated.");
+        ResetForm();
+        await LoadLinks();
+    }
+
+    private async Task DeleteLink(QuickLink link)
+    {
+        await LinkService.DeleteAsync(link.Id);
+        Toast.Success("Link deleted.");
+        await LoadLinks();
+    }
+
+    private async Task Close() => await OnClose.InvokeAsync();
+}

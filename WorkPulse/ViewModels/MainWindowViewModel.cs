@@ -21,8 +21,26 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ContactExcelImportService _contactExcelImportService;
     private readonly ContactExcelExportService _contactExcelExportService;
 
-    // File search service
-    private readonly IFileIndexService _fileIndexService;
+    // Quick Links service
+    private readonly IQuickLinkDataService _quickLinkDataService;
+    private QuickLinksViewModel? _quickLinksVm;
+
+    // Reports services (Apple Notes-style: no dialogs, view manages its own CRUD/autosave)
+    private readonly IDailyReportDataService _dailyReportDataService;
+    private readonly IWeeklyReportDataService _weeklyReportDataService;
+    private DailyReportViewModel? _dailyReportVm;
+    private WeeklyReportViewModel? _weeklyReportVm;
+    public DailyReportViewModel DailyReports => _dailyReportVm ??= new DailyReportViewModel(_dailyReportDataService, _settingsService);
+    public WeeklyReportViewModel WeeklyReports => _weeklyReportVm ??= new WeeklyReportViewModel(_weeklyReportDataService, _settingsService);
+
+    // Trip report service
+    private readonly ITripReportDataService _tripReportDataService;
+    private TripReportViewModel? _tripReportVm;
+    public TripReportViewModel? TripReportDashboard => _tripReportVm;
+
+    // Reimbursement (cross-trip document library)
+    private ReimbursementViewModel? _reimbursementVm;
+    public ReimbursementViewModel Reimbursement => _reimbursementVm ??= new ReimbursementViewModel(_apiClient);
 
     // Sync
     private readonly HttpApiClient _apiClient;
@@ -44,20 +62,26 @@ public partial class MainWindowViewModel : ViewModelBase
     // Cached ViewModels
     private DashboardViewModel? _dashboardVm;
     private ContactBookDashboardViewModel? _contactBookVm;
-    private FileSearchViewModel? _fileSearchVm;
     private SettingsViewModel? _settingsVm;
 
     // Accessors for closing logic
     public DashboardViewModel? AttendanceDashboard => _dashboardVm;
     public ContactBookDashboardViewModel? ContactBookDashboard => _contactBookVm;
-    public FileSearchViewModel? FileSearchDashboard => _fileSearchVm;
 
     // Dialog callbacks
     public Func<Task<string?>>? ShowOpenFileDialog { get; set; }
     public Func<string, Task<string?>>? ShowSaveFileDialog { get; set; }
     public Func<AttendanceEntryViewModel, Task<bool>>? ShowEditDialog { get; set; }
     public Func<ContactEntryViewModel, Task<bool>>? ShowContactEditDialog { get; set; }
+    public Func<TripReportEntryViewModel, Task<bool>>? ShowTripReportEditDialog { get; set; }
     public Func<string, string, Task<bool>>? ShowConfirmDialog { get; set; }
+    public Func<Task<string?>>? ShowFolderDialog { get; set; }
+    public Action? ShowQuickLinksWindow { get; set; }
+    public Action<TripDocumentsViewModel>? ShowTripDocumentsWindow { get; set; }
+    public Action? ShowReimbursementWindow { get; set; }
+    public Action? ShowBookmarkLibraryWindow { get; set; }
+
+    public QuickLinksViewModel QuickLinks => _quickLinksVm ??= new QuickLinksViewModel(_quickLinkDataService);
 
     public MainWindowViewModel()
     {
@@ -67,12 +91,16 @@ public partial class MainWindowViewModel : ViewModelBase
         _contactDataService = new JsonContactDataService();
         _contactExcelImportService = new ContactExcelImportService();
         _contactExcelExportService = new ContactExcelExportService();
-        _fileIndexService = new FileIndexService();
         _settingsService = new SettingsService();
+        _quickLinkDataService = new JsonQuickLinkDataService();
+        _dailyReportDataService = new JsonDailyReportDataService(_settingsService);
+        _weeklyReportDataService = new JsonWeeklyReportDataService(_settingsService);
+        _tripReportDataService = new JsonTripReportDataService(_settingsService);
         _apiClient = new HttpApiClient();
-        _syncService = new SyncService(_dataService, _contactDataService, _settingsService, _apiClient);
+        _syncService = new SyncService(_dataService, _contactDataService, _quickLinkDataService, _dailyReportDataService, _weeklyReportDataService, _tripReportDataService, _settingsService, _apiClient);
 
-        _currentView = new HomeViewModel(NavigateTo);
+
+        _currentView = new HomeViewModel(NavigateTo, OpenQuickLinks, OpenReimbursement, OpenBookmarkLibrary);
     }
 
     public async Task InitializeAsync()
@@ -88,7 +116,7 @@ public partial class MainWindowViewModel : ViewModelBase
         switch (target)
         {
             case "home":
-                CurrentView = new HomeViewModel(NavigateTo);
+                CurrentView = new HomeViewModel(NavigateTo, OpenQuickLinks, OpenReimbursement, OpenBookmarkLibrary);
                 CurrentViewName = "home";
                 StatusMessage = "Ready";
                 break;
@@ -111,17 +139,36 @@ public partial class MainWindowViewModel : ViewModelBase
                 _ = _contactBookVm.InitializeAsync();
                 break;
 
-            case "search":
-                _fileSearchVm ??= new FileSearchViewModel(_fileIndexService);
-                OnPropertyChanged(nameof(FileSearchDashboard));
-                CurrentView = _fileSearchVm;
-                CurrentViewName = "search";
-                StatusMessage = _fileSearchVm.StatusMessage;
-                _ = _fileSearchVm.InitializeAsync();
+            case "dailyreports":
+                DailyReports.ShowFolderDialog = ShowFolderDialog;
+                DailyReports.GoBack = GoHome;
+                CurrentView = DailyReports;
+                CurrentViewName = "dailyreports";
+                StatusMessage = "Daily Reports";
+                _ = DailyReports.InitializeAsync();
+                break;
+
+            case "weeklyreports":
+                WeeklyReports.ShowFolderDialog = ShowFolderDialog;
+                WeeklyReports.GoBack = GoHome;
+                CurrentView = WeeklyReports;
+                CurrentViewName = "weeklyreports";
+                StatusMessage = "Weekly Reports";
+                _ = WeeklyReports.InitializeAsync();
+                break;
+
+            case "tripreports":
+                _tripReportVm ??= new TripReportViewModel(_tripReportDataService);
+                OnPropertyChanged(nameof(TripReportDashboard));
+                CurrentView = _tripReportVm;
+                CurrentViewName = "tripreports";
+                StatusMessage = _tripReportVm.StatusMessage;
+                _ = _tripReportVm.InitializeAsync();
                 break;
 
             case "settings":
                 _settingsVm ??= new SettingsViewModel(_settingsService, _syncService);
+                _settingsVm.ShowFolderDialog = ShowFolderDialog;
                 CurrentView = _settingsVm;
                 CurrentViewName = "settings";
                 StatusMessage = "Settings";
@@ -135,6 +182,27 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoToSettings() => NavigateTo("settings");
+
+    [RelayCommand]
+    private void OpenQuickLinks()
+    {
+        _ = QuickLinks.InitializeAsync();
+        ShowQuickLinksWindow?.Invoke();
+    }
+
+    [RelayCommand]
+    private void OpenReimbursement()
+    {
+        _ = Reimbursement.InitializeAsync();
+        ShowReimbursementWindow?.Invoke();
+    }
+
+    [RelayCommand]
+    private void OpenBookmarkLibrary()
+    {
+        _ = QuickLinks.InitializeAsync();
+        ShowBookmarkLibraryWindow?.Invoke();
+    }
 
     // --- Closing Logic ---
 
@@ -364,6 +432,8 @@ public partial class MainWindowViewModel : ViewModelBase
             await DeleteAttendanceEntry();
         else if (CurrentViewName == "contacts")
             await DeleteContactEntry();
+        else if (CurrentViewName == "tripreports")
+            await DeleteTripReportEntry();
     }
 
     private async Task DeleteAttendanceEntry()
@@ -498,6 +568,91 @@ public partial class MainWindowViewModel : ViewModelBase
             await _contactBookVm.UpdateContact(record);
             _syncService.NotifyDataChanged();
         }
+    }
+
+
+    // --- Trip Report CRUD ---
+
+    [RelayCommand]
+    private async Task AddTripReport()
+    {
+        if (_tripReportVm == null || !_tripReportVm.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
+        var entryVm = new TripReportEntryViewModel();
+        if (ShowTripReportEditDialog != null && await ShowTripReportEditDialog(entryVm))
+        {
+            await _tripReportVm.AddReport(entryVm.ToRecord());
+            _syncService.NotifyDataChanged();
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditTripReport()
+    {
+        if (_tripReportVm == null || !_tripReportVm.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
+        var selected = _tripReportVm.SelectedReport;
+        if (selected == null)
+        {
+            StatusMessage = "Select a trip to edit.";
+            return;
+        }
+
+        var entryVm = new TripReportEntryViewModel();
+        entryVm.LoadFromRecord(selected);
+
+        if (ShowTripReportEditDialog != null && await ShowTripReportEditDialog(entryVm))
+        {
+            await _tripReportVm.UpdateReport(entryVm.ToRecord());
+            _syncService.NotifyDataChanged();
+        }
+    }
+
+    private async Task DeleteTripReportEntry()
+    {
+        if (_tripReportVm == null || !_tripReportVm.IsEditMode)
+        {
+            StatusMessage = "Please enter EDIT MODE first by clicking the Edit button.";
+            return;
+        }
+
+        var selected = _tripReportVm.SelectedReport;
+        if (selected == null)
+        {
+            StatusMessage = "Select a trip to delete.";
+            return;
+        }
+
+        if (ShowConfirmDialog != null)
+        {
+            var confirmed = await ShowConfirmDialog("Delete Trip Report", $"Delete trip to {selected.Destination}? This also deletes its documents.");
+            if (!confirmed) return;
+        }
+
+        await _tripReportVm.DeleteReport(selected);
+        _syncService.NotifyDataChanged();
+    }
+
+    [RelayCommand]
+    private void OpenTripDocuments()
+    {
+        var selected = _tripReportVm?.SelectedReport;
+        if (selected == null)
+        {
+            StatusMessage = "Select a trip to manage its documents.";
+            return;
+        }
+
+        var docsVm = new TripDocumentsViewModel(_apiClient, selected.Id, selected.Destination);
+        ShowTripDocumentsWindow?.Invoke(docsVm);
     }
 
     private void PopulateContactSuggestions(ContactEntryViewModel entryVm)

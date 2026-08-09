@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading;
@@ -48,6 +49,11 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _lastSyncDisplay = "Never";
+
+    [ObservableProperty]
+    private string _reportsDirectoryDisplay = "";
+
+    public Func<Task<string?>>? ShowFolderDialog { get; set; }
 
     private bool _isNetworkConnected;
     public bool IsNetworkConnected
@@ -101,6 +107,11 @@ public partial class SettingsViewModel : ViewModelBase
             _ => 1
         };
 
+        // Storage location
+        ReportsDirectoryDisplay = string.IsNullOrWhiteSpace(_settings.DefaultReportsDirectory)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "WorkPulse Reports")
+            : _settings.DefaultReportsDirectory;
+
         // Sync state
         SyncServerUrl = _settings.SyncServerUrl;
         SyncEmail = _settings.SyncEmail;
@@ -151,6 +162,19 @@ public partial class SettingsViewModel : ViewModelBase
         };
         Application.Current!.Resources["DefaultFontSize"] = size;
         _ = SaveSettingsAsync();
+    }
+
+    [RelayCommand]
+    private async Task BrowseReportsDirectory()
+    {
+        if (ShowFolderDialog == null) return;
+
+        var folder = await ShowFolderDialog();
+        if (string.IsNullOrEmpty(folder)) return;
+
+        _settings.DefaultReportsDirectory = folder;
+        ReportsDirectoryDisplay = folder;
+        await SaveSettingsAsync();
     }
 
     [RelayCommand]

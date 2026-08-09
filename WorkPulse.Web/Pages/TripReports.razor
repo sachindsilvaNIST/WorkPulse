@@ -1,0 +1,413 @@
+@page "/reports/trips"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using WorkPulse.Models
+@inject WorkPulse.Web.Services.ApiTripReportService TripService
+@inject WorkPulse.Web.Services.ApiTripDocumentService DocService
+@inject WorkPulse.Web.Services.ToastService Toast
+@inject IJSRuntime JS
+
+<PageTitle>WorkPulse · Business Trip Reports</PageTitle>
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+    <h4 class="text-xl font-semibold text-app-fg">Business Trip Reports</h4>
+    <button class="btn-primary" @onclick="AddTrip">+ Add Trip</button>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-12"><div class="spinner-primary"></div></div>
+}
+else if (!_trips.Any())
+{
+    <div class="nist-card nist-card-body text-center text-app-fg-secondary py-12">
+        No business trip reports yet. Click "+ Add Trip" to create one.
+    </div>
+}
+else
+{
+    <div class="flex flex-col gap-2">
+        @foreach (var t in _trips.OrderByDescending(x => x.StartDate))
+        {
+            <div class="nist-card nist-card-body">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="badge-info">@t.Category</span>
+                        <span class="font-semibold text-app-fg">@t.Destination</span>
+                        <span class="text-xs text-app-fg-secondary">@t.StartDate.ToString("yyyy-MM-dd") &ndash; @t.EndDate.ToString("yyyy-MM-dd")</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => OpenDocuments(t)">Documents</button>
+                        <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => EditTrip(t)">Edit</button>
+                        <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => DeleteTrip(t)">Del</button>
+                    </div>
+                </div>
+                <div class="text-sm text-app-fg-secondary mt-1">@t.Purpose</div>
+            </div>
+        }
+    </div>
+}
+
+@if (_showModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-lg">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold text-app-fg">@(_isEdit ? "Edit Trip" : "Add Trip")</h5>
+            </div>
+            <div class="modal-body flex flex-col gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-app-fg mb-1">Trip Type</label>
+                    <select class="nist-input" @bind="_formCategory">
+                        <option value="Domestic">Domestic Business Trip</option>
+                        <option value="Overseas">Overseas Business Trip</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg mb-1">Destination</label>
+                    <select class="nist-input" @bind="_formDestination">
+                        <option value="">-- Select --</option>
+                        @foreach (var d in _formCategory == "Domestic" ? TripData.Prefectures : TripData.Countries)
+                        {
+                            <option value="@d">@d</option>
+                        }
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-app-fg mb-1">Start Date</label>
+                        <input class="nist-input" type="date" @bind="_formStartDate" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-app-fg mb-1">End Date</label>
+                        <input class="nist-input" type="date" @bind="_formEndDate" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg mb-1">Purpose</label>
+                    <input class="nist-input" @bind="_formPurpose" placeholder="e.g. Client meeting, conference" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-app-fg mb-1">Notes</label>
+                    <textarea class="nist-input" rows="3" @bind="_formNotes" placeholder="Optional"></textarea>
+                </div>
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="text-sm text-nist-danger">@_formError</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="CloseModal">Cancel</button>
+                <button class="btn-primary" @onclick="SaveTrip">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showDeleteConfirm)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-md">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold text-app-fg">Delete Trip</h5>
+            </div>
+            <div class="modal-body">
+                Delete the trip to <strong>@_deletingTrip?.Destination</strong>? This also deletes its documents.
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="() => _showDeleteConfirm = false">Cancel</button>
+                <button class="btn-danger" @onclick="ConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showDocsModal && _docsTrip != null)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-2xl">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold text-app-fg">Documents — @_docsTrip.Destination</h5>
+                <button class="text-app-fg-secondary hover:text-app-fg text-xl" @onclick="CloseDocuments">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-3">
+                <div class="flex gap-2 items-end">
+                    <div class="w-40">
+                        <label class="block text-xs font-medium text-app-fg mb-1">Category</label>
+                        <select class="nist-input text-sm" @bind="_uploadCategory">
+                            @foreach (var c in _categories)
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-app-fg mb-1">Label (optional)</label>
+                        <input class="nist-input text-sm" @bind="_uploadLabel" placeholder="e.g. Visa, Hotel Booking" />
+                    </div>
+                    <InputFile OnChange="OnFileSelected" class="hidden" id="doc-file-input" />
+                    <label for="doc-file-input" class="btn-primary cursor-pointer text-sm">@(_uploading ? "Uploading…" : "Upload File…")</label>
+                </div>
+
+                <input class="nist-input text-sm" placeholder="Search documents..." value="@_docSearch" @oninput="OnDocSearchInput" />
+
+                @if (_docsLoading)
+                {
+                    <div class="text-center py-6"><div class="spinner-primary"></div></div>
+                }
+                else if (!_documents.Any())
+                {
+                    <div class="text-center text-app-fg-secondary text-sm py-6">No documents yet.</div>
+                }
+                else
+                {
+                    <div class="flex flex-col gap-1 max-h-80 overflow-y-auto">
+                        @foreach (var d in _documents)
+                        {
+                            <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-app-bg-alt">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="badge-info shrink-0">@d.Category</span>
+                                    <div class="min-w-0">
+                                        <div class="text-sm text-app-fg truncate">@d.FileName</div>
+                                        @if (!string.IsNullOrWhiteSpace(d.Label))
+                                        {
+                                            <div class="text-xs text-app-fg-secondary truncate">@d.Label</div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="flex gap-1 shrink-0">
+                                    <button class="btn-outline text-xs !px-2 !py-1" @onclick="() => DownloadDocument(d)">Download</button>
+                                    <button class="btn-danger text-xs !px-2 !py-1" @onclick="() => DeleteDocument(d)">Del</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<TripReport> _trips = new();
+    private bool _loading = true;
+
+    private readonly string[] _categories = { "Invoice", "Receipt", "FlightTicket", "Insurance", "Report", "Other" };
+
+    // Trip modal state
+    private bool _showModal;
+    private bool _isEdit;
+    private TripReport? _editingTrip;
+    private string _formError = "";
+    private string _formCategory = "Domestic";
+    private string _formDestination = "";
+    private DateOnly _formStartDate = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly _formEndDate = DateOnly.FromDateTime(DateTime.Today);
+    private string _formPurpose = "";
+    private string _formNotes = "";
+
+    private bool _showDeleteConfirm;
+    private TripReport? _deletingTrip;
+
+    // Documents modal state
+    private bool _showDocsModal;
+    private TripReport? _docsTrip;
+    private List<TripDocumentMeta> _documents = new();
+    private bool _docsLoading;
+    private string _docSearch = "";
+    private string _uploadCategory = "Other";
+    private string _uploadLabel = "";
+    private bool _uploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrips();
+    }
+
+    private async Task LoadTrips()
+    {
+        _loading = true;
+        _trips = await TripService.GetAllAsync();
+        _loading = false;
+    }
+
+    private void AddTrip()
+    {
+        _editingTrip = null;
+        _isEdit = false;
+        _formCategory = "Domestic";
+        _formDestination = "";
+        _formStartDate = DateOnly.FromDateTime(DateTime.Today);
+        _formEndDate = DateOnly.FromDateTime(DateTime.Today);
+        _formPurpose = "";
+        _formNotes = "";
+        _formError = "";
+        _showModal = true;
+    }
+
+    private void EditTrip(TripReport t)
+    {
+        _editingTrip = t;
+        _isEdit = true;
+        _formCategory = t.Category.ToString();
+        _formDestination = t.Destination;
+        _formStartDate = t.StartDate;
+        _formEndDate = t.EndDate;
+        _formPurpose = t.Purpose;
+        _formNotes = t.Notes;
+        _formError = "";
+        _showModal = true;
+    }
+
+    private void CloseModal() => _showModal = false;
+
+    private async Task SaveTrip()
+    {
+        if (string.IsNullOrWhiteSpace(_formDestination))
+        {
+            _formError = "Please select a destination.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_formPurpose))
+        {
+            _formError = "Please enter a purpose.";
+            return;
+        }
+
+        var record = new TripReport
+        {
+            Id = _editingTrip?.Id ?? Guid.NewGuid().ToString(),
+            Category = Enum.Parse<TripCategory>(_formCategory),
+            Destination = _formDestination,
+            StartDate = _formStartDate,
+            EndDate = _formEndDate,
+            Purpose = _formPurpose.Trim(),
+            Notes = _formNotes.Trim()
+        };
+
+        var saved = _isEdit
+            ? await TripService.UpdateAsync(record.Id, record)
+            : await TripService.CreateAsync(record);
+
+        if (saved == null)
+        {
+            Toast.Error("Failed to save trip.");
+            return;
+        }
+
+        await LoadTrips();
+        Toast.Success(_isEdit ? "Trip updated." : "Trip added.");
+        _showModal = false;
+    }
+
+    private void DeleteTrip(TripReport t)
+    {
+        _deletingTrip = t;
+        _showDeleteConfirm = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deletingTrip != null)
+        {
+            await TripService.DeleteAsync(_deletingTrip.Id);
+            await LoadTrips();
+            Toast.Success("Trip deleted.");
+        }
+        _showDeleteConfirm = false;
+    }
+
+    private async Task OpenDocuments(TripReport t)
+    {
+        _docsTrip = t;
+        _docSearch = "";
+        _uploadCategory = "Other";
+        _uploadLabel = "";
+        _showDocsModal = true;
+        await LoadDocuments();
+    }
+
+    private void CloseDocuments()
+    {
+        _showDocsModal = false;
+        _docsTrip = null;
+    }
+
+    private async Task LoadDocuments()
+    {
+        if (_docsTrip == null) return;
+        _docsLoading = true;
+        _documents = await DocService.GetAllAsync(_docsTrip.Id, string.IsNullOrWhiteSpace(_docSearch) ? null : _docSearch);
+        _docsLoading = false;
+    }
+
+    private void OnDocSearchInput(ChangeEventArgs e)
+    {
+        _docSearch = e.Value?.ToString() ?? "";
+        _ = LoadDocuments();
+    }
+
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (_docsTrip == null) return;
+
+        var file = e.File;
+        if (file.Size > MaxFileSizeBytes)
+        {
+            Toast.Error("File exceeds the 10 MB limit.");
+            return;
+        }
+
+        if (!Enum.TryParse<DocCategory>(_uploadCategory, out var category))
+            category = DocCategory.Other;
+
+        _uploading = true;
+        StateHasChanged();
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxFileSizeBytes);
+            var (success, _, error) = await DocService.UploadAsync(_docsTrip.Id, stream, file.Name, file.ContentType, category, _uploadLabel);
+
+            if (!success)
+            {
+                Toast.Error(error ?? "Upload failed.");
+            }
+            else
+            {
+                Toast.Success("Document uploaded.");
+                _uploadLabel = "";
+                await LoadDocuments();
+            }
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task DownloadDocument(TripDocumentMeta doc)
+    {
+        if (_docsTrip == null) return;
+
+        var (success, content, contentType) = await DocService.DownloadAsync(_docsTrip.Id, doc.Id);
+        if (!success || content == null)
+        {
+            Toast.Error("Download failed.");
+            return;
+        }
+
+        var base64 = Convert.ToBase64String(content);
+        await JS.InvokeVoidAsync("FileDownload.download", doc.FileName, contentType ?? doc.ContentType, base64);
+    }
+
+    private async Task DeleteDocument(TripDocumentMeta doc)
+    {
+        if (_docsTrip == null) return;
+
+        await DocService.DeleteAsync(_docsTrip.Id, doc.Id);
+        Toast.Success("Document deleted.");
+        await LoadDocuments();
+    }
+}

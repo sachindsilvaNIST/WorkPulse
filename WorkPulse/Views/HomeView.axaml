@@ -7,7 +7,7 @@
              x:Class="WorkPulse.Views.HomeView"
              x:DataType="vm:HomeViewModel">
 
-    <Border Background="{DynamicResource AppBackground}">
+    <Border Background="Transparent">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="32">
             <!-- App Title -->
             <StackPanel Spacing="8" HorizontalAlignment="Center">
@@ -28,14 +28,16 @@
             </StackPanel>
 
             <!-- Navigation Buttons -->
-            <StackPanel Orientation="Horizontal" Spacing="24" HorizontalAlignment="Center">
+            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" MaxWidth="1180">
                 <!-- Attendance Dashboard -->
                 <Button Command="{Binding GoToAttendanceCommand}"
-                        Padding="0" Background="Transparent" BorderThickness="0"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
                         ToolTip.Tip="Manage daily attendance, overtime, and monthly reports">
-                    <Border Background="#0078D4" CornerRadius="12" Padding="32,40"
-                            Width="260" MinHeight="180">
+                    <Border Background="#0078D4" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
                         <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
                             <TextBlock Text="Attendance" FontSize="20" FontWeight="Bold"
                                        Foreground="White" HorizontalAlignment="Center"/>
                             <TextBlock Text="Dashboard" FontSize="20" FontWeight="Bold"
@@ -52,11 +54,13 @@
 
                 <!-- Contact Book -->
                 <Button Command="{Binding GoToContactBookCommand}"
-                        Padding="0" Background="Transparent" BorderThickness="0"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
                         ToolTip.Tip="Manage team contacts, departments, and email directory">
-                    <Border Background="#107C10" CornerRadius="12" Padding="32,40"
-                            Width="260" MinHeight="180">
+                    <Border Background="#107C10" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
                         <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
                             <TextBlock Text="Contact" FontSize="20" FontWeight="Bold"
                                        Foreground="White" HorizontalAlignment="Center"/>
                             <TextBlock Text="Book" FontSize="20" FontWeight="Bold"
@@ -71,42 +75,158 @@
                     </Border>
                 </Button>
 
-                <!-- File Search -->
-                <Button Command="{Binding GoToFileSearchCommand}"
-                        Padding="0" Background="Transparent" BorderThickness="0"
-                        ToolTip.Tip="Search files across the entire filesystem instantly">
-                    <Border Background="#8B5CF6" CornerRadius="12" Padding="32,40"
-                            Width="260" MinHeight="180">
+                <!-- Daily Reports -->
+                <Button Command="{Binding GoToDailyReportsCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Write and track daily work reports">
+                    <Border Background="#D13438" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
                         <StackPanel Spacing="12" HorizontalAlignment="Center">
-                            <TextBlock Text="File" FontSize="20" FontWeight="Bold"
+                            <PathIcon Data="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Daily" FontSize="20" FontWeight="Bold"
                                        Foreground="White" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Search" FontSize="20" FontWeight="Bold"
+                            <TextBlock Text="Reports" FontSize="20" FontWeight="Bold"
                                        Foreground="White" HorizontalAlignment="Center"
                                        Margin="0,-8,0,0"/>
                             <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
-                            <TextBlock Text="Find any file instantly&#x0a;across the filesystem"
+                            <TextBlock Text="Summarize what you&#x0a;worked on each day"
+                                       FontSize="12" Foreground="#F8D7D7"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Weekly Reports -->
+                <Button Command="{Binding GoToWeeklyReportsCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Write and track weekly work reports">
+                    <Border Background="#106EBE" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Weekly" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Reports" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Summarize your&#x0a;weekly progress"
+                                       FontSize="12" Foreground="#CDE6F7"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Business Trip Reports -->
+                <Button Command="{Binding GoToTripReportsCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Track business trips and their documents">
+                    <Border Background="#8B5CF6" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Business" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Trips" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Trip reports, receipts,&#x0a;tickets and documents"
                                        FontSize="12" Foreground="#DDD6FE"
                                        HorizontalAlignment="Center"
                                        TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Button>
-            </StackPanel>
 
-            <!-- Settings Gear Button -->
-            <Button Command="{Binding GoToSettingsCommand}"
-                    Padding="0" Background="Transparent" BorderThickness="0"
-                    HorizontalAlignment="Center"
-                    ToolTip.Tip="Application Settings">
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <PathIcon Data="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"
-                              Width="20" Height="20"
-                              Foreground="{DynamicResource AppForegroundSecondary}"/>
-                    <TextBlock Text="Settings" FontSize="14"
-                               Foreground="{DynamicResource AppForegroundSecondary}"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+                <!-- Quick Links -->
+                <Button Command="{Binding GoToQuickLinksCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Fast-access links panel">
+                    <Border Background="#FF9500" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M13.828 10.172a4 4 0 010 5.656l-2 2a4 4 0 01-5.656-5.656l1-1m5.656-1l1-1a4 4 0 00-5.656-5.656l-2 2a4 4 0 000 5.656"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Quick Links" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="A floating panel of&#x0a;your go-to links"
+                                       FontSize="12" Foreground="#FFE4C2"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Reimbursement -->
+                <Button Command="{Binding GoToReimbursementCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Reimbursement document library">
+                    <Border Background="#FF2D55" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Reimbursement" FontSize="19" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Every trip document,&#x0a;found in a second"
+                                       FontSize="12" Foreground="#FFD0DC"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Bookmark Library -->
+                <Button Command="{Binding GoToBookmarkLibraryCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Bookmark library">
+                    <Border Background="#00C7BE" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Bookmark" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Library" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       Margin="0,-8,0,0"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Find any saved link&#x0a;by name or category"
+                                       FontSize="12" Foreground="#C8F5F2"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Settings -->
+                <Button Command="{Binding GoToSettingsCommand}"
+                        Margin="12" Padding="0" Background="Transparent" BorderThickness="0"
+                        ToolTip.Tip="Application settings">
+                    <Border Background="#6E6E73" CornerRadius="12" Padding="32,36"
+                            Width="260" MinHeight="190">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <PathIcon Data="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066zM15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      Width="26" Height="26" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Settings" FontSize="20" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <Border Height="1" Background="#FFFFFF" Opacity="0.3" Margin="0,4"/>
+                            <TextBlock Text="Sync, directories,&#x0a;theme and preferences"
+                                       FontSize="12" Foreground="#DCDCDE"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+            </WrapPanel>
         </StackPanel>
     </Border>
 </UserControl>

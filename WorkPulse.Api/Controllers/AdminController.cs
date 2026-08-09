@@ -161,11 +161,11 @@ public class AdminController : ControllerBase
     /// <summary>Catalog of toggleable feature keys. Attendance/Settings/Home are core and not listed.</summary>
     public static readonly string[] FeatureCatalog = new[]
     {
-        "calendar",
         "contacts",
         "dictionary",
-        "notes",
-        "notifications"
+        "notifications",
+        "quicklinks",
+        "reports"
     };
 
     [HttpGet("users/{id}/features")]

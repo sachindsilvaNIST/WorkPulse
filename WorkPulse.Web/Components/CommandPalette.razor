@@ -80,17 +80,19 @@
             new("Attendance", "Track daily attendance and overtime", "/dashboard", "📅"),
         };
 
-        if (!disabled.Contains("calendar"))
-            _allCommands.Add(new("Calendar", "View calendar", "/calendar", "📆"));
+        if (!disabled.Contains("reports"))
+        {
+            _allCommands.Add(new("Daily Reports", "Write and track daily work reports", "/reports/daily", "📝"));
+            _allCommands.Add(new("Weekly Reports", "Write and track weekly work reports", "/reports/weekly", "📋"));
+            _allCommands.Add(new("Business Trips", "Trip reports and their documents", "/reports/trips", "🧳"));
+            _allCommands.Add(new("Reimbursement", "Find any document across all trips instantly", "/reimbursement", "🧾"));
+        }
+        if (!disabled.Contains("quicklinks"))
+            _allCommands.Add(new("Bookmarks", "Find any saved link by name, synonym, or category", "/bookmarks", "🔖"));
         if (!disabled.Contains("contacts"))
             _allCommands.Add(new("Contacts", "Manage contact book", "/contacts", "👥"));
         if (!disabled.Contains("dictionary"))
-        {
             _allCommands.Add(new("JP Dictionary", "Search Japanese words", "/dictionary", "📖"));
-            _allCommands.Add(new("Review", "Spaced repetition review", "/review", "🧠"));
-        }
-        if (!disabled.Contains("notes"))
-            _allCommands.Add(new("Markdown Editor", "Write and preview notes", "/markdown-editor", "✏"));
         _allCommands.Add(new("Settings", "Configure preferences", "/settings", "⚙"));
         if (isAdmin)
             _allCommands.Add(new("Admin", "Manage users and features", "/admin", "🔧"));

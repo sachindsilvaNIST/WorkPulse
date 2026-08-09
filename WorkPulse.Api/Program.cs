@@ -115,52 +115,87 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+    var isSqlite = db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
+
+    // Ensure the Dictionary tables exist BEFORE running migrations. InitialCreate never
+    // actually created DictionaryEntries/DictionaryLabels/DictionaryEntryLabels (they were
+    // bolted on later via this raw SQL bootstrap); AddJlptLevelToDictionaryEntry and
+    // AddSrsFieldsToDictionaryEntry both ALTER those tables and will fail on a genuinely
+    // fresh database if this runs after Migrate() instead of before it.
+    var conn = db.Database.GetDbConnection();
+    await conn.OpenAsync();
+    using (var cmd = conn.CreateCommand())
     {
-        db.Database.EnsureCreated();
-    }
-    else
-    {
-        // Apply pending migrations for existing tables
-        db.Database.Migrate();
+        cmd.CommandText = isSqlite
+            ? @"
+                CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
+                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_DictionaryEntries"" PRIMARY KEY AUTOINCREMENT,
+                    ""UserId"" TEXT NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                    ""Japanese"" TEXT NOT NULL,
+                    ""Reading"" TEXT NULL,
+                    ""Meaning"" TEXT NOT NULL,
+                    ""ExampleJp"" TEXT NULL,
+                    ""ExampleEn"" TEXT NULL,
+                    ""Notes"" TEXT NULL,
+                    ""CreatedUtc"" TEXT NOT NULL,
+                    ""LastModifiedUtc"" TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
 
-        // Ensure new tables exist (handles tables added after last migration)
-        var conn = db.Database.GetDbConnection();
-        await conn.OpenAsync();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
-            CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
-                ""Id"" serial PRIMARY KEY,
-                ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                ""Japanese"" text NOT NULL,
-                ""Reading"" text,
-                ""Meaning"" text NOT NULL,
-                ""ExampleJp"" text,
-                ""ExampleEn"" text,
-                ""Notes"" text,
-                ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now(),
-                ""LastModifiedUtc"" timestamp with time zone NOT NULL DEFAULT now()
-            );
-            CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
+                CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
+                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_DictionaryLabels"" PRIMARY KEY AUTOINCREMENT,
+                    ""UserId"" TEXT NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                    ""Name"" TEXT NOT NULL,
+                    ""Color"" TEXT NOT NULL DEFAULT '#0078D4',
+                    ""CreatedUtc"" TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
 
-            CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
-                ""Id"" serial PRIMARY KEY,
-                ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                ""Name"" text NOT NULL,
-                ""Color"" text NOT NULL DEFAULT '#0078D4',
-                ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now()
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
+                CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
+                    ""EntryId"" INTEGER NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
+                    ""LabelId"" INTEGER NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
+                    PRIMARY KEY (""EntryId"", ""LabelId"")
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
+            "
+            : @"
+                CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
+                    ""Id"" serial PRIMARY KEY,
+                    ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                    ""Japanese"" text NOT NULL,
+                    ""Reading"" text,
+                    ""Meaning"" text NOT NULL,
+                    ""ExampleJp"" text,
+                    ""ExampleEn"" text,
+                    ""Notes"" text,
+                    ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now(),
+                    ""LastModifiedUtc"" timestamp with time zone NOT NULL DEFAULT now()
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
 
-            CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
-                ""EntryId"" integer NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
-                ""LabelId"" integer NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
-                PRIMARY KEY (""EntryId"", ""LabelId"")
-            );
-            CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
-        ";
+                CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
+                    ""Id"" serial PRIMARY KEY,
+                    ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
+                    ""Name"" text NOT NULL,
+                    ""Color"" text NOT NULL DEFAULT '#0078D4',
+                    ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now()
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
+
+                CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
+                    ""EntryId"" integer NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
+                    ""LabelId"" integer NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
+                    PRIMARY KEY (""EntryId"", ""LabelId"")
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
+            ";
         await cmd.ExecuteNonQueryAsync();
     }
+
+    // Now apply migrations (InitialCreate + all incremental ones) — the Dictionary
+    // tables already exist, so AddJlptLevelToDictionaryEntry/AddSrsFieldsToDictionaryEntry
+    // can ALTER them successfully even on a brand-new database.
+    db.Database.Migrate();
 
     // Seed Admin role
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

@@ -49,7 +49,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-    <script src="js/markdown-editor.js"></script>
+    <script src="js/notes-editor.js"></script>
+    <script src="js/file-download.js"></script>
 
     <!-- Theme + Dictionary helpers -->
     <script>
@@ -137,21 +138,6 @@
             if (!el) return [0, 0];
             return [el.selectionStart, el.selectionEnd];
         }
-
-        // Review page keyboard shortcuts (Space to reveal, 1-4 to grade)
-        window.registerReviewKeyboard = function(dotnetRef) {
-            var handler = function(e) {
-                var tag = (e.target && e.target.tagName) || '';
-                if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
-                if (!window.location.pathname.endsWith('/review')) return;
-                var key = e.key;
-                if (key === ' ' || key === 'Enter' || key === '1' || key === '2' || key === '3' || key === '4') {
-                    e.preventDefault();
-                    dotnetRef.invokeMethodAsync('HandleKey', key);
-                }
-            };
-            document.addEventListener('keydown', handler);
-        };
 
         function speakText(text, lang) {
             if (!('speechSynthesis' in window) || !text) return false;

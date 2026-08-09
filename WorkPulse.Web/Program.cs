@@ -57,6 +57,12 @@ builder.Services.AddScoped<IDataService>(sp => sp.GetRequiredService<ApiDataServ
 builder.Services.AddScoped<ApiContactDataService>();
 builder.Services.AddScoped<ApiSettingsService>();
 builder.Services.AddScoped<ApiDictionaryService>();
+builder.Services.AddScoped<ApiQuickLinkService>();
+builder.Services.AddScoped<ApiDailyReportService>();
+builder.Services.AddScoped<ApiWeeklyReportService>();
+builder.Services.AddScoped<ApiTripReportService>();
+builder.Services.AddScoped<ApiTripDocumentService>();
+builder.Services.AddScoped<ApiReimbursementService>();
 builder.Services.AddScoped<FeatureService>();
 builder.Services.AddScoped<ToastService>();
 

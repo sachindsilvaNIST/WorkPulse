@@ -18,6 +18,9 @@ public partial class MainWindow : Window
 {
     private bool _forceClose;
     private DispatcherTimer? _clockTimer;
+    private QuickLinksWindow? _quickLinksWindow;
+    private ReimbursementWindow? _reimbursementWindow;
+    private BookmarkLibraryWindow? _bookmarkLibraryWindow;
 
     public MainWindow()
     {
@@ -34,7 +37,13 @@ public partial class MainWindow : Window
                 vm.ShowSaveFileDialog = ShowSaveFileDialogAsync;
                 vm.ShowEditDialog = ShowEditDialogAsync;
                 vm.ShowContactEditDialog = ShowContactEditDialogAsync;
+                vm.ShowTripReportEditDialog = ShowTripReportEditDialogAsync;
                 vm.ShowConfirmDialog = ShowConfirmDialogAsync;
+                vm.ShowFolderDialog = ShowFolderDialogAsync;
+                vm.ShowQuickLinksWindow = OpenQuickLinksWindow;
+                vm.ShowTripDocumentsWindow = OpenTripDocumentsWindow;
+                vm.ShowReimbursementWindow = OpenReimbursementWindow;
+                vm.ShowBookmarkLibraryWindow = OpenBookmarkLibraryWindow;
 
                 // Listen for navigation changes to toggle toolbars
                 vm.PropertyChanged += OnViewModelPropertyChanged;
@@ -66,10 +75,6 @@ public partial class MainWindow : Window
                     break;
                 case Key.D2:
                     vm.NavigateTo("contacts");
-                    e.Handled = true;
-                    break;
-                case Key.D3:
-                    vm.NavigateTo("search");
                     e.Handled = true;
                     break;
                 case Key.H:
@@ -160,7 +165,6 @@ public partial class MainWindow : Window
         {
             ("Ctrl + 1", "Attendance Dashboard"),
             ("Ctrl + 2", "Contact Book"),
-            ("Ctrl + 3", "File Search"),
             ("Ctrl + H", "Home"),
             ("Ctrl + F", "Focus Search Bar"),
             ("Ctrl + ,", "Settings"),
@@ -251,7 +255,7 @@ public partial class MainWindow : Window
     {
         var attendanceToolbar = this.FindControl<StackPanel>("AttendanceToolbar");
         var contactsToolbar = this.FindControl<StackPanel>("ContactsToolbar");
-        var fileSearchToolbar = this.FindControl<StackPanel>("FileSearchToolbar");
+        var tripReportsToolbar = this.FindControl<StackPanel>("TripReportsToolbar");
         var importExportToolbar = this.FindControl<StackPanel>("ImportExportToolbar");
         var importExcelBtn = this.FindControl<Button>("ImportExcelBtn");
         var toolbarBorder = this.FindControl<Border>("ToolbarBorder");
@@ -262,13 +266,13 @@ public partial class MainWindow : Window
         bool isHome = viewName == "home";
         bool isAttendance = viewName == "attendance";
         bool isContacts = viewName == "contacts";
-        bool isSearch = viewName == "search";
+        bool isTripReports = viewName == "tripreports";
         bool isSettings = viewName == "settings";
 
-        if (toolbarBorder != null) toolbarBorder.IsVisible = !isHome;
+        if (toolbarBorder != null) toolbarBorder.IsVisible = !isHome && viewName != "dailyreports" && viewName != "weeklyreports";
         if (attendanceToolbar != null) attendanceToolbar.IsVisible = isAttendance;
         if (contactsToolbar != null) contactsToolbar.IsVisible = isContacts;
-        if (fileSearchToolbar != null) fileSearchToolbar.IsVisible = isSearch;
+        if (tripReportsToolbar != null) tripReportsToolbar.IsVisible = isTripReports;
         if (importExportToolbar != null) importExportToolbar.IsVisible = isAttendance || isContacts;
         if (importExcelBtn != null) importExcelBtn.IsVisible = isAttendance;
         if (toolbarSettingsBtn != null) toolbarSettingsBtn.IsVisible = !isHome && !isSettings;
@@ -279,7 +283,9 @@ public partial class MainWindow : Window
             {
                 "attendance" => "Attendance Management",
                 "contacts" => "Contact Book",
-                "search" => "File Search",
+                "dailyreports" => "Daily Reports",
+                "weeklyreports" => "Weekly Reports",
+                "tripreports" => "Business Trip Reports",
                 "settings" => "Settings",
                 _ => ""
             };
@@ -291,7 +297,9 @@ public partial class MainWindow : Window
             {
                 "attendance" => "Attendance",
                 "contacts" => "Contacts",
-                "search" => "File Search",
+                "dailyreports" => "Daily Reports",
+                "weeklyreports" => "Weekly Reports",
+                "tripreports" => "Trip Reports",
                 "settings" => "Settings",
                 "home" => "Home",
                 _ => ""
@@ -538,6 +546,78 @@ public partial class MainWindow : Window
         var dialog = new ContactEntryDialog(entryVm);
         await dialog.ShowDialog(this);
         return entryVm.DialogResult;
+    }
+
+    private void OpenQuickLinksWindow()
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (_quickLinksWindow == null)
+        {
+            _quickLinksWindow = new QuickLinksWindow(vm.QuickLinks);
+            _quickLinksWindow.Closed += (_, _) => _quickLinksWindow = null;
+            _quickLinksWindow.Show(this);
+        }
+        else
+        {
+            _quickLinksWindow.Activate();
+        }
+    }
+
+    private void OpenBookmarkLibraryWindow()
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (_bookmarkLibraryWindow == null)
+        {
+            _bookmarkLibraryWindow = new BookmarkLibraryWindow(vm.QuickLinks);
+            _bookmarkLibraryWindow.Closed += (_, _) => _bookmarkLibraryWindow = null;
+            _bookmarkLibraryWindow.Show(this);
+        }
+        else
+        {
+            _bookmarkLibraryWindow.Activate();
+        }
+    }
+
+    private async Task<bool> ShowTripReportEditDialogAsync(TripReportEntryViewModel entryVm)
+    {
+        var dialog = new TripReportEntryDialog(entryVm);
+        await dialog.ShowDialog(this);
+        return entryVm.DialogResult;
+    }
+
+    private async void OpenTripDocumentsWindow(TripDocumentsViewModel docsVm)
+    {
+        var window = new TripDocumentsWindow(docsVm);
+        await window.ShowDialog(this);
+    }
+
+    private void OpenReimbursementWindow()
+    {
+        if (DataContext is not MainWindowViewModel vm) return;
+
+        if (_reimbursementWindow == null)
+        {
+            _reimbursementWindow = new ReimbursementWindow(vm.Reimbursement);
+            _reimbursementWindow.Closed += (_, _) => _reimbursementWindow = null;
+            _reimbursementWindow.Show(this);
+        }
+        else
+        {
+            _reimbursementWindow.Activate();
+        }
+    }
+
+    private async Task<string?> ShowFolderDialogAsync()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Select Save Folder",
+            AllowMultiple = false
+        });
+
+        return folders.FirstOrDefault()?.Path.LocalPath;
     }
 
     private async Task<bool> ShowConfirmDialogAsync(string title, string message)

@@ -15,12 +15,19 @@
                        Foreground="{DynamicResource AppForeground}"/>
 
             <!-- ===== Appearance Card ===== -->
-            <Border Background="{DynamicResource AppBackground}"
+            <Border Background="#0A8B5CF6"
                     BorderBrush="{DynamicResource AppDivider}"
-                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                    BorderThickness="1" CornerRadius="10" Padding="24,20">
                 <StackPanel Spacing="20">
-                    <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppForeground}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="#1F8B5CF6">
+                            <PathIcon Data="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+                                      Width="15" Height="15" Foreground="#8B5CF6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                    </StackPanel>
 
                     <!-- Theme Toggle -->
                     <Grid ColumnDefinitions="*,Auto">
@@ -54,12 +61,19 @@
             </Border>
 
             <!-- ===== Keyboard Shortcuts Card ===== -->
-            <Border Background="{DynamicResource AppBackground}"
+            <Border Background="#0A007AFF"
                     BorderBrush="{DynamicResource AppDivider}"
-                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                    BorderThickness="1" CornerRadius="10" Padding="24,20">
                 <StackPanel Spacing="16">
-                    <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppForeground}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="#1F007AFF">
+                            <PathIcon Data="M4 6h16M4 10h16M4 14h10M4 18h10"
+                                      Width="15" Height="15" Foreground="#007AFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                    </StackPanel>
 
                     <!-- Shortcuts Table -->
                     <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
@@ -138,14 +152,47 @@
                 </StackPanel>
             </Border>
 
-            <!-- ===== Cloud Sync Card ===== -->
-            <Border Background="{DynamicResource AppBackground}"
+            <!-- ===== Storage Card ===== -->
+            <Border Background="#0A00C7BE"
                     BorderBrush="{DynamicResource AppDivider}"
-                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                    BorderThickness="1" CornerRadius="10" Padding="24,20">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="#1F00C7BE">
+                            <PathIcon Data="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                                      Width="15" Height="15" Foreground="#00C7BE" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Storage" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                    </StackPanel>
+                    <TextBlock Text="Schedules and reports are saved as files in this folder. Change it any time."
+                               FontSize="12"
+                               Foreground="{DynamicResource AppForegroundSecondary}"/>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBox Grid.Column="0" Text="{Binding ReportsDirectoryDisplay}"
+                                 IsReadOnly="True" Padding="10,6" CornerRadius="4"/>
+                        <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseReportsDirectoryCommand}"
+                                Padding="14,6" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Cloud Sync Card ===== -->
+            <Border Background="#0A34C759"
+                    BorderBrush="{DynamicResource AppDivider}"
+                    BorderThickness="1" CornerRadius="10" Padding="24,20">
                 <StackPanel Spacing="16">
                     <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Grid.Column="0" Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppForeground}"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#1F34C759">
+                                <PathIcon Data="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9"
+                                          Width="15" Height="15" Foreground="#34C759" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Cloud Sync" FontSize="18" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppForeground}"/>
+                        </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                             <Ellipse Width="8" Height="8" Fill="#22C55E"
                                      IsVisible="{Binding IsNetworkConnected}"/>
@@ -221,12 +268,19 @@
             </Border>
 
             <!-- ===== About Card ===== -->
-            <Border Background="{DynamicResource AppBackground}"
+            <Border Background="#0A6E6E73"
                     BorderBrush="{DynamicResource AppDivider}"
-                    BorderThickness="1" CornerRadius="8" Padding="24,20">
+                    BorderThickness="1" CornerRadius="10" Padding="24,20">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="About" FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppForeground}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="#1F6E6E73">
+                            <PathIcon Data="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      Width="15" Height="15" Foreground="#6E6E73" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="About" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppForeground}"/>
+                    </StackPanel>
                     <TextBlock Text="{Binding VersionDisplay}" FontSize="14"
                                Foreground="{DynamicResource AppForeground}"/>
                     <TextBlock Text="Attendance, Contact Book, and File Search — all in one place."

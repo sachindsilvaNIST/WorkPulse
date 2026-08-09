@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WorkPulse.ViewModels"
+        xmlns:m="using:WorkPulse.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="420"
+        x:Class="WorkPulse.Views.QuickLinksWindow"
+        x:DataType="vm:QuickLinksViewModel"
+        Title="Quick Links"
+        Width="480" Height="480"
+        MinWidth="360" MinHeight="320"
+        Background="Transparent"
+        TransparencyLevelHint="Mica,AcrylicBlur,None"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <Window.Styles>
+        <!-- Ambient hover glow for each link chip -->
+        <Style Selector="Button.ql-chip">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.ql-chip:pointerover">
+            <Setter Property="Background" Value="#2AFF9500"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel Margin="16">
+        <!-- Search + Add -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <TextBox Grid.Column="0" Text="{Binding SearchText}"
+                     Watermark="Search links..."
+                     Padding="10,6" CornerRadius="6"
+                     BorderBrush="{DynamicResource AppDivider}"
+                     Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Classes="btn-blue" Content="+ Add"
+                    Command="{Binding AddLinkCommand}"
+                    Padding="14,6" Background="#007AFF" Foreground="White"/>
+        </Grid>
+
+        <!-- Links -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding FilteredLinks}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:QuickLink">
+                        <Button Classes="ql-chip" Margin="4" Padding="14,10" CornerRadius="10"
+                                Background="#14FF9500"
+                                BorderBrush="#33FF9500" BorderThickness="1"
+                                Click="LinkButton_Click"
+                                Tag="{Binding}">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Edit" Click="EditLink_Click" Tag="{Binding}"/>
+                                    <MenuItem Header="Delete" Click="DeleteLink_Click" Tag="{Binding}"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="M13.828 10.172a4 4 0 010 5.656l-2 2a4 4 0 01-5.656-5.656l1-1m5.656-1l1-1a4 4 0 00-5.656-5.656l-2 2a4 4 0 000 5.656"
+                                          Width="13" Height="13" Foreground="#FF9500"/>
+                                <TextBlock Text="{Binding Label}" Foreground="#B8580A" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
