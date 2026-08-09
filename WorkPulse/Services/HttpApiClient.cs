@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -6,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using WorkPulse.Converters;
 using WorkPulse.DTOs;
+using WorkPulse.Models;
 
 namespace WorkPulse.Services;
 
@@ -117,6 +120,73 @@ public class HttpApiClient : IDisposable
 
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SyncResponse>(_jsonOptions);
+    }
+
+    // --- Reimbursement: cross-trip document library ---
+
+    public async Task<List<TripDocumentWithTrip>> GetAllDocumentsAsync(string? search = null)
+    {
+        var url = "api/reimbursement/documents";
+        if (!string.IsNullOrWhiteSpace(search))
+            url += $"?search={Uri.EscapeDataString(search)}";
+
+        var response = await SendWithRetry(() => _http.GetAsync(url));
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<TripDocumentWithTrip>>(_jsonOptions) ?? new();
+    }
+
+    // --- Trip documents (API-only; not part of the local JSON sync payload) ---
+
+    public async Task<List<TripDocumentMeta>> GetTripDocumentsAsync(string tripId, string? search = null)
+    {
+        var url = $"api/tripreports/{tripId}/documents";
+        if (!string.IsNullOrWhiteSpace(search))
+            url += $"?search={Uri.EscapeDataString(search)}";
+
+        var response = await SendWithRetry(() => _http.GetAsync(url));
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<TripDocumentMeta>>(_jsonOptions) ?? new();
+    }
+
+    public async Task<(bool Success, TripDocumentMeta? Meta, string? Error)> UploadTripDocumentAsync(
+        string tripId, string filePath, DocCategory category, string? label)
+    {
+        using var form = new MultipartFormDataContent();
+        var fileBytes = await File.ReadAllBytesAsync(filePath);
+        var fileContent = new ByteArrayContent(fileBytes);
+        form.Add(fileContent, "file", Path.GetFileName(filePath));
+        form.Add(new StringContent(category.ToString()), "category");
+        form.Add(new StringContent(label ?? ""), "label");
+
+        var response = await SendWithRetry(() => _http.PostAsync($"api/tripreports/{tripId}/documents", form));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            return (false, null, $"Upload failed: {error}");
+        }
+
+        var meta = await response.Content.ReadFromJsonAsync<TripDocumentMeta>(_jsonOptions);
+        return (true, meta, null);
+    }
+
+    public async Task<(bool Success, byte[]? Content, string? FileName, string? Error)> DownloadTripDocumentAsync(string tripId, string docId)
+    {
+        var response = await SendWithRetry(() => _http.GetAsync($"api/tripreports/{tripId}/documents/{docId}"));
+
+        if (!response.IsSuccessStatusCode)
+            return (false, null, null, $"Download failed: {response.StatusCode}");
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName
+            ?? "download";
+        return (true, bytes, fileName.Trim('"'), null);
+    }
+
+    public async Task DeleteTripDocumentAsync(string tripId, string docId)
+    {
+        await SendWithRetry(() => _http.DeleteAsync($"api/tripreports/{tripId}/documents/{docId}"));
     }
 
     private async Task<HttpResponseMessage> SendWithRetry(Func<Task<HttpResponseMessage>> action)

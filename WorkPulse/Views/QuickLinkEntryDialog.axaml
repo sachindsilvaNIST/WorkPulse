@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WorkPulse.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="420"
+        x:Class="WorkPulse.Views.QuickLinkEntryDialog"
+        x:DataType="vm:QuickLinkEntryViewModel"
+        Title="{Binding WindowTitle}"
+        Width="400" Height="440"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="20">
+        <StackPanel Spacing="14">
+            <!-- Validation Error -->
+            <Border Background="{DynamicResource AppErrorPanel}" Padding="12" CornerRadius="4"
+                    IsVisible="{Binding HasValidationError}">
+                <TextBlock Text="{Binding ValidationError}" FontWeight="SemiBold"
+                           Foreground="#D13438"/>
+            </Border>
+
+            <!-- Label -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Label" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Label}" Watermark="e.g. Team Wiki" Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="URL" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Url}" Watermark="https://example.com" Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Category -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Category" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Category}" Watermark="e.g. Work, Cloud Storage, Docs" Padding="10,6" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- Keywords -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Search Keywords" FontWeight="SemiBold" FontSize="13"/>
+                <TextBox Text="{Binding Keywords}" Watermark="e.g. drive, cloud, storage, backup" Padding="10,6" CornerRadius="4"/>
+                <TextBlock Text="Comma-separated alternate terms so you can find this by synonyms." FontSize="11" Opacity="0.6"/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Spacing="8" Margin="0,8,0,0">
+                <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        Padding="16,6"
+                        Background="{DynamicResource AppButtonNeutral}" Foreground="{DynamicResource AppForeground}"/>
+                <Button Content="Save" Command="{Binding SaveCommand}"
+                        Padding="16,6" FontWeight="Bold"
+                        Background="#107C10" Foreground="White"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

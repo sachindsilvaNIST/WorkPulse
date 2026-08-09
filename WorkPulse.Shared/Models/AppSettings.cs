@@ -21,4 +21,8 @@ public class AppSettings
     public string? SyncToken { get; set; }
     public string? SyncRefreshToken { get; set; }
     public DateTime LastSyncedAtUtc { get; set; } = DateTime.MinValue;
+
+    // Local save directory (desktop only, not synced to server — a Windows/Linux
+    // folder path has no meaning on the web app or the server itself)
+    public string DefaultReportsDirectory { get; set; } = "";
 }

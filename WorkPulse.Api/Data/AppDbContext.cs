@@ -13,6 +13,11 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<DictionaryEntryEntity> DictionaryEntries => Set<DictionaryEntryEntity>();
     public DbSet<DictionaryLabelEntity> DictionaryLabels => Set<DictionaryLabelEntity>();
     public DbSet<DictionaryEntryLabelEntity> DictionaryEntryLabels => Set<DictionaryEntryLabelEntity>();
+    public DbSet<QuickLinkEntity> QuickLinks => Set<QuickLinkEntity>();
+    public DbSet<DailyReportEntity> DailyReports => Set<DailyReportEntity>();
+    public DbSet<WeeklyReportEntity> WeeklyReports => Set<WeeklyReportEntity>();
+    public DbSet<TripReportEntity> TripReports => Set<TripReportEntity>();
+    public DbSet<TripDocumentEntity> TripDocuments => Set<TripDocumentEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -97,6 +102,62 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(x => x.Label)
                 .WithMany(label => label.EntryLabels)
                 .HasForeignKey(x => x.LabelId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // QuickLink
+        builder.Entity<QuickLinkEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DailyReport
+        builder.Entity<DailyReportEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.UserId, x.ReportDate });
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WeeklyReport
+        builder.Entity<WeeklyReportEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.UserId, x.WeekStartDate });
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TripReport
+        builder.Entity<TripReportEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.UserId, x.StartDate });
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TripDocument
+        builder.Entity<TripDocumentEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.TripReportId);
+            e.HasIndex(x => x.UserId);
+            e.HasOne(x => x.TripReport)
+                .WithMany(t => t.Documents)
+                .HasForeignKey(x => x.TripReportId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

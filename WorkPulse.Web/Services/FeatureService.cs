@@ -12,11 +12,11 @@ public class FeatureService
     /// <summary>Catalog of toggleable features. Mirror of AdminController.FeatureCatalog.</summary>
     public static readonly string[] Catalog = new[]
     {
-        "calendar",
         "contacts",
         "dictionary",
-        "notes",
-        "notifications"
+        "notifications",
+        "quicklinks",
+        "reports"
     };
 
     private readonly AuthenticationStateProvider _authState;

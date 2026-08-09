@@ -22,6 +22,13 @@
   --color-app-fg-secondary: #666666;
   --color-app-divider: #E0E0E0;
   --color-app-sidebar: #1E1E1E;
+
+  /* Apple/Notes-style card radius (rounded-card utility) */
+  --radius-card: 16px;
+
+  /* Apple-style spring/glass motion tokens */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 /* Dark mode overrides — activated by .dark class on <html> */
@@ -41,9 +48,32 @@ html.dark {
 /* Base styles — match desktop Segoe UI / Fluent */
 @layer base {
   html, body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-    @apply h-full bg-app-bg-alt text-app-fg;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    @apply h-full text-app-fg;
     font-size: 14px;
+    background:
+      radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--color-nist-primary) 10%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--color-nist-purple) 8%, transparent), transparent 55%),
+      radial-gradient(800px 500px at 50% 110%, color-mix(in srgb, var(--color-nist-info) 6%, transparent), transparent 60%),
+      var(--color-app-bg-alt);
+    background-attachment: fixed;
+    background-size: 160% 160%, 160% 160%, 160% 160%, auto;
+    animation: aurora-drift 40s ease-in-out infinite alternate;
+  }
+
+  .dark html, .dark body, html.dark, html.dark body {
+    background:
+      radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--color-nist-primary) 16%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--color-nist-purple) 12%, transparent), transparent 55%),
+      radial-gradient(800px 500px at 50% 110%, color-mix(in srgb, var(--color-nist-info) 10%, transparent), transparent 60%),
+      var(--color-app-bg-alt);
+    background-attachment: fixed;
+    background-size: 160% 160%, 160% 160%, 160% 160%, auto;
+    animation: aurora-drift 40s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html, body { animation: none; }
   }
 
   input, select, textarea {
@@ -96,9 +126,15 @@ html.dark {
     border-radius: 2px;
   }
 
-  /* Desktop-style card */
+  /* Desktop-style card — Liquid Glass surface with a specular highlight along the top edge */
   .nist-card {
-    @apply bg-app-bg rounded-lg border border-app-divider;
+    @apply relative rounded-card border border-app-divider backdrop-blur-md overflow-hidden;
+    background-color: color-mix(in srgb, var(--color-app-bg) 88%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring), border-color 0.35s var(--ease-spring);
+  }
+  .nist-card:hover {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.06), 0 16px 32px -14px rgba(0, 0, 0, 0.14);
   }
   .nist-card-header {
     @apply px-5 py-3 border-b border-app-divider font-semibold text-app-fg;
@@ -107,47 +143,104 @@ html.dark {
     @apply p-5;
   }
 
-  /* Desktop-style buttons */
-  .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-primary text-white;
+  /* Apple Notes-style translucent card — for panels floating over other content
+     (slide-overs, palettes) where a frosted-glass feel reads better than a flat card */
+  .nist-card-translucent {
+    @apply rounded-card border border-app-divider backdrop-blur-xl;
+    background-color: color-mix(in srgb, var(--color-app-bg) 72%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 40px -8px rgba(0, 0, 0, 0.18);
   }
-  .btn-blue {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-blue text-white;
+
+  /* Frosted-glass sidebar */
+  .glass-sidebar {
+    background-color: color-mix(in srgb, var(--color-app-sidebar) 78%, transparent);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .btn-green {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-success text-white;
+
+  /* Frosted-glass top bar (mobile) */
+  .glass-topbar {
+    background-color: color-mix(in srgb, var(--color-app-sidebar) 82%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
   }
-  .btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-danger text-white;
+
+  /* Sidebar nav links — glassy pill hover/active states with spring motion */
+  .nav-pill {
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-white/75;
+    transition: background-color 0.25s var(--ease-out-soft), color 0.25s var(--ease-out-soft), transform 0.25s var(--ease-spring);
   }
-  .btn-warning {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-warning text-white;
+  .nav-pill:hover {
+    @apply text-white;
+    background-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
   }
-  .btn-info {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-info text-white;
+  .nav-pill:active {
+    transform: translateX(2px) scale(0.98);
   }
-  .btn-purple {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-nist-purple text-white;
+  .nav-pill.active {
+    @apply text-white;
+    background-color: color-mix(in srgb, var(--color-nist-primary) 30%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-nist-primary) 45%, transparent);
   }
+
+  /* Liquid Glass buttons — translucent capsule with a specular highlight sheen along the top edge */
+  .btn-primary, .btn-blue, .btn-green, .btn-danger,
+  .btn-warning, .btn-info, .btn-purple, .btn-outline {
+    @apply relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium overflow-hidden;
+    isolation: isolate;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring), opacity 0.2s var(--ease-out-soft), background-color 0.2s var(--ease-out-soft);
+  }
+  .btn-primary::before, .btn-blue::before, .btn-green::before, .btn-danger::before,
+  .btn-warning::before, .btn-info::before, .btn-purple::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
+    pointer-events: none;
+  }
+  .btn-primary { background-color: color-mix(in srgb, var(--color-nist-primary) 88%, transparent); @apply text-white; }
+  .btn-blue { background-color: color-mix(in srgb, var(--color-nist-blue) 88%, transparent); @apply text-white; }
+  .btn-green { background-color: color-mix(in srgb, var(--color-nist-success) 88%, transparent); @apply text-white; }
+  .btn-danger { background-color: color-mix(in srgb, var(--color-nist-danger) 88%, transparent); @apply text-white; }
+  .btn-warning { background-color: color-mix(in srgb, var(--color-nist-warning) 88%, transparent); @apply text-white; }
+  .btn-info { background-color: color-mix(in srgb, var(--color-nist-info) 88%, transparent); @apply text-white; }
+  .btn-purple { background-color: color-mix(in srgb, var(--color-nist-purple) 88%, transparent); @apply text-white; }
   .btn-outline {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 bg-transparent border border-app-divider text-app-fg;
+    background-color: color-mix(in srgb, var(--color-app-bg) 55%, transparent);
+    @apply border border-app-divider text-app-fg;
   }
   .btn-outline:hover {
-    @apply bg-gray-100;
+    background-color: color-mix(in srgb, var(--color-app-bg) 80%, transparent);
   }
   .btn-primary:hover, .btn-blue:hover, .btn-green:hover, .btn-danger:hover,
   .btn-warning:hover, .btn-info:hover, .btn-purple:hover {
-    @apply opacity-80;
+    @apply opacity-90;
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.08), 0 8px 20px -6px rgba(0, 0, 0, 0.3);
   }
   .btn-primary:active, .btn-blue:active, .btn-green:active, .btn-danger:active,
   .btn-warning:active, .btn-info:active, .btn-purple:active, .btn-outline:active {
-    @apply opacity-60;
+    @apply opacity-70;
+    transform: translateY(0) scale(0.97);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
-  /* Desktop-style input */
+  /* Liquid Glass input — translucent capsule, brightens and glows on focus */
   .nist-input {
-    @apply w-full px-3 py-1.5 border border-app-divider rounded bg-app-bg text-app-fg text-sm
+    @apply w-full px-3.5 py-1.5 border border-app-divider rounded-full text-app-fg text-sm backdrop-blur-md
            focus:outline-none focus:ring-2 focus:ring-nist-primary/40 focus:border-nist-primary;
+    background-color: color-mix(in srgb, var(--color-app-bg) 55%, transparent);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: background-color 0.25s var(--ease-out-soft), box-shadow 0.25s var(--ease-out-soft);
+  }
+  .nist-input:focus {
+    background-color: color-mix(in srgb, var(--color-app-bg) 85%, transparent);
   }
 
   /* Desktop-style table */
@@ -155,7 +248,8 @@ html.dark {
     @apply w-full text-sm border-collapse;
   }
   .nist-table thead tr {
-    @apply bg-app-bg-alt border-b-2 border-app-divider;
+    @apply border-b-2 border-app-divider backdrop-blur-md;
+    background-color: color-mix(in srgb, var(--color-app-bg-alt) 70%, transparent);
   }
   .nist-table th {
     @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-app-fg-secondary;
@@ -163,30 +257,50 @@ html.dark {
   .nist-table td {
     @apply px-3 py-2 border-b border-app-divider;
   }
+  .nist-table tbody tr {
+    transition: background-color 0.2s var(--ease-out-soft);
+  }
   .nist-table tbody tr:hover {
     @apply bg-gray-50;
   }
 
-  /* Status badge */
+  /* Liquid Glass status badges — translucent pill with a soft ring instead of a flat fill */
   .badge-success {
-    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700;
+    @apply inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full text-green-700;
+    background-color: color-mix(in srgb, #16a34a 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #16a34a 30%, transparent);
   }
   .badge-danger {
-    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-700;
+    @apply inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full text-red-700;
+    background-color: color-mix(in srgb, #dc2626 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #dc2626 30%, transparent);
   }
   .badge-info {
-    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700;
+    @apply inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full text-blue-700;
+    background-color: color-mix(in srgb, #2563eb 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #2563eb 30%, transparent);
   }
   .badge-warning {
-    @apply inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700;
+    @apply inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full text-amber-700;
+    background-color: color-mix(in srgb, #d97706 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #d97706 30%, transparent);
+  }
+  .dark .badge-success, .dark .badge-danger, .dark .badge-info, .dark .badge-warning {
+    @apply text-white;
   }
 
   /* Modal overlay */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50;
+    @apply fixed inset-0 bg-black/40 flex items-center justify-center z-50;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: overlay-fade-in 0.25s var(--ease-out-soft);
   }
   .modal-panel {
-    @apply bg-app-bg rounded-lg shadow-xl w-full mx-4;
+    @apply rounded-card shadow-xl w-full mx-4 border border-app-divider backdrop-blur-xl;
+    background-color: color-mix(in srgb, var(--color-app-bg) 92%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 20px 60px -12px rgba(0, 0, 0, 0.35);
+    animation: modal-pop-in 0.3s var(--ease-spring);
   }
   .modal-header {
     @apply px-6 py-4 border-b border-app-divider flex justify-between items-center;
@@ -198,61 +312,15 @@ html.dark {
     @apply px-6 py-4 border-t border-app-divider flex justify-end gap-2;
   }
 
-  /* ── Markdown Editor ── */
+  /* Rich-text toolbar button, shared by report editors and the dictionary notes editor */
   .md-tool-btn {
     @apply inline-flex items-center justify-center w-7 h-7 rounded text-app-fg-secondary
            hover:bg-gray-100 hover:text-app-fg transition-colors cursor-pointer text-xs font-semibold;
     border: 1px solid transparent;
     background: transparent;
   }
-  .md-tool-active {
-    @apply bg-blue-50 text-nist-primary;
-    border-color: var(--color-nist-primary);
-  }
 
-  /* CodeMirror integration */
-  .md-editor-wrapper .CodeMirror {
-    height: 100%;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 14px;
-    line-height: 1.6;
-    border: none;
-  }
-  .md-editor-wrapper .CodeMirror-gutters {
-    background: var(--color-app-bg-alt);
-    border-right: 1px solid var(--color-app-divider);
-  }
-  .md-editor-wrapper .CodeMirror-linenumber {
-    color: var(--color-app-fg-secondary);
-  }
-  .md-editor-wrapper .CodeMirror-cursor {
-    border-left-color: var(--color-nist-primary);
-  }
-  .md-editor-wrapper .CodeMirror-selected {
-    background: rgba(0, 120, 212, 0.15) !important;
-  }
-
-  /* Divider */
-  .md-divider {
-    @apply flex items-center justify-center shrink-0 cursor-col-resize transition-colors;
-    width: 5px;
-    background: var(--color-app-divider);
-  }
-  .md-divider:hover { background: var(--color-nist-primary); }
-  .md-divider-handle {
-    width: 3px; height: 28px; border-radius: 2px;
-    background: var(--color-app-fg-secondary);
-    opacity: 0.4;
-  }
-  .md-divider:hover .md-divider-handle { opacity: 0; }
-
-  /* View mode toggles */
-  #md-main.md-editor-only #md-preview-pane,
-  #md-main.md-editor-only #md-divider { display: none; }
-  #md-main.md-preview-only #md-editor-pane,
-  #md-main.md-preview-only #md-divider { display: none; }
-
-  /* GitHub-flavored Markdown preview */
+  /* GitHub-flavored Markdown preview (report/dictionary rich-text rendering) */
   .md-body {
     font-size: 15px;
     line-height: 1.7;
@@ -313,6 +381,31 @@ html.dark {
 }
 .animate-slide-in {
   animation: toast-slide-in 0.25s ease-out;
+}
+
+/* Modal entrance motion */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-pop-in {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Ambient background drift — the layered radial gradients slowly pan, like Apple's aurora backdrops */
+@keyframes aurora-drift {
+  0% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  100% { background-position: 10% 15%, 90% 10%, 55% 90%, 0 0; }
+}
+
+/* Page content fade/rise-in — applied to the routed page wrapper */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-transition {
+  animation: page-fade-in 0.35s var(--ease-out-soft);
 }
 
 /* Blazor defaults */

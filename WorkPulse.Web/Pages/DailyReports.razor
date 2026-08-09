@@ -1,0 +1,263 @@
+@page "/reports/daily"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using WorkPulse.Models
+@inject WorkPulse.Web.Services.ApiDailyReportService ReportService
+@inject WorkPulse.Web.Services.ToastService Toast
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>WorkPulse · Daily Reports</PageTitle>
+
+<div class="flex h-[calc(100vh-2rem)] -m-4 sm:-m-6 border border-app-divider rounded-lg overflow-hidden">
+    <!-- Sidebar -->
+    <div class="w-72 shrink-0 border-r border-app-divider flex flex-col bg-app-bg-alt">
+        <div class="p-3 border-b border-app-divider">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold text-app-fg">Daily Reports</h4>
+                <div class="flex items-center gap-2">
+                    <a href="/reports/weekly" class="text-xs text-nist-primary hover:underline">Weekly</a>
+                    <button class="text-nist-primary text-xl leading-none" title="New Report" @onclick="CreateNote">+</button>
+                </div>
+            </div>
+            <input class="nist-input text-sm" placeholder="Search" value="@_search" @oninput="OnSearchInput" />
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            @if (_loading)
+            {
+                <div class="text-center py-8"><div class="spinner-primary"></div></div>
+            }
+            else if (!_filtered.Any())
+            {
+                <div class="text-center text-app-fg-secondary text-sm py-8">No reports yet.</div>
+            }
+            else
+            {
+                @foreach (var note in _filtered)
+                {
+                    <div class="px-3 py-2 cursor-pointer border-b border-app-divider @(_selected?.Id == note.Id ? "bg-nist-primary/10" : "hover:bg-app-bg")"
+                         @onclick="() => SelectNote(note)">
+                        <div class="font-semibold text-sm text-app-fg truncate">@(string.IsNullOrWhiteSpace(note.Title) ? "New Report" : note.Title)</div>
+                        <div class="text-xs text-app-fg-secondary">@note.ReportDate.ToString("MMM d, yyyy")</div>
+                        <div class="text-xs text-app-fg-secondary truncate">@StripHtml(note.Body)</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="flex-1 flex flex-col bg-app-bg">
+        @if (_selected != null)
+        {
+            <div class="flex items-center justify-between px-4 py-2 border-b border-app-divider">
+                <div class="flex items-center gap-1">
+                    <button class="md-tool-btn" title="Bold" @onclick='() => Exec("bold")'><strong>B</strong></button>
+                    <button class="md-tool-btn" title="Italic" @onclick='() => Exec("italic")'><em>I</em></button>
+                    <button class="md-tool-btn" title="Underline" @onclick='() => Exec("underline")'><u>U</u></button>
+                    <button class="md-tool-btn" title="Bulleted list" @onclick='() => Exec("insertUnorderedList")'>•</button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input class="nist-input text-xs !py-1 !w-auto" type="date" value="@_selected.ReportDate.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" />
+                    <button class="text-xs text-nist-danger hover:underline" @onclick="() => _showDeleteConfirm = true">Delete</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6">
+                <input class="w-full text-2xl font-bold border-none outline-none bg-transparent mb-3 text-app-fg"
+                       placeholder="Title" value="@_selected.Title" @oninput="OnTitleInput" />
+                <div id="@_editorId" contenteditable="true"
+                     class="outline-none min-h-[300px] text-app-fg leading-relaxed"
+                     @oninput="OnBodyInput"></div>
+            </div>
+        }
+        else
+        {
+            <div class="flex-1 flex items-center justify-center text-app-fg-secondary text-sm">
+                Select a report, or click + to create one.
+            </div>
+        }
+    </div>
+</div>
+
+@if (_showDeleteConfirm)
+{
+    <div class="modal-overlay">
+        <div class="modal-panel max-w-md">
+            <div class="modal-header">
+                <h5 class="text-lg font-semibold text-app-fg">Delete Report</h5>
+            </div>
+            <div class="modal-body">
+                Delete <strong>@(_selected?.Title is { Length: > 0 } t ? t : "this report")</strong>? This can't be undone.
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="() => _showDeleteConfirm = false">Cancel</button>
+                <button class="btn-danger" @onclick="ConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string _editorId = "daily-report-editor-" + Guid.NewGuid().ToString("N");
+    private List<DailyReport> _reports = new();
+    private List<DailyReport> _filtered = new();
+    private DailyReport? _selected;
+    private bool _bodyNeedsSync;
+    private string _search = "";
+    private bool _loading = true;
+    private string _saveStatus = "";
+    private bool _showDeleteConfirm;
+    private System.Threading.Timer? _saveTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reports = await ReportService.GetAllAsync();
+        ApplyFilter();
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_bodyNeedsSync && _selected != null)
+        {
+            _bodyNeedsSync = false;
+            await JS.InvokeVoidAsync("NotesEditor.setHtml", _editorId, _selected.Body);
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        _filtered = (string.IsNullOrWhiteSpace(_search)
+            ? _reports
+            : _reports.Where(r => r.SearchText.Contains(_search.ToLowerInvariant())))
+            .OrderByDescending(r => r.ReportDate)
+            .ToList();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+        ApplyFilter();
+    }
+
+    private void SelectNote(DailyReport note)
+    {
+        _selected = note;
+        _bodyNeedsSync = true;
+        _saveStatus = "";
+    }
+
+    private async Task CreateNote()
+    {
+        var record = new DailyReport
+        {
+            Id = Guid.NewGuid().ToString(),
+            ReportDate = DateOnly.FromDateTime(DateTime.Today),
+            Title = "",
+            Body = ""
+        };
+
+        var saved = await ReportService.CreateAsync(record);
+        if (saved == null)
+        {
+            Toast.Error("Failed to create report.");
+            return;
+        }
+
+        _reports.Insert(0, saved);
+        ApplyFilter();
+        SelectNote(saved);
+        await JS.InvokeVoidAsync("NotesEditor.focus", _editorId);
+    }
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        if (_selected == null) return;
+        _selected.Title = e.Value?.ToString() ?? "";
+        ScheduleSave();
+    }
+
+    private async Task OnBodyInput(ChangeEventArgs e)
+    {
+        if (_selected == null) return;
+        _selected.Body = await JS.InvokeAsync<string>("NotesEditor.getHtml", _editorId);
+        ScheduleSave();
+    }
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        if (_selected == null) return;
+        if (DateOnly.TryParse(e.Value?.ToString(), out var date))
+        {
+            _selected.ReportDate = date;
+            ScheduleSave();
+        }
+    }
+
+    private async Task Exec(string command)
+    {
+        await JS.InvokeVoidAsync("NotesEditor.exec", command);
+        if (_selected != null)
+        {
+            _selected.Body = await JS.InvokeAsync<string>("NotesEditor.getHtml", _editorId);
+            ScheduleSave();
+        }
+    }
+
+    private void ScheduleSave()
+    {
+        _saveStatus = "Editing…";
+        _saveTimer?.Dispose();
+        _saveTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await SaveSelectedAsync();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromMilliseconds(800), Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task SaveSelectedAsync()
+    {
+        if (_selected == null) return;
+        var saved = await ReportService.UpdateAsync(_selected.Id, _selected);
+        if (saved != null)
+        {
+            var idx = _reports.FindIndex(r => r.Id == saved.Id);
+            if (idx >= 0) _reports[idx] = saved;
+            _selected = saved;
+            ApplyFilter();
+            _saveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
+        }
+        else
+        {
+            _saveStatus = "Save failed";
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_selected != null)
+        {
+            await ReportService.DeleteAsync(_selected.Id);
+            _reports.RemoveAll(r => r.Id == _selected.Id);
+            ApplyFilter();
+            _selected = null;
+            Toast.Success("Report deleted.");
+        }
+        _showDeleteConfirm = false;
+    }
+
+    private static string StripHtml(string html)
+    {
+        var text = System.Text.RegularExpressions.Regex.Replace(html ?? "", "<.*?>", " ").Trim();
+        return text.Length > 80 ? text[..80] + "…" : text;
+    }
+
+    public void Dispose()
+    {
+        _saveTimer?.Dispose();
+    }
+}

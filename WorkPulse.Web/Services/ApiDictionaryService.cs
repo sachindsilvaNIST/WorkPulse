@@ -47,26 +47,6 @@ public class ApiDictionaryService
         await _http.DeleteAsync($"api/dictionary/entries/{id}");
     }
 
-    // ===== SRS =====
-
-    public async Task<List<DictEntryDto>> GetSrsQueueAsync(int limit = 20)
-    {
-        return await _http.GetFromJsonAsync<List<DictEntryDto>>($"api/dictionary/srs/queue?limit={limit}", _json) ?? new();
-    }
-
-    public async Task<SrsStatsDto?> GetSrsStatsAsync()
-    {
-        try { return await _http.GetFromJsonAsync<SrsStatsDto>("api/dictionary/srs/stats", _json); }
-        catch { return null; }
-    }
-
-    public async Task<DictEntryDto?> ReviewEntryAsync(int id, int grade)
-    {
-        var response = await _http.PostAsJsonAsync($"api/dictionary/srs/review/{id}", new { Grade = grade }, _json);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<DictEntryDto>(_json);
-    }
-
     public async Task<List<DictExampleDto>?> GenerateExamplesAsync(string japanese, string? reading, string meaning)
     {
         var response = await _http.PostAsJsonAsync("api/dictionary/generate-examples", new { Japanese = japanese, Reading = reading, Meaning = meaning }, _json);

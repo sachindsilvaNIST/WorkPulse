@@ -7,7 +7,8 @@
     <AssemblyName>WorkPulse</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>2.6.1</Version>
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
+    <Version>2.7.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

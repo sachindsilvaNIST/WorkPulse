@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:WorkPulse.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="650"
+             x:Class="WorkPulse.Views.DailyReportView"
+             x:DataType="vm:DailyReportViewModel">
+
+    <Grid ColumnDefinitions="280,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                BorderBrush="{DynamicResource AppDivider}" BorderThickness="0,0,1,0"
+                Background="{DynamicResource AppBackgroundAlt}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="12" Spacing="8">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Button Grid.Column="0" Command="{Binding NavigateBackCommand}"
+                                Width="28" Height="28" Padding="0" CornerRadius="14"
+                                Background="{DynamicResource AppButtonNeutral}"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                Margin="0,0,8,0" ToolTip.Tip="Back to Home">
+                            <PathIcon Data="M14.7 5.3a1 1 0 010 1.4L10.41 11l4.3 4.3a1 1 0 01-1.42 1.4l-5-5a1 1 0 010-1.4l5-5a1 1 0 011.42 0z"
+                                      Width="12" Height="12" Foreground="{DynamicResource AppForeground}"/>
+                        </Button>
+                        <TextBlock Grid.Column="1" Text="Daily Reports" FontWeight="Bold" FontSize="16"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource AppForeground}"/>
+                        <Button Grid.Column="2" Content="+" FontSize="18" Padding="10,2"
+                                Command="{Binding NewReportCommand}" ToolTip.Tip="New Report"/>
+                    </Grid>
+                    <TextBox Text="{Binding SearchText}" Watermark="Search" Padding="8,6" CornerRadius="6"/>
+
+                    <!-- Save directory bar -->
+                    <Border Background="{DynamicResource AppBackground}" CornerRadius="6" Padding="8,6"
+                            BorderBrush="{DynamicResource AppDivider}" BorderThickness="1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding ReportsDirectoryDisplay}"
+                                       FontSize="10" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource AppForegroundSecondary}"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <Button Grid.Column="1" Content="Browse…" FontSize="10" Padding="6,2"
+                                    Command="{Binding BrowseDirectoryCommand}"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <ListBox ItemsSource="{Binding FilteredReports}"
+                         SelectedItem="{Binding SelectedReport}"
+                         Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="4,4" Spacing="2">
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding ReportDate}" FontSize="11"
+                                           Foreground="{DynamicResource AppForegroundSecondary}"/>
+                                <TextBlock Text="{Binding Preview}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource AppForegroundSecondary}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Editor -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,*"
+              IsVisible="{Binding SelectedReport, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <DatePicker SelectedDate="{Binding DateInput}"/>
+                    <Button Content="Delete" Foreground="#D13438" Background="Transparent"
+                            Command="{Binding DeleteSelectedCommand}"/>
+                </StackPanel>
+            </Grid>
+            <ScrollViewer Grid.Row="1" Padding="24,0,24,24">
+                <StackPanel Spacing="8">
+                    <TextBox Text="{Binding TitleInput}" Watermark="Title"
+                             FontSize="22" FontWeight="Bold" BorderThickness="0" Background="Transparent"/>
+                    <TextBox Text="{Binding BodyInput}" Watermark="Start writing…"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             BorderThickness="0" Background="Transparent" MinHeight="400"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <TextBlock Grid.Column="1" Text="Select a report, or click + to create one."
+                   IsVisible="{Binding SelectedReport, Converter={x:Static ObjectConverters.IsNull}}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource AppForegroundSecondary}"/>
+    </Grid>
+</UserControl>

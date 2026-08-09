@@ -1,0 +1,245 @@
+@page "/bookmarks"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.IO
+@using WorkPulse.Models
+@using WorkPulse.Utilities
+@inject WorkPulse.Web.Services.ApiQuickLinkService LinkService
+@inject WorkPulse.Web.Services.ToastService Toast
+
+<PageTitle>WorkPulse · Bookmarks</PageTitle>
+
+<div class="mb-4">
+    <h4 class="text-xl font-semibold text-app-fg">Bookmark Library</h4>
+    <p class="text-sm text-app-fg-secondary mt-1">Every link you've saved, in one searchable place. Type a name, a synonym, or a category to find it instantly.</p>
+</div>
+
+<div class="flex flex-col sm:flex-row gap-2 mb-3">
+    <input class="nist-input flex-1" placeholder="Search bookmarks — try &quot;drive&quot;, &quot;wiki&quot;, a category..." value="@_search" @oninput="OnSearchInput" />
+    <label class="btn-outline cursor-pointer text-center">
+        Import from Chrome
+        <InputFile OnChange="OnImportFile" class="hidden" accept=".html,.htm" />
+    </label>
+    <button class="btn-blue" @onclick="() => OpenForm(null)">+ Add Bookmark</button>
+</div>
+
+@if (_categories.Count > 1)
+{
+    <div class="flex flex-wrap gap-2 mb-4">
+        @foreach (var cat in _categories)
+        {
+            <button class="@(cat == _selectedCategory ? "btn-primary" : "btn-outline") text-xs !px-3 !py-1"
+                    @onclick="() => SelectCategory(cat)">@cat</button>
+        }
+    </div>
+}
+
+@if (_showForm)
+{
+    <div class="modal-overlay" @onclick="CloseForm">
+        <div class="modal-panel max-w-md" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h5 class="font-semibold text-app-fg">@(_editingId == null ? "Add Bookmark" : "Edit Bookmark")</h5>
+                <button class="text-app-fg-secondary hover:text-app-fg text-xl leading-none" @onclick="CloseForm">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-2">
+                <input class="nist-input" placeholder="Label (e.g. My Drive)" @bind="_formLabel" />
+                <input class="nist-input" placeholder="https://example.com" @bind="_formUrl" />
+                <input class="nist-input" placeholder="Category (e.g. Cloud Storage)" @bind="_formCategory" />
+                <input class="nist-input" placeholder="Search keywords, comma-separated (e.g. drive, cloud, storage)" @bind="_formKeywords" />
+                @if (!string.IsNullOrEmpty(_formError))
+                {
+                    <div class="text-sm text-nist-danger">@_formError</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" @onclick="CloseForm">Cancel</button>
+                <button class="btn-primary" @onclick="SaveBookmark">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="text-center py-12"><div class="spinner-primary"></div></div>
+}
+else if (!_filtered.Any())
+{
+    <div class="nist-card nist-card-body text-center text-app-fg-secondary py-12">
+        @(string.IsNullOrWhiteSpace(_search) ? "No bookmarks yet. Add one, or import your Chrome bookmarks above." : "No bookmarks match your search.")
+    </div>
+}
+else
+{
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        @foreach (var link in _filtered)
+        {
+            <a href="@NormalizeUrl(link.Url)" target="_blank" rel="noopener noreferrer"
+               class="nist-card hover:shadow-md transition-shadow h-28 flex flex-col p-3 group relative no-underline">
+                @if (!string.IsNullOrWhiteSpace(link.Category))
+                {
+                    <span class="badge-info self-start !text-[10px]">@link.Category</span>
+                }
+                <span class="font-semibold text-app-fg text-sm mt-2 line-clamp-2">@link.Label</span>
+                <span class="text-xs text-app-fg-secondary mt-auto truncate">@link.Url</span>
+                <div class="absolute top-2 right-2 hidden group-hover:flex gap-1">
+                    <button class="text-[10px] px-1.5 py-0.5 rounded bg-app-bg-alt text-app-fg-secondary hover:text-nist-primary"
+                            @onclick="() => OpenForm(link)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
+                    <button class="text-[10px] px-1.5 py-0.5 rounded bg-app-bg-alt text-app-fg-secondary hover:text-nist-danger"
+                            @onclick="() => DeleteBookmark(link)" @onclick:preventDefault @onclick:stopPropagation>Del</button>
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<QuickLink> _links = new();
+    private List<QuickLink> _filtered = new();
+    private List<string> _categories = new() { "All" };
+    private string _selectedCategory = "All";
+    private string _search = "";
+    private bool _loading = true;
+
+    private bool _showForm;
+    private string? _editingId;
+    private string _formLabel = "";
+    private string _formUrl = "";
+    private string _formCategory = "";
+    private string _formKeywords = "";
+    private string _formError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBookmarks();
+    }
+
+    private async Task LoadBookmarks()
+    {
+        _loading = true;
+        _links = await LinkService.GetAllAsync();
+        RefreshCategories();
+        ApplyFilter();
+        _loading = false;
+    }
+
+    private void RefreshCategories()
+    {
+        var distinct = _links
+            .Where(l => !string.IsNullOrWhiteSpace(l.Category))
+            .Select(l => l.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c);
+
+        _categories = new List<string> { "All" }.Concat(distinct).ToList();
+        if (!_categories.Contains(_selectedCategory)) _selectedCategory = "All";
+    }
+
+    private void ApplyFilter()
+    {
+        var source = _links.AsEnumerable();
+
+        if (_selectedCategory != "All")
+            source = source.Where(l => string.Equals(l.Category, _selectedCategory, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(_search))
+            source = source.Where(l => l.SearchText.Contains(_search.ToLowerInvariant()));
+
+        _filtered = source.OrderBy(l => l.SortOrder).ThenBy(l => l.Label).ToList();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+        ApplyFilter();
+    }
+
+    private void SelectCategory(string cat)
+    {
+        _selectedCategory = cat;
+        ApplyFilter();
+    }
+
+    private static string NormalizeUrl(string url) =>
+        url.StartsWith("http://") || url.StartsWith("https://") ? url : $"https://{url}";
+
+    private void OpenForm(QuickLink? link)
+    {
+        _editingId = link?.Id;
+        _formLabel = link?.Label ?? "";
+        _formUrl = link?.Url ?? "";
+        _formCategory = link?.Category ?? "";
+        _formKeywords = link?.Keywords ?? "";
+        _formError = "";
+        _showForm = true;
+    }
+
+    private void CloseForm() => _showForm = false;
+
+    private async Task SaveBookmark()
+    {
+        if (string.IsNullOrWhiteSpace(_formLabel) || string.IsNullOrWhiteSpace(_formUrl))
+        {
+            _formError = "Please enter both a label and a URL.";
+            return;
+        }
+
+        var record = new QuickLink
+        {
+            Id = _editingId ?? Guid.NewGuid().ToString(),
+            Label = _formLabel.Trim(),
+            Url = _formUrl.Trim(),
+            Category = _formCategory.Trim(),
+            Keywords = _formKeywords.Trim()
+        };
+
+        var saved = _editingId == null
+            ? await LinkService.CreateAsync(record)
+            : await LinkService.UpdateAsync(record.Id, record);
+
+        if (saved == null)
+        {
+            Toast.Error("Failed to save bookmark.");
+            return;
+        }
+
+        Toast.Success(_editingId == null ? "Bookmark added." : "Bookmark updated.");
+        _showForm = false;
+        await LoadBookmarks();
+    }
+
+    private async Task DeleteBookmark(QuickLink link)
+    {
+        await LinkService.DeleteAsync(link.Id);
+        Toast.Success("Bookmark deleted.");
+        await LoadBookmarks();
+    }
+
+    private async Task OnImportFile(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var html = await reader.ReadToEndAsync();
+            var imported = BookmarkImportParser.Parse(html);
+
+            var existingUrls = _links.Select(l => l.Url.TrimEnd('/').ToLowerInvariant()).ToHashSet();
+            var added = 0;
+            foreach (var link in imported)
+            {
+                var key = link.Url.TrimEnd('/').ToLowerInvariant();
+                if (!existingUrls.Add(key)) continue;
+                var saved = await LinkService.CreateAsync(link);
+                if (saved != null) added++;
+            }
+
+            Toast.Success(added > 0 ? $"Imported {added} bookmark(s)." : "No new bookmarks found (all already imported).");
+            await LoadBookmarks();
+        }
+        catch (Exception ex)
+        {
+            Toast.Error($"Import failed: {ex.Message}");
+        }
+    }
+}
