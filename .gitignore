@@ -66,3 +66,5 @@ mono_crash.*
 # Node
 node_modules/
 webscript.log
+---
+.claude/settings.local.json

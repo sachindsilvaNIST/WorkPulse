@@ -1,0 +1,22 @@
+{
+  "name": "WorkPulse",
+  "short_name": "WorkPulse",
+  "description": "Attendance, reports, business trips, reimbursement, and bookmarks — all in one place.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F5F5F5",
+  "theme_color": "#0078D4",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
