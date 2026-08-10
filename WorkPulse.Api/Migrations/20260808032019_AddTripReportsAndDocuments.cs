@@ -48,7 +48,7 @@ namespace WorkPulse.Api.Migrations
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
                     ContentType = table.Column<string>(type: "TEXT", nullable: false),
                     SizeBytes = table.Column<long>(type: "INTEGER", nullable: false),
-                    Content = table.Column<byte[]>(type: "BLOB", nullable: false),
+                    Content = table.Column<byte[]>(nullable: false),
                     UploadedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>

@@ -1,0 +1,21 @@
+[Unit]
+Description=WorkPulse API + Web
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/workpulse
+ExecStart=/opt/workpulse/WorkPulse.Api
+Restart=always
+RestartSec=5
+User=workpulse
+Group=workpulse
+
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5050
+# Real secrets go in /opt/workpulse/workpulse.env (not committed to git) — see
+# packaging/linux/workpulse.env.example and the deployment README.
+EnvironmentFile=/opt/workpulse/workpulse.env
+
+[Install]
+WantedBy=multi-user.target

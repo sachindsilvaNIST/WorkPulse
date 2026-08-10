@@ -1,0 +1,79 @@
+name: Release builds
+
+# Builds the Windows, macOS (arm64 + x64), and web (PWA) artifacts whenever a
+# version tag like v2.7.0 is pushed. macOS runs on a GitHub-hosted Mac runner,
+# so no local Mac is required to produce a .dmg.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - id: extract
+        run: |
+          ref="${GITHUB_REF#refs/tags/v}"
+          echo "version=${ref:-0.0.0-dev}" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Publish win-x64
+        run: |
+          dotnet publish WorkPulse/WorkPulse.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o publish/win-x64
+      - name: Zip
+        run: Compress-Archive -Path publish/win-x64/* -DestinationPath WorkPulse-${{ needs.version.outputs.version }}-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WorkPulse-windows
+          path: WorkPulse-*.zip
+
+  macos:
+    needs: version
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build .app + .dmg
+        run: |
+          chmod +x packaging/macos/build-dmg.sh
+          ./packaging/macos/build-dmg.sh ${{ matrix.rid }} ${{ needs.version.outputs.version }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WorkPulse-${{ matrix.rid }}
+          path: dist/*.dmg
+
+  web:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Publish Blazor WASM (PWA)
+        run: dotnet publish WorkPulse.Web/WorkPulse.Web.csproj -c Release -o publish/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WorkPulse-web-pwa
+          path: publish/web/wwwroot

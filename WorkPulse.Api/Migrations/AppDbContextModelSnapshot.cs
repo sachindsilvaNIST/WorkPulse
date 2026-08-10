@@ -545,8 +545,7 @@ namespace WorkPulse.Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("Content")
-                        .IsRequired()
-                        .HasColumnType("BLOB");
+                        .IsRequired();
 
                     b.Property<string>("ContentType")
                         .IsRequired()
