@@ -1,4 +1,18 @@
-import type { AuthResponse, LoginRequest, RegisterRequest, MonthlyData, YearMonthDto } from "./types";
+import type {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  MonthlyData,
+  YearMonthDto,
+  DailyReport,
+  WeeklyReport,
+  TripReport,
+  TripDocumentMeta,
+  TripDocumentWithTrip,
+  ContactRecord,
+  QuickLink,
+  DictEntryDto,
+} from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
 const TOKEN_KEY = "workpulse.token";
@@ -82,6 +96,105 @@ export const attendanceApi = {
   getMonths: () => request<YearMonthDto[]>("/api/attendance/months"),
   getMonth: (year: number, month: number) =>
     request<MonthlyData>(`/api/attendance/${year}/${month}`),
+};
+
+async function requestBlob(path: string): Promise<{ blob: Blob; fileName: string }> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (!res.ok) throw new ApiError(res.status, res.statusText);
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = /filename="?([^";]+)"?/.exec(disposition);
+  return { blob: await res.blob(), fileName: match?.[1] ?? "download" };
+}
+
+export function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const dailyReportsApi = {
+  getAll: () => request<DailyReport[]>("/api/dailyreports"),
+  create: (record: Partial<DailyReport>) =>
+    request<DailyReport>("/api/dailyreports", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<DailyReport>) =>
+    request<DailyReport>(`/api/dailyreports/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/dailyreports/${id}`, { method: "DELETE" }),
+};
+
+export const weeklyReportsApi = {
+  getAll: () => request<WeeklyReport[]>("/api/weeklyreports"),
+  create: (record: Partial<WeeklyReport>) =>
+    request<WeeklyReport>("/api/weeklyreports", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<WeeklyReport>) =>
+    request<WeeklyReport>(`/api/weeklyreports/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/weeklyreports/${id}`, { method: "DELETE" }),
+};
+
+export const tripReportsApi = {
+  getAll: () => request<TripReport[]>("/api/tripreports"),
+  create: (record: Partial<TripReport>) =>
+    request<TripReport>("/api/tripreports", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<TripReport>) =>
+    request<TripReport>(`/api/tripreports/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/tripreports/${id}`, { method: "DELETE" }),
+
+  getDocuments: (tripId: string) => request<TripDocumentMeta[]>(`/api/tripreports/${tripId}/documents`),
+  uploadDocument: async (tripId: string, file: File, category: string, label: string) => {
+    const token = getToken();
+    const form = new FormData();
+    form.append("file", file);
+    form.append("category", category);
+    form.append("label", label);
+    const res = await fetch(`${API_BASE}/api/tripreports/${tripId}/documents`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return (await res.json()) as TripDocumentMeta;
+  },
+  downloadDocument: (tripId: string, docId: string) => requestBlob(`/api/tripreports/${tripId}/documents/${docId}`),
+  deleteDocument: (tripId: string, docId: string) =>
+    request<void>(`/api/tripreports/${tripId}/documents/${docId}`, { method: "DELETE" }),
+};
+
+export const reimbursementApi = {
+  getAllDocuments: (search?: string) =>
+    request<TripDocumentWithTrip[]>(`/api/reimbursement/documents${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+};
+
+export const contactsApi = {
+  getAll: () => request<{ contacts: ContactRecord[] }>("/api/contacts"),
+  create: (record: Partial<ContactRecord>) =>
+    request<ContactRecord>("/api/contacts", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<ContactRecord>) =>
+    request<void>(`/api/contacts/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/contacts/${id}`, { method: "DELETE" }),
+};
+
+export const quickLinksApi = {
+  getAll: () => request<QuickLink[]>("/api/quicklinks"),
+  create: (record: Partial<QuickLink>) =>
+    request<QuickLink>("/api/quicklinks", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<QuickLink>) =>
+    request<QuickLink>(`/api/quicklinks/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/quicklinks/${id}`, { method: "DELETE" }),
+};
+
+export const dictionaryApi = {
+  getEntries: (search?: string) =>
+    request<DictEntryDto[]>(`/api/dictionary/entries${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  create: (dto: Partial<DictEntryDto>) =>
+    request<DictEntryDto>("/api/dictionary/entries", { method: "POST", body: JSON.stringify(dto) }),
+  update: (id: number, dto: Partial<DictEntryDto>) =>
+    request<DictEntryDto>(`/api/dictionary/entries/${id}`, { method: "PUT", body: JSON.stringify(dto) }),
+  delete: (id: number) => request<void>(`/api/dictionary/entries/${id}`, { method: "DELETE" }),
 };
 
 export { ApiError };

@@ -1,14 +1,20 @@
 "use client";
 
 import { FileText } from "lucide-react";
-import { ComingSoon } from "@/components/shell/coming-soon";
+import { NoteEditor } from "@/components/reports/note-editor";
+import { dailyReportsApi } from "@/lib/api/client";
+import type { DailyReport } from "@/lib/api/types";
 
 export default function DailyReportsPage() {
   return (
-    <ComingSoon
-      title="Daily Reports"
-      description="Apple Notes-style autosaving daily work reports."
+    <NoteEditor<DailyReport>
       icon={FileText}
+      heading="Daily Reports"
+      subheading="Summarize what you worked on each day"
+      dateField="reportDate"
+      dateLabel="Date"
+      api={dailyReportsApi}
+      makeNew={() => ({ reportDate: new Date().toISOString().slice(0, 10) })}
     />
   );
 }
