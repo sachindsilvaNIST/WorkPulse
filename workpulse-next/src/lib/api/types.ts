@@ -52,3 +52,94 @@ export interface YearMonthDto {
   month: number;
   label: string;
 }
+
+export interface DailyReport {
+  id: string;
+  reportDate: string; // yyyy-MM-dd
+  title: string;
+  body: string;
+  lastModifiedUtc?: string;
+}
+
+export interface WeeklyReport {
+  id: string;
+  weekStartDate: string; // yyyy-MM-dd
+  title: string;
+  body: string;
+  lastModifiedUtc?: string;
+}
+
+export type TripCategory = "Domestic" | "Overseas";
+
+export interface TripReport {
+  id: string;
+  category: TripCategory;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  purpose: string;
+  notes: string;
+  lastModifiedUtc?: string;
+}
+
+export type DocCategory = "Invoice" | "Receipt" | "FlightTicket" | "Insurance" | "Report" | "Other";
+
+export interface TripDocumentMeta {
+  id: string;
+  tripReportId: string;
+  category: DocCategory;
+  label: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedUtc: string;
+}
+
+export interface TripDocumentWithTrip extends TripDocumentMeta {
+  tripDestination: string;
+  tripCategory: TripCategory;
+  tripStartDate: string;
+  tripEndDate: string;
+}
+
+export interface ContactRecord {
+  id: string;
+  affiliation: string;
+  familyName: string;
+  givenName: string;
+  department: string;
+  email: string;
+  intercom: string;
+  contactNumber: string;
+  notes: string;
+  lastModifiedUtc?: string;
+}
+
+export interface QuickLink {
+  id: string;
+  label: string;
+  url: string;
+  category: string;
+  keywords: string;
+  sortOrder: number;
+  lastModifiedUtc?: string;
+}
+
+export interface DictLabelDto {
+  id: number;
+  name: string;
+}
+
+export interface DictEntryDto {
+  id: number;
+  japanese: string;
+  reading?: string | null;
+  meaning: string;
+  exampleJp?: string | null;
+  exampleEn?: string | null;
+  notes?: string | null;
+  jlptLevel?: string | null;
+  createdUtc: string;
+  lastModifiedUtc: string;
+  labels: DictLabelDto[];
+}
