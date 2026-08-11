@@ -14,6 +14,7 @@ export default function DailyReportsPage() {
       dateField="reportDate"
       dateLabel="Date"
       api={dailyReportsApi}
+      basePath="/api/dailyreports"
       makeNew={() => ({ reportDate: new Date().toISOString().slice(0, 10) })}
     />
   );

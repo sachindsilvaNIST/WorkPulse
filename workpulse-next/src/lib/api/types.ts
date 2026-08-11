@@ -130,6 +130,16 @@ export interface DictLabelDto {
   name: string;
 }
 
+export interface AppSettings {
+  standardLoginTime: string; // "HH:mm:ss"
+  standardLogoutTime: string;
+  overtimeBreakDeductionMinutes: number;
+  defaultTitle: string;
+  lastOpenedMonth?: string | null;
+  themeVariant: string;
+  fontSizePreset: string;
+}
+
 export interface DictEntryDto {
   id: number;
   japanese: string;
