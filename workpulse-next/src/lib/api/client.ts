@@ -96,6 +96,8 @@ export const attendanceApi = {
   getMonths: () => request<YearMonthDto[]>("/api/attendance/months"),
   getMonth: (year: number, month: number) =>
     request<MonthlyData>(`/api/attendance/${year}/${month}`),
+  saveMonth: (year: number, month: number, data: MonthlyData) =>
+    request<MonthlyData>(`/api/attendance/${year}/${month}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
 async function requestBlob(path: string): Promise<{ blob: Blob; fileName: string }> {
