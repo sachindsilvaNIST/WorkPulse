@@ -12,6 +12,7 @@ import type {
   ContactRecord,
   QuickLink,
   DictEntryDto,
+  AppSettings,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -197,6 +198,11 @@ export const dictionaryApi = {
   update: (id: number, dto: Partial<DictEntryDto>) =>
     request<DictEntryDto>(`/api/dictionary/entries/${id}`, { method: "PUT", body: JSON.stringify(dto) }),
   delete: (id: number) => request<void>(`/api/dictionary/entries/${id}`, { method: "DELETE" }),
+};
+
+export const settingsApi = {
+  get: () => request<AppSettings>("/api/settings"),
+  save: (settings: AppSettings) => request<void>("/api/settings", { method: "PUT", body: JSON.stringify(settings) }),
 };
 
 export { ApiError };

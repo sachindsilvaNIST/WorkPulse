@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Pencil, Plus, Search, X } from "lucide-react";
+import { Bookmark, Download, Pencil, Plus, Search, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
 import { categoryColor } from "@/lib/category-color";
+import { exportNetscapeBookmarks, parseNetscapeBookmarks } from "@/lib/bookmark-import";
 import { cn } from "@/lib/utils";
 
 function emptyLink(): Partial<QuickLink> {
@@ -79,6 +80,39 @@ export default function BookmarksPage() {
     setLinks((prev) => prev.filter((l) => l.id !== id));
   }
 
+  const [importMessage, setImportMessage] = useState("");
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const html = await file.text();
+    const parsed = parseNetscapeBookmarks(html);
+    const existingUrls = new Set(links.map((l) => l.url.replace(/\/$/, "").toLowerCase()));
+    let added = 0;
+    for (const link of parsed) {
+      const key = (link.url ?? "").replace(/\/$/, "").toLowerCase();
+      if (!key || existingUrls.has(key)) continue;
+      existingUrls.add(key);
+      const created = await quickLinksApi.create(link);
+      setLinks((prev) => [...prev, created]);
+      added++;
+    }
+    setImportMessage(added > 0 ? `Imported ${added} bookmark(s).` : "No new bookmarks found — all already imported.");
+    setTimeout(() => setImportMessage(""), 4000);
+  }
+
+  function handleExport() {
+    const html = exportNetscapeBookmarks(links);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "workpulse-bookmarks.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -86,10 +120,23 @@ export default function BookmarksPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Bookmark Library</h1>
           <p className="mt-1 text-muted-foreground">Find any saved link by name, synonym, or category</p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="size-4" /> Add Bookmark
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <label className="cursor-pointer">
+              <Upload className="size-4" /> Import from Chrome
+              <input type="file" accept=".html,.htm" className="hidden" onChange={handleImportFile} />
+            </label>
+          </Button>
+          <Button variant="outline" onClick={handleExport} disabled={links.length === 0}>
+            <Download className="size-4" /> Export
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="size-4" /> Add Bookmark
+          </Button>
+        </div>
       </div>
+
+      {importMessage && <p className="mb-4 text-sm text-muted-foreground">{importMessage}</p>}
 
       <div className="relative mb-4 max-w-md">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

@@ -22,10 +22,22 @@ interface NoteApi<T extends NoteRecord> {
   delete: (id: string) => Promise<void>;
 }
 
+interface PendingEdit {
+  id: string;
+  title: string;
+  body: string;
+  date: string;
+}
+
 /**
  * Apple Notes-style sidebar-list + inline-editor, with silent background
  * autosave (no Save button, no visible status text) — same UX as the
  * desktop/Blazor report editors.
+ *
+ * Autosave is debounce-scheduled but ALWAYS flushed synchronously before the
+ * selection changes, before unmount, and best-effort on tab close/refresh —
+ * relying on the debounce timer alone loses in-flight edits the instant you
+ * switch records or reload, since a pending setTimeout never survives either.
  */
 export function NoteEditor<T extends NoteRecord>({
   icon: Icon,
@@ -34,6 +46,7 @@ export function NoteEditor<T extends NoteRecord>({
   dateField,
   dateLabel,
   api,
+  basePath,
   makeNew,
 }: {
   icon: LucideIcon;
@@ -42,6 +55,8 @@ export function NoteEditor<T extends NoteRecord>({
   dateField: keyof T;
   dateLabel: string;
   api: NoteApi<T>;
+  /** e.g. "/api/dailyreports" — needed for the beforeunload beacon, which can't go through `api` generically. */
+  basePath: string;
   makeNew: () => Partial<T>;
 }) {
   const [records, setRecords] = useState<T[]>([]);
@@ -52,14 +67,75 @@ export function NoteEditor<T extends NoteRecord>({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [dateValue, setDateValue] = useState("");
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isNewDraft = useRef(false);
+
+  const pendingRef = useRef<PendingEdit | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const newIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     api.getAll().then((list) => {
       setRecords(list);
       setLoading(false);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const flush = useRef(async () => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    pendingRef.current = null;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const payload = { title: pending.title, body: pending.body, [dateField]: pending.date } as Partial<T>;
+    try {
+      if (newIdsRef.current.has(pending.id)) {
+        const created = await api.create({ id: pending.id, ...payload } as Partial<T>);
+        newIdsRef.current.delete(pending.id);
+        setRecords((prev) => prev.map((r) => (r.id === pending.id ? created : r)));
+      } else {
+        const updated = await api.update(pending.id, payload);
+        setRecords((prev) => prev.map((r) => (r.id === pending.id ? updated : r)));
+      }
+    } catch {
+      // Put the edit back so the next flush (or unload beacon) retries it
+      pendingRef.current = pending;
+    }
+  });
+
+  // Best-effort flush on tab close/refresh — fetch with keepalive can outlive
+  // the page unload event, unlike a normal in-flight promise.
+  useEffect(() => {
+    function handleBeforeUnload() {
+      const pending = pendingRef.current;
+      if (!pending) return;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
+      const token = localStorage.getItem("workpulse.token");
+      const isNew = newIdsRef.current.has(pending.id);
+      const payload = { title: pending.title, body: pending.body, [dateField]: pending.date } as Record<string, unknown>;
+      fetch(isNew ? `${apiBase}${basePath}` : `${apiBase}${basePath}/${pending.id}`, {
+        method: isNew ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(isNew ? { id: pending.id, ...payload } : payload),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basePath]);
+
+  // Flush whenever the selection is about to change, and on unmount.
+  async function selectRecord(id: string | null) {
+    await flush.current();
+    setSelectedId(id);
+  }
+
+  useEffect(() => {
+    return () => {
+      void flush.current();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -70,7 +146,6 @@ export function NoteEditor<T extends NoteRecord>({
     setTitle(selected.title);
     setBody(selected.body);
     setDateValue(String(selected[dateField]));
-    isNewDraft.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
@@ -83,24 +158,18 @@ export function NoteEditor<T extends NoteRecord>({
   }, [records, search]);
 
   function scheduleSave(nextTitle: string, nextBody: string, nextDate: string) {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      if (!selectedId) return;
-      const payload = { title: nextTitle, body: nextBody, [dateField]: nextDate } as Partial<T>;
-      if (isNewDraft.current) {
-        const created = await api.create({ id: selectedId, ...payload } as Partial<T>);
-        isNewDraft.current = false;
-        setRecords((prev) => prev.map((r) => (r.id === selectedId ? created : r)));
-      } else {
-        const updated = await api.update(selectedId, payload);
-        setRecords((prev) => prev.map((r) => (r.id === selectedId ? updated : r)));
-      }
+    if (!selectedId) return;
+    pendingRef.current = { id: selectedId, title: nextTitle, body: nextBody, date: nextDate };
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      void flush.current();
     }, 800);
   }
 
-  function handleNew() {
+  async function handleNew() {
+    await flush.current();
     const draft = { id: crypto.randomUUID(), title: "", body: "", ...makeNew() } as T;
-    isNewDraft.current = true;
+    newIdsRef.current.add(draft.id);
     setRecords((prev) => [draft, ...prev]);
     setSelectedId(draft.id);
     setTitle("");
@@ -109,9 +178,16 @@ export function NoteEditor<T extends NoteRecord>({
   }
 
   async function handleDelete(id: string) {
+    if (pendingRef.current?.id === id) {
+      pendingRef.current = null;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
     setRecords((prev) => prev.filter((r) => r.id !== id));
     if (selectedId === id) setSelectedId(null);
-    if (!isNewDraft.current) await api.delete(id);
+    if (!newIdsRef.current.has(id)) {
+      await api.delete(id);
+    }
+    newIdsRef.current.delete(id);
   }
 
   return (
@@ -146,7 +222,7 @@ export function NoteEditor<T extends NoteRecord>({
           {filtered.map((r) => (
             <button
               key={r.id}
-              onClick={() => setSelectedId(r.id)}
+              onClick={() => selectRecord(r.id)}
               className={cn(
                 "group mb-1 flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors",
                 r.id === selectedId ? "bg-primary/15" : "hover:bg-foreground/5"
@@ -191,6 +267,7 @@ export function NoteEditor<T extends NoteRecord>({
                   setTitle(e.target.value);
                   scheduleSave(e.target.value, body, dateValue);
                 }}
+                onBlur={() => flush.current()}
                 placeholder="Title"
                 className="flex-1 border-none bg-transparent px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
               />
@@ -203,6 +280,7 @@ export function NoteEditor<T extends NoteRecord>({
                     setDateValue(e.target.value);
                     scheduleSave(title, body, e.target.value);
                   }}
+                  onBlur={() => flush.current()}
                   className="w-40"
                 />
               </div>
@@ -213,6 +291,7 @@ export function NoteEditor<T extends NoteRecord>({
                 setBody(e.target.value);
                 scheduleSave(title, e.target.value, dateValue);
               }}
+              onBlur={() => flush.current()}
               placeholder="Start writing…"
               className="flex-1 resize-none border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
             />

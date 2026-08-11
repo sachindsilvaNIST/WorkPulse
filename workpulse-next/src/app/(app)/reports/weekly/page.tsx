@@ -22,6 +22,7 @@ export default function WeeklyReportsPage() {
       dateField="weekStartDate"
       dateLabel="Week of"
       api={weeklyReportsApi}
+      basePath="/api/weeklyreports"
       makeNew={() => ({ weekStartDate: startOfWeek() })}
     />
   );
