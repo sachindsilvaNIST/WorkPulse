@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace WorkPulse.Models;
@@ -15,6 +16,10 @@ public class AttendanceRecord
     public string? HolidayName { get; set; }
     public TripCategory? TripCategory { get; set; }
     public string? TripRegion { get; set; }
+
+    // Duration taken for DayType.HourlyLeave
+    public int? LeaveHours { get; set; }
+    public int? LeaveMinutes { get; set; }
 
     public TimeOnly? LoginTime { get; set; }
     public TimeOnly? LogoutTime { get; set; }
@@ -43,19 +48,28 @@ public class AttendanceRecord
     public bool IsNonWorkDay => DayType != DayType.WorkDay;
 
     [JsonIgnore]
+    private static readonly DayType[] TimeTrackedDayTypes =
+        [DayType.WorkDay, DayType.HalfDayLeave, DayType.AMLeave, DayType.PMLeave];
+
+    [JsonIgnore]
     public string LoginDisplay => DayType switch
     {
-        DayType.WorkDay when LoginTime.HasValue => LoginTime.Value.ToString("H:mm"),
+        _ when TimeTrackedDayTypes.Contains(DayType) && LoginTime.HasValue => LoginTime.Value.ToString("H:mm"),
+        DayType.HalfDayLeave => HolidayName ?? "半休",
+        DayType.AMLeave => HolidayName ?? "午前休",
+        DayType.PMLeave => HolidayName ?? "午後休",
+        DayType.HourlyLeave => FormatHourlyLeaveDisplay(),
         DayType.AnnualPaidLeave => HolidayName ?? "年休",
         DayType.UnpaidLeave => HolidayName ?? "休み",
         DayType.PublicHoliday => HolidayName ?? "休日",
         DayType.Weekend => HolidayName ?? "---",
         DayType.BusinessTrip => FormatBusinessTripDisplay(),
+        DayType.Other => HolidayName ?? "その他",
         _ => ""
     };
 
     [JsonIgnore]
-    public string LogoutDisplay => DayType == DayType.WorkDay && LogoutTime.HasValue
+    public string LogoutDisplay => TimeTrackedDayTypes.Contains(DayType) && LogoutTime.HasValue
         ? LogoutTime.Value.ToString("H:mm")
         : "";
 
@@ -85,6 +99,12 @@ public class AttendanceRecord
     public string SearchText =>
         $"{Date:yyyy-MM-dd} {DayAbbreviation} {DayOfWeek} {DayType} {HolidayName} {TripRegion} {LoginDisplay} {LogoutDisplay} {OvertimeFlag}"
             .ToLowerInvariant();
+
+    private string FormatHourlyLeaveDisplay()
+    {
+        var duration = $"{LeaveHours ?? 0}h {LeaveMinutes ?? 0}m";
+        return string.IsNullOrWhiteSpace(HolidayName) ? duration : $"{duration} - {HolidayName}";
+    }
 
     private string FormatBusinessTripDisplay()
     {

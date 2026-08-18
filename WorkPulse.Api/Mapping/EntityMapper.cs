@@ -46,6 +46,8 @@ public static class EntityMapper
             TripCategory = string.IsNullOrEmpty(entity.TripCategory) ? null
                 : Enum.TryParse<TripCategory>(entity.TripCategory, out var tc) ? tc : null,
             TripRegion = entity.TripRegion,
+            LeaveHours = entity.LeaveHours,
+            LeaveMinutes = entity.LeaveMinutes,
             LoginTime = entity.LoginTime,
             LogoutTime = entity.LogoutTime,
             OvertimeHours = entity.OvertimeHours,
@@ -64,6 +66,8 @@ public static class EntityMapper
             HolidayName = record.HolidayName,
             TripCategory = record.TripCategory?.ToString(),
             TripRegion = record.TripRegion,
+            LeaveHours = record.LeaveHours,
+            LeaveMinutes = record.LeaveMinutes,
             LoginTime = record.LoginTime,
             LogoutTime = record.LogoutTime,
             OvertimeHours = record.OvertimeHours,

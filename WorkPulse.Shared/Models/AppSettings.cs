@@ -4,8 +4,8 @@ namespace WorkPulse.Models;
 
 public class AppSettings
 {
-    public TimeOnly StandardLoginTime { get; set; } = new(8, 20);
-    public TimeOnly StandardLogoutTime { get; set; } = new(17, 25);
+    public TimeOnly StandardLoginTime { get; set; } = new(8, 25);
+    public TimeOnly StandardLogoutTime { get; set; } = new(17, 30);
     public int OvertimeBreakDeductionMinutes { get; set; } = 20;
     public string DefaultTitle { get; set; } = "MSW SETTLEMENT";
     public string? LastOpenedMonth { get; set; }

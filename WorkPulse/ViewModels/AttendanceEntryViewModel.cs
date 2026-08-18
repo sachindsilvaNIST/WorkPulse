@@ -20,19 +20,19 @@ public partial class AttendanceEntryViewModel : ViewModelBase
     [ObservableProperty]
     private string? _holidayName;
 
-    // Login defaults to 8:20
+    // Login defaults to 8:25
     [ObservableProperty]
     private int _loginHour = 8;
 
     [ObservableProperty]
-    private int _loginMinute = 20;
+    private int _loginMinute = 25;
 
-    // Logout defaults to 17:25 (24h)
+    // Logout defaults to 17:30 (24h)
     [ObservableProperty]
     private int _logoutHour = 17;
 
     [ObservableProperty]
-    private int _logoutMinute = 25;
+    private int _logoutMinute = 30;
 
     // Overtime dropdown: -1 = not selected, 0 = No, 1 = Yes
     [ObservableProperty]

@@ -9,6 +9,8 @@ public class AttendanceRecordEntity
     public string? HolidayName { get; set; }
     public string? TripCategory { get; set; }
     public string? TripRegion { get; set; }
+    public int? LeaveHours { get; set; }
+    public int? LeaveMinutes { get; set; }
     public TimeOnly? LoginTime { get; set; }
     public TimeOnly? LogoutTime { get; set; }
     public int OvertimeHours { get; set; }

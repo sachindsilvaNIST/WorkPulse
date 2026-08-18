@@ -130,7 +130,7 @@
 
                 <!-- Login Time (visible only for work days) -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsWorkDay}">
-                    <TextBlock Text="Login Time (default: 08:20)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
+                    <TextBlock Text="Login Time (default: 08:25)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <Border Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppDivider}" BorderThickness="1"
                             CornerRadius="4" Padding="12,8">
                         <Grid ColumnDefinitions="*,Auto,*,Auto">
@@ -152,7 +152,7 @@
 
                 <!-- Logout Time (visible only for work days) -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsWorkDay}">
-                    <TextBlock Text="Logout Time (default: 17:25)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
+                    <TextBlock Text="Logout Time (default: 17:30)" FontWeight="SemiBold" Foreground="{DynamicResource AppForeground}"/>
                     <Border Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppDivider}" BorderThickness="1"
                             CornerRadius="4" Padding="12,8">
                         <Grid ColumnDefinitions="*,Auto,*,Auto">
