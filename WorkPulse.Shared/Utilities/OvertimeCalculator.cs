@@ -4,7 +4,7 @@ namespace WorkPulse.Services;
 
 public static class OvertimeCalculator
 {
-    public static readonly TimeOnly StandardLogout = new(17, 25);
+    public static readonly TimeOnly StandardLogout = new(17, 30);
     public const int BreakDeductionMinutes = 20;
 
     public static (bool IsOvertime, int Hours, int Minutes) Calculate(

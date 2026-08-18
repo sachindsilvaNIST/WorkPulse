@@ -15,23 +15,32 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarClock, Clock, Pencil, Plus, Search, Trash2, TrendingUp, Umbrella, X } from "lucide-react";
+import { CalendarClock, ChevronDown, Clock, Pencil, Plus, Search, Trash2, TrendingUp, Umbrella } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
 import { attendanceApi } from "@/lib/api/client";
 import type { AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
+import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
+import { getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
 
-const DAY_TYPE_COLORS: Record<string, string> = {
-  WorkDay: "var(--brand-blue)",
-  AnnualPaidLeave: "var(--brand-orange)",
-  UnpaidLeave: "#8E8E93",
-  PublicHoliday: "var(--brand-green)",
-  Weekend: "#C7C7CC",
-  BusinessTrip: "var(--brand-purple)",
-};
+function emptyMonth(year: number, month: number): MonthlyData {
+  return {
+    year,
+    month,
+    monthLabel: new Date(year, month - 1, 1).toLocaleString("default", { month: "short" }).toUpperCase(),
+    title: `${new Date(year, month - 1, 1).toLocaleString("default", { month: "long" }).toUpperCase()} - MSW SETTLEMENT`,
+    records: [],
+  };
+}
+
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
   return (
@@ -58,9 +67,15 @@ function overtimeFlag(r: AttendanceRecord): string {
 }
 
 export default function DashboardPage() {
+  // "months" = distinct calendar months that have any saved data (from the backend, which still
+  // stores/partitions records by real calendar month). "selected" is the nominal (year, month) of
+  // the currently-viewed SETTLEMENT period (e.g. {year:2026, month:8} = "August 2026" = Jul 21 - Aug
+  // 20, 2026) — not a calendar month. "bucketCache" holds the raw calendar-month MonthlyData objects
+  // fetched from the backend, keyed by "year-month"; a settlement period reads from up to two of them
+  // (the previous calendar month + its own) and filters to the period's actual date window.
   const [months, setMonths] = useState<YearMonthDto[]>([]);
   const [selected, setSelected] = useState<{ year: number; month: number } | null>(null);
-  const [data, setData] = useState<MonthlyData | null>(null);
+  const [bucketCache, setBucketCache] = useState<Record<string, MonthlyData>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +83,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<{ date: string; record?: AttendanceRecord } | null>(null);
+  const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
 
   useEffect(() => {
     attendanceApi
@@ -75,7 +91,7 @@ export default function DashboardPage() {
       .then((list) => {
         setMonths(list);
         if (list.length > 0) {
-          const latest = list[list.length - 1];
+          const latest = list[0];
           setSelected({ year: latest.year, month: latest.month });
         } else {
           const now = new Date();
@@ -92,27 +108,62 @@ export default function DashboardPage() {
     if (!selected) return;
     setLoading(true);
     setError(null);
-    attendanceApi
-      .getMonth(selected.year, selected.month)
-      .then(setData)
-      .catch(() =>
-        setData({
-          year: selected.year,
-          month: selected.month,
-          monthLabel: new Date(selected.year, selected.month - 1, 1).toLocaleString("default", { month: "short" }).toUpperCase(),
-          title: `${new Date(selected.year, selected.month - 1, 1).toLocaleString("default", { month: "long" }).toUpperCase()} - MSW SETTLEMENT`,
-          records: [],
-        })
+    const buckets = settlementBuckets(selected.year, selected.month);
+    Promise.all(
+      buckets.map((b) =>
+        attendanceApi.getMonth(b.year, b.month).catch(() => emptyMonth(b.year, b.month))
       )
+    )
+      .then((fetched) => {
+        setBucketCache((prev) => {
+          const next = { ...prev };
+          for (const m of fetched) next[`${m.year}-${m.month}`] = m;
+          return next;
+        });
+      })
       .finally(() => setLoading(false));
   }, [selected]);
+
+  const period: SettlementPeriod | null = useMemo(
+    () => (selected ? getSettlementPeriod(selected.year, selected.month) : null),
+    [selected]
+  );
+
+  const settlementOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const opts: SettlementPeriod[] = [];
+    for (const m of months) {
+      for (const candidate of [{ year: m.year, month: m.month }, nextCalendarMonth(m.year, m.month)]) {
+        const key = `${candidate.year}-${candidate.month}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          opts.push(getSettlementPeriod(candidate.year, candidate.month));
+        }
+      }
+    }
+    return opts.sort((a, b) => b.year - a.year || b.month - a.month);
+  }, [months]);
+
+  const data: MonthlyData | null = useMemo(() => {
+    if (!selected || !period) return null;
+    const records = settlementBuckets(selected.year, selected.month)
+      .flatMap((b) => bucketCache[`${b.year}-${b.month}`]?.records ?? [])
+      .filter((r) => r.date >= period.periodStart && r.date <= period.periodEnd);
+    return {
+      year: selected.year,
+      month: selected.month,
+      monthLabel: period.label,
+      title: `${period.label} Settlement (${period.periodStart} to ${period.periodEnd})`,
+      records,
+    };
+  }, [selected, period, bucketCache]);
 
   const stats = useMemo(() => {
     if (!data) return null;
     const workDays = data.records.filter((r) => r.dayType === "WorkDay" && r.loginTime).length;
     const overtimeCount = data.records.filter((r) => r.isOvertime).length;
     const overtimeMinutes = data.records.filter((r) => r.isOvertime).reduce((sum, r) => sum + r.overtimeHours * 60 + r.overtimeMinutes, 0);
-    const leaveDays = data.records.filter((r) => r.dayType === "AnnualPaidLeave" || r.dayType === "UnpaidLeave").length;
+    const leaveDays = data.records.filter((r) => LEAVE_DAY_TYPES.includes(r.dayType)).length;
     return {
       workDays,
       overtimeCount,
@@ -124,12 +175,12 @@ export default function DashboardPage() {
   const dailyHoursChart = useMemo(() => {
     if (!data) return [];
     return data.records
-      .filter((r) => r.dayType === "WorkDay" && r.loginTime && r.logoutTime)
+      .filter((r) => TIME_TRACKED_DAY_TYPES.includes(r.dayType) && r.loginTime && r.logoutTime)
       .map((r) => {
         const [lh, lm] = r.loginTime!.split(":").map(Number);
         const [oh, om] = r.logoutTime!.split(":").map(Number);
         const hours = Math.max(0, oh + om / 60 - (lh + lm / 60));
-        return { day: r.date.slice(8, 10), hours: Math.round(hours * 10) / 10 };
+        return { day: r.date.slice(8, 10), hours: Math.round(hours * 10) / 10, dayType: r.dayType };
       });
   }, [data]);
 
@@ -137,7 +188,7 @@ export default function DashboardPage() {
     if (!data) return [];
     const counts = new Map<string, number>();
     for (const r of data.records) counts.set(r.dayType, (counts.get(r.dayType) ?? 0) + 1);
-    return Array.from(counts.entries()).map(([name, value]) => ({ name, value }));
+    return Array.from(counts.entries()).map(([key, value]) => ({ key, name: dayTypeLabel(key), value }));
   }, [data]);
 
   const filteredRecords = useMemo(() => {
@@ -152,30 +203,54 @@ export default function DashboardPage() {
     );
   }, [data, search]);
 
-  async function persist(nextRecords: AttendanceRecord[]) {
-    if (!data) return;
-    const nextData: MonthlyData = { ...data, records: nextRecords };
-    setData(nextData);
-    await attendanceApi.saveMonth(nextData.year, nextData.month, nextData);
-    if (!months.some((m) => m.year === nextData.year && m.month === nextData.month)) {
-      setMonths((prev) => [...prev, { year: nextData.year, month: nextData.month, label: nextData.monthLabel }]);
+  // A settlement period spans (up to) two calendar months, and the backend still partitions/saves
+  // records by real calendar month — so a save or delete must route to whichever calendar-month
+  // bucket the record's own date actually falls in, not just the currently-viewed settlement bucket.
+  async function getOrFetchBucket(year: number, month: number): Promise<MonthlyData> {
+    const key = `${year}-${month}`;
+    if (bucketCache[key]) return bucketCache[key];
+    const fetched = await attendanceApi.getMonth(year, month).catch(() => emptyMonth(year, month));
+    setBucketCache((prev) => ({ ...prev, [key]: fetched }));
+    return fetched;
+  }
+
+  async function persistRecords(records: AttendanceRecord[]) {
+    const groups = new Map<string, AttendanceRecord[]>();
+    for (const r of records) {
+      const [y, m] = r.date.split("-").map(Number);
+      const key = `${y}-${m}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(r);
+    }
+
+    for (const [key, groupRecords] of groups) {
+      const [y, m] = key.split("-").map(Number);
+      const bucket = await getOrFetchBucket(y, m);
+      let bucketRecords = [...bucket.records];
+      for (const r of groupRecords) {
+        bucketRecords = bucketRecords.filter((x) => x.date !== r.date);
+        bucketRecords.push(r);
+      }
+      const nextBucket: MonthlyData = { ...bucket, year: y, month: m, records: bucketRecords };
+      setBucketCache((prev) => ({ ...prev, [key]: nextBucket }));
+      await attendanceApi.saveMonth(y, m, nextBucket);
+      if (!months.some((mo) => mo.year === y && mo.month === m)) {
+        setMonths((prev) => [...prev, { year: y, month: m, label: nextBucket.monthLabel }]);
+      }
     }
   }
 
   function handleDialogSave(records: AttendanceRecord[]) {
-    if (!data) return;
-    let next = [...data.records];
-    for (const record of records) {
-      next = next.filter((r) => r.date !== record.date);
-      next.push(record);
-    }
-    persist(next);
+    persistRecords(records);
     setDialogState(null);
   }
 
-  function handleDelete(dateStr: string) {
-    if (!data) return;
-    persist(data.records.filter((r) => r.date !== dateStr));
+  async function handleDelete(dateStr: string) {
+    const [y, m] = dateStr.split("-").map(Number);
+    const bucket = await getOrFetchBucket(y, m);
+    const nextBucket: MonthlyData = { ...bucket, records: bucket.records.filter((r) => r.date !== dateStr) };
+    setBucketCache((prev) => ({ ...prev, [`${y}-${m}`]: nextBucket }));
+    await attendanceApi.saveMonth(y, m, nextBucket);
     if (selectedDate === dateStr) setSelectedDate(null);
   }
 
@@ -189,24 +264,31 @@ export default function DashboardPage() {
       >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Attendance Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">{data?.monthLabel ?? "Track login, logout, overtime and monthly trends"}</p>
+          <p className="mt-1 text-muted-foreground">
+            {period
+              ? `${period.label} Settlement · ${formatShortDate(period.periodStart)} – ${formatShortDate(period.periodEnd)}, ${period.year}`
+              : "Track login, logout, overtime and monthly trends"}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {months.length > 0 && selected && (
-            <select
-              className="h-9 rounded-full border border-input bg-background/60 px-4 text-sm backdrop-blur-md outline-none"
-              value={`${selected.year}-${selected.month}`}
-              onChange={(e) => {
-                const [y, m] = e.target.value.split("-").map(Number);
-                setSelected({ year: y, month: m });
-              }}
-            >
-              {months.map((m) => (
-                <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+          {settlementOptions.length > 0 && selected && (
+            <div className="relative">
+              <select
+                className="h-9 appearance-none rounded-full border border-input bg-background/60 py-2 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
+                value={`${selected.year}-${selected.month}`}
+                onChange={(e) => {
+                  const [y, m] = e.target.value.split("-").map(Number);
+                  setSelected({ year: y, month: m });
+                }}
+              >
+                {settlementOptions.map((opt) => (
+                  <option key={`${opt.year}-${opt.month}`} value={`${opt.year}-${opt.month}`}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            </div>
           )}
           <Button
             variant={editMode ? "default" : "outline"}
@@ -242,7 +324,11 @@ export default function DashboardPage() {
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
                     <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" width={30} />
                     <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
-                    <Bar dataKey="hours" fill="var(--brand-blue)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
+                      {dailyHoursChart.map((entry) => (
+                        <Cell key={entry.day} fill={DAY_TYPE_COLORS[entry.dayType] ?? "var(--brand-blue)"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -257,7 +343,7 @@ export default function DashboardPage() {
                   <PieChart>
                     <Pie data={dayTypeChart} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
                       {dayTypeChart.map((entry) => (
-                        <Cell key={entry.name} fill={DAY_TYPE_COLORS[entry.name] ?? "#999"} />
+                        <Cell key={entry.key} fill={DAY_TYPE_COLORS[entry.key] ?? "#999"} />
                       ))}
                     </Pie>
                     <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -284,16 +370,11 @@ export default function DashboardPage() {
                 </div>
                 {editMode && (
                   <>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        setDialogState({ date: selected ? `${selected.year}-${String(selected.month).padStart(2, "0")}-01` : new Date().toISOString().slice(0, 10) })
-                      }
-                    >
+                    <Button size="sm" onClick={() => setDialogState({ date: new Date().toISOString().slice(0, 10) })}>
                       <Plus className="size-3.5" /> Entry
                     </Button>
                     {selectedDate && (
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(selectedDate)}>
+                      <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteDate(selectedDate)}>
                         <Trash2 className="size-3.5" /> Delete
                       </Button>
                     )}
@@ -303,7 +384,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
               {filteredRecords.length === 0 ? (
-                <p className="p-5 text-sm text-muted-foreground">No records for this month yet.</p>
+                <p className="p-5 text-sm text-muted-foreground">No records for this settlement period yet.</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
@@ -327,8 +408,22 @@ export default function DashboardPage() {
                       >
                         <td className="px-4 py-2">{r.date}</td>
                         <td className="px-4 py-2">
-                          <Badge variant="secondary">{r.dayType}</Badge>
+                          <Badge
+                            variant="outline"
+                            style={{
+                              backgroundColor: `color-mix(in srgb, ${DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93"} 15%, transparent)`,
+                              borderColor: `color-mix(in srgb, ${DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93"} 35%, transparent)`,
+                              color: DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93",
+                            }}
+                          >
+                            {dayTypeLabel(r.dayType)}
+                          </Badge>
                           {r.tripRegion && <span className="ml-1.5 text-xs text-muted-foreground">{r.tripRegion}</span>}
+                          {r.dayType === "HourlyLeave" && (
+                            <span className="ml-1.5 text-xs text-muted-foreground">
+                              {r.leaveHours ?? 0}h {r.leaveMinutes ?? 0}m
+                            </span>
+                          )}
                           {r.holidayName && r.dayType !== "BusinessTrip" && (
                             <span className="ml-1.5 text-xs text-muted-foreground">{r.holidayName}</span>
                           )}
@@ -346,17 +441,17 @@ export default function DashboardPage() {
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-2">
                               <Pencil
-                                className="size-3.5 text-muted-foreground hover:text-primary"
+                                className="size-3.5 cursor-pointer text-muted-foreground hover:text-primary"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setDialogState({ date: r.date, record: r });
                                 }}
                               />
-                              <X
-                                className="size-3.5 text-muted-foreground hover:text-destructive"
+                              <Trash2
+                                className="size-3.5 cursor-pointer text-muted-foreground hover:text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDelete(r.date);
+                                  setConfirmDeleteDate(r.date);
                                 }}
                               />
                             </div>
@@ -377,6 +472,20 @@ export default function DashboardPage() {
           initial={{ date: dialogState.date, ...dialogState.record }}
           onSave={handleDialogSave}
           onCancel={() => setDialogState(null)}
+        />
+      )}
+
+      {confirmDeleteDate && (
+        <ConfirmDialog
+          title="Delete this entry?"
+          description={`This will permanently remove the attendance record for ${confirmDeleteDate}.`}
+          confirmLabel="Yes"
+          cancelLabel="No"
+          onConfirm={() => {
+            handleDelete(confirmDeleteDate);
+            setConfirmDeleteDate(null);
+          }}
+          onCancel={() => setConfirmDeleteDate(null)}
         />
       )}
     </div>

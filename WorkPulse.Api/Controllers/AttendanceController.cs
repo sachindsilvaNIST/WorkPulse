@@ -20,10 +20,19 @@ public class AttendanceController : ApiControllerBase
         var months = await _db.AttendanceMonths
             .Where(m => m.UserId == UserId)
             .OrderByDescending(m => m.Year).ThenByDescending(m => m.Month)
-            .Select(m => new YearMonthDto { Year = m.Year, Month = m.Month })
+            .Select(m => new { m.Year, m.Month })
             .ToListAsync();
 
-        return Ok(months);
+        var result = months
+            .Select(m => new YearMonthDto
+            {
+                Year = m.Year,
+                Month = m.Month,
+                Label = new DateTime(m.Year, m.Month, 1).ToString("MMMM yyyy")
+            })
+            .ToList();
+
+        return Ok(result);
     }
 
     [HttpGet("{year}/{month}")]

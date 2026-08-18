@@ -84,7 +84,8 @@ public static class StreamExcelExportService
         ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
         ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
 
-        if (record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday)
+        if (record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday
+            or DayType.HourlyLeave or DayType.Other)
         {
             ws.Range(row, 5, row, 11).Merge().Value = record.LoginDisplay;
             ws.Range(row, 5, row, 11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;

@@ -18,11 +18,16 @@ export interface RegisterRequest {
 
 export type DayType =
   | "WorkDay"
+  | "HalfDayLeave"
+  | "AMLeave"
+  | "PMLeave"
+  | "HourlyLeave"
   | "AnnualPaidLeave"
   | "UnpaidLeave"
   | "PublicHoliday"
   | "Weekend"
-  | "BusinessTrip";
+  | "BusinessTrip"
+  | "Other";
 
 export interface AttendanceRecord {
   date: string;
@@ -30,6 +35,8 @@ export interface AttendanceRecord {
   holidayName?: string | null;
   tripCategory?: "Domestic" | "Overseas" | null;
   tripRegion?: string | null;
+  leaveHours?: number | null;
+  leaveMinutes?: number | null;
   loginTime?: string | null;
   logoutTime?: string | null;
   overtimeHours: number;

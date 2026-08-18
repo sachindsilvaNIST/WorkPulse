@@ -1,22 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import type { AttendanceRecord, DayType, TripCategory } from "@/lib/api/types";
 import { PREFECTURES, COUNTRIES } from "@/lib/trip-data";
+import { DAY_TYPE_OPTIONS, NOTE_ENABLED_DAY_TYPES, TIME_TRACKED_DAY_TYPES } from "@/lib/attendance-day-types";
 
-const DAY_TYPES: { value: DayType; label: string }[] = [
-  { value: "WorkDay", label: "Work Day" },
-  { value: "AnnualPaidLeave", label: "Annual Paid Leave" },
-  { value: "UnpaidLeave", label: "Unpaid Leave" },
-  { value: "PublicHoliday", label: "Public Holiday" },
-  { value: "BusinessTrip", label: "Business Trip" },
-];
-
-const STANDARD_LOGOUT_MIN = 17 * 60 + 25;
+const STANDARD_LOGOUT_MIN = 17 * 60 + 30;
 const BREAK_DEDUCTION_MIN = 20;
 
 function calcOvertime(logoutTime: string): { isOvertime: boolean; hours: number; minutes: number } {
@@ -39,12 +33,14 @@ export function AttendanceEntryDialog({
   onCancel: () => void;
 }) {
   const [date, setDate] = useState(initial.date);
-  const [dayType, setDayType] = useState<DayType>(initial.dayType ?? "WorkDay");
+  const [dayType, setDayType] = useState<DayType | "">(initial.dayType ?? "");
   const [holidayName, setHolidayName] = useState(initial.holidayName ?? "");
-  const [loginTime, setLoginTime] = useState(initial.loginTime ?? "08:20");
-  const [logoutTime, setLogoutTime] = useState(initial.logoutTime ?? "17:25");
-  const [overtimeSelection, setOvertimeSelection] = useState<"" | "yes" | "no">(
-    initial.isOvertimeDecided ? (initial.isOvertime ? "yes" : "no") : ""
+  const [leaveHours, setLeaveHours] = useState(initial.leaveHours ?? 0);
+  const [leaveMinutes, setLeaveMinutes] = useState(initial.leaveMinutes ?? 0);
+  const [loginTime, setLoginTime] = useState(initial.loginTime ?? "08:25");
+  const [logoutTime, setLogoutTime] = useState(initial.logoutTime ?? "17:30");
+  const [overtimeOn, setOvertimeOn] = useState<boolean>(
+    initial.isOvertimeDecided ? !!initial.isOvertime : false
   );
   const [tripCategory, setTripCategory] = useState<TripCategory>(initial.tripCategory ?? "Domestic");
   const [tripRegion, setTripRegion] = useState(initial.tripRegion ?? "");
@@ -52,16 +48,20 @@ export function AttendanceEntryDialog({
   const [returnDate, setReturnDate] = useState(initial.date);
   const [error, setError] = useState("");
 
-  const overtime = calcOvertime(overtimeSelection === "yes" ? logoutTime : "");
+  const overtime = calcOvertime(overtimeOn ? logoutTime : "");
 
   useEffect(() => {
-    if (overtimeSelection !== "yes") return;
+    if (!overtimeOn) return;
     // live-recompute as logoutTime changes; nothing else to do, calc happens on render
-  }, [logoutTime, overtimeSelection]);
+  }, [logoutTime, overtimeOn]);
 
   function handleSave() {
-    if (dayType === "WorkDay" && overtimeSelection === "") {
-      setError("Please select Yes or No for Overtime.");
+    if (!dayType) {
+      setError("Please select a Day Type.");
+      return;
+    }
+    if (dayType === "HourlyLeave" && leaveHours === 0 && leaveMinutes === 0) {
+      setError("Please set the hours or minutes taken for Hourly Leave.");
       return;
     }
     if (dayType === "BusinessTrip") {
@@ -94,17 +94,19 @@ export function AttendanceEntryDialog({
       return;
     }
 
+    const isTimeTracked = TIME_TRACKED_DAY_TYPES.includes(dayType);
     const record: AttendanceRecord = {
       date,
       dayType,
-      holidayName:
-        dayType === "AnnualPaidLeave" || dayType === "UnpaidLeave" || dayType === "PublicHoliday" ? holidayName : null,
-      loginTime: dayType === "WorkDay" ? loginTime : null,
-      logoutTime: dayType === "WorkDay" ? logoutTime : null,
+      holidayName: NOTE_ENABLED_DAY_TYPES.includes(dayType) ? holidayName || null : null,
+      leaveHours: dayType === "HourlyLeave" ? leaveHours : null,
+      leaveMinutes: dayType === "HourlyLeave" ? leaveMinutes : null,
+      loginTime: isTimeTracked ? loginTime : null,
+      logoutTime: isTimeTracked ? logoutTime : null,
       overtimeHours: dayType === "WorkDay" ? overtime.hours : 0,
       overtimeMinutes: dayType === "WorkDay" ? overtime.minutes : 0,
       isOvertime: dayType === "WorkDay" ? overtime.isOvertime : false,
-      isOvertimeDecided: dayType === "WorkDay" ? overtimeSelection !== "" : false,
+      isOvertimeDecided: dayType === "WorkDay",
     };
     onSave([record]);
   }
@@ -128,25 +130,78 @@ export function AttendanceEntryDialog({
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Day Type</label>
-            <select
-              className="h-10 w-full rounded-full border border-input bg-background/50 px-4 text-sm backdrop-blur-md outline-none"
-              value={dayType}
-              onChange={(e) => setDayType(e.target.value as DayType)}
-            >
-              {DAY_TYPES.map((d) => (
-                <option key={d.value} value={d.value}>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Day Type <span className="text-destructive">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {DAY_TYPE_OPTIONS.map((d) => (
+                <Button
+                  key={d.value}
+                  type="button"
+                  variant={dayType === d.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setDayType(d.value);
+                    setError("");
+                  }}
+                >
                   {d.label}
-                </option>
+                </Button>
               ))}
-            </select>
+            </div>
           </div>
 
-          {(dayType === "AnnualPaidLeave" || dayType === "UnpaidLeave" || dayType === "PublicHoliday") && (
-            <Input placeholder="Holiday / leave name (optional)" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />
+          {dayType === "HourlyLeave" && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Duration <span className="text-destructive">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={leaveHours}
+                    onChange={(e) => setLeaveHours(Math.max(0, Number(e.target.value)))}
+                    className="pr-10"
+                  />
+                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    hrs
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={leaveMinutes}
+                    onChange={(e) => setLeaveMinutes(Math.max(0, Math.min(59, Number(e.target.value))))}
+                    className="pr-10"
+                  />
+                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    min
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
 
-          {dayType === "WorkDay" && (
+          {dayType && NOTE_ENABLED_DAY_TYPES.includes(dayType) && (
+            <Input
+              placeholder={
+                dayType === "Other"
+                  ? "Describe this entry (optional)"
+                  : dayType === "HourlyLeave"
+                    ? "Description (optional)"
+                    : "Holiday / leave name (optional)"
+              }
+              value={holidayName}
+              onChange={(e) => setHolidayName(e.target.value)}
+            />
+          )}
+
+          {dayType && TIME_TRACKED_DAY_TYPES.includes(dayType) && (
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -158,34 +213,22 @@ export function AttendanceEntryDialog({
                   <Input type="time" value={logoutTime} onChange={(e) => setLogoutTime(e.target.value)} />
                 </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Overtime?</label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={overtimeSelection === "yes" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setOvertimeSelection("yes")}
-                  >
-                    Yes
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={overtimeSelection === "no" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setOvertimeSelection("no")}
-                  >
-                    No
-                  </Button>
+              {dayType === "WorkDay" && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Overtime?</label>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={overtimeOn} onCheckedChange={setOvertimeOn} />
+                    <span className="text-sm text-muted-foreground">{overtimeOn ? "On" : "Off"}</span>
+                  </div>
+                  {overtimeOn && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {overtime.isOvertime
+                        ? `Overtime: ${overtime.hours} Hr ${overtime.minutes} Min`
+                        : "Logout time is within standard hours (no OT)."}
+                    </p>
+                  )}
                 </div>
-                {overtimeSelection === "yes" && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {overtime.isOvertime
-                      ? `Overtime: ${overtime.hours} Hr ${overtime.minutes} Min`
-                      : "Logout time is within standard hours (no OT)."}
-                  </p>
-                )}
-              </div>
+              )}
             </>
           )}
 
@@ -232,18 +275,21 @@ export function AttendanceEntryDialog({
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   {tripCategory === "Domestic" ? "Prefecture" : "Country"}
                 </label>
-                <select
-                  className="h-10 w-full rounded-full border border-input bg-background/50 px-4 text-sm backdrop-blur-md outline-none"
-                  value={tripRegion}
-                  onChange={(e) => setTripRegion(e.target.value)}
-                >
-                  <option value="">Select…</option>
-                  {(tripCategory === "Domestic" ? PREFECTURES : COUNTRIES).map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className="h-10 w-full appearance-none rounded-full border border-input bg-background/50 py-2 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
+                    value={tripRegion}
+                    onChange={(e) => setTripRegion(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {(tripCategory === "Domestic" ? PREFECTURES : COUNTRIES).map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
               <Input placeholder="Location / notes (optional)" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />
             </>
