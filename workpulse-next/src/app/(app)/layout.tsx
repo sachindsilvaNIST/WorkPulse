@@ -6,15 +6,24 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Activity } from "lucide-react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { useAuth } from "@/lib/auth-context";
+import { useIdleLogout } from "@/hooks/use-idle-logout";
+import { settingsApi } from "@/lib/api/client";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) settingsApi.get().then((s) => setIdleTimeoutMinutes(s.idleTimeoutMinutes)).catch(() => {});
+  }, [isAuthenticated]);
+
+  useIdleLogout(idleTimeoutMinutes, logout);
 
   if (isLoading || !isAuthenticated) {
     return (

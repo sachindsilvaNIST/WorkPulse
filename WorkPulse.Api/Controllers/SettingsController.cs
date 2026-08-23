@@ -37,6 +37,11 @@ public class SettingsController : ApiControllerBase
             entity.LastOpenedMonth = settings.LastOpenedMonth;
             entity.ThemeVariant = settings.ThemeVariant;
             entity.FontSizePreset = settings.FontSizePreset;
+            entity.DateFormat = settings.DateFormat;
+            entity.WeekStartDay = settings.WeekStartDay;
+            entity.DefaultLandingPage = settings.DefaultLandingPage;
+            entity.IdleTimeoutMinutes = settings.IdleTimeoutMinutes;
+            entity.NotificationsEnabled = settings.NotificationsEnabled;
         }
         else
         {

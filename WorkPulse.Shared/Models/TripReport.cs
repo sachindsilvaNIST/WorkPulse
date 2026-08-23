@@ -16,6 +16,11 @@ public class TripReport
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public DateTime LastModifiedUtc { get; set; }
 
+    /// <summary>How many documents (reimbursement receipts/invoices/etc.) are linked to this
+    /// trip — populated by TripReportsController.GetAll so Business Trips can show it on each
+    /// trip card without a separate request per trip.</summary>
+    public int DocumentCount { get; set; }
+
     [JsonIgnore]
     public string SearchText => $"{Destination} {Purpose} {Notes} {Category}".ToLowerInvariant();
 }

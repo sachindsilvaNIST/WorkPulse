@@ -18,6 +18,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<WeeklyReportEntity> WeeklyReports => Set<WeeklyReportEntity>();
     public DbSet<TripReportEntity> TripReports => Set<TripReportEntity>();
     public DbSet<TripDocumentEntity> TripDocuments => Set<TripDocumentEntity>();
+    public DbSet<UserSessionEntity> UserSessions => Set<UserSessionEntity>();
+    public DbSet<ReimbursementCategoryEntity> ReimbursementCategories => Set<ReimbursementCategoryEntity>();
+    public DbSet<GoogleDriveConnectionEntity> GoogleDriveConnections => Set<GoogleDriveConnectionEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -66,6 +69,40 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(x => x.User)
                 .WithOne(u => u.Settings)
                 .HasForeignKey<UserSettingsEntity>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserSession
+        builder.Entity<UserSessionEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.RefreshToken).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ReimbursementCategory
+        builder.Entity<ReimbursementCategoryEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.UserId, x.Name }).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GoogleDriveConnection
+        builder.Entity<GoogleDriveConnectionEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

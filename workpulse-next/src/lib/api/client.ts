@@ -13,6 +13,15 @@ import type {
   QuickLink,
   DictEntryDto,
   AppSettings,
+  AdminUser,
+  AdminUserCreateRequest,
+  AdminUserUpdateRequest,
+  AdminUserFeatures,
+  LoginResult,
+  CurrentUser,
+  UserSession,
+  ReimbursementCategory,
+  GoogleDriveStatus,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -28,6 +37,11 @@ export function getToken(): string | null {
 export function getDisplayName(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(NAME_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(REFRESH_KEY);
 }
 
 function setSession(auth: AuthResponse) {
@@ -67,15 +81,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(res.status, message);
   }
 
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  // Some endpoints return 200 with an empty body instead of 204 — checking status alone isn't
+  // enough to know whether there's JSON to parse, so read as text first and only parse if non-empty.
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export const authApi = {
-  async login(req: LoginRequest): Promise<AuthResponse> {
-    const auth = await request<AuthResponse>("/api/auth/login", {
+  // Returns the raw challenge result rather than auto-completing the session — a 2FA-enabled
+  // account gets { requiresTwoFactor: true, auth: null } here and only actually signs in once
+  // verifyTwoFactor() succeeds.
+  async login(req: LoginRequest): Promise<LoginResult> {
+    const result = await request<LoginResult>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(req),
+    });
+    if (result.auth) setSession(result.auth);
+    return result;
+  },
+  async verifyTwoFactor(email: string, code: string): Promise<AuthResponse> {
+    const auth = await request<AuthResponse>("/api/auth/login/verify-2fa", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
     });
     setSession(auth);
     return auth;
@@ -89,8 +117,17 @@ export const authApi = {
     return auth;
   },
   logout() {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      // Best-effort — the session is cleared client-side regardless of whether this succeeds.
+      void request<void>("/api/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }).catch(() => {});
+    }
     clearSession();
   },
+  me: () => request<CurrentUser>("/api/auth/me"),
+  send2faSetupCode: () => request<void>("/api/auth/2fa/send-code", { method: "POST" }),
+  enable2fa: (code: string) => request<void>("/api/auth/2fa/enable", { method: "POST", body: JSON.stringify({ code }) }),
+  disable2fa: () => request<void>("/api/auth/2fa/disable", { method: "POST" }),
 };
 
 export const attendanceApi = {
@@ -148,12 +185,13 @@ export const tripReportsApi = {
   delete: (id: string) => request<void>(`/api/tripreports/${id}`, { method: "DELETE" }),
 
   getDocuments: (tripId: string) => request<TripDocumentMeta[]>(`/api/tripreports/${tripId}/documents`),
-  uploadDocument: async (tripId: string, file: File, category: string, label: string) => {
+  uploadDocument: async (tripId: string, file: File, category: string, label: string, documentDate?: string) => {
     const token = getToken();
     const form = new FormData();
     form.append("file", file);
     form.append("category", category);
     form.append("label", label);
+    if (documentDate) form.append("documentDate", documentDate);
     const res = await fetch(`${API_BASE}/api/tripreports/${tripId}/documents`, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -168,8 +206,25 @@ export const tripReportsApi = {
 };
 
 export const reimbursementApi = {
-  getAllDocuments: (search?: string) =>
-    request<TripDocumentWithTrip[]>(`/api/reimbursement/documents${search ? `?search=${encodeURIComponent(search)}` : ""}`),
+  getAllDocuments: (search?: string, category?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (category) params.set("category", category);
+    const qs = params.toString();
+    return request<TripDocumentWithTrip[]>(`/api/reimbursement/documents${qs ? `?${qs}` : ""}`);
+  },
+  getCategories: () => request<ReimbursementCategory[]>("/api/reimbursement/categories"),
+  createCategory: (name: string) =>
+    request<ReimbursementCategory>("/api/reimbursement/categories", { method: "POST", body: JSON.stringify({ name }) }),
+  renameCategory: (id: number, name: string) =>
+    request<ReimbursementCategory>(`/api/reimbursement/categories/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteCategory: (id: number) => request<void>(`/api/reimbursement/categories/${id}`, { method: "DELETE" }),
+};
+
+export const googleDriveApi = {
+  status: () => request<GoogleDriveStatus>("/api/googledrive/status"),
+  getConnectUrl: () => request<{ url: string }>("/api/googledrive/connect"),
+  disconnect: () => request<void>("/api/googledrive/disconnect", { method: "POST" }),
 };
 
 export const contactsApi = {
@@ -203,6 +258,26 @@ export const dictionaryApi = {
 export const settingsApi = {
   get: () => request<AppSettings>("/api/settings"),
   save: (settings: AppSettings) => request<void>("/api/settings", { method: "PUT", body: JSON.stringify(settings) }),
+};
+
+export const sessionsApi = {
+  list: () => request<UserSession[]>("/api/sessions"),
+  revoke: (id: number) => request<void>(`/api/sessions/${id}`, { method: "DELETE" }),
+  revokeAll: () => request<void>("/api/sessions", { method: "DELETE" }),
+};
+
+export const adminApi = {
+  getUsers: () => request<AdminUser[]>("/api/admin/users"),
+  createUser: (dto: AdminUserCreateRequest) => request<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(dto) }),
+  updateUser: (id: string, dto: AdminUserUpdateRequest) =>
+    request<void>(`/api/admin/users/${id}`, { method: "PUT", body: JSON.stringify(dto) }),
+  deleteUser: (id: string) => request<void>(`/api/admin/users/${id}`, { method: "DELETE" }),
+  toggleDisable: (id: string) => request<{ isDisabled: boolean }>(`/api/admin/users/${id}/toggle-disable`, { method: "POST" }),
+  resetPassword: (id: string, newPassword: string) =>
+    request<void>(`/api/admin/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ newPassword }) }),
+  getUserFeatures: (id: string) => request<AdminUserFeatures>(`/api/admin/users/${id}/features`),
+  updateUserFeatures: (id: string, disabled: string[]) =>
+    request<void>(`/api/admin/users/${id}/features`, { method: "PUT", body: JSON.stringify({ disabled }) }),
 };
 
 export { ApiError };

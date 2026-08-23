@@ -240,13 +240,21 @@ public static class EntityMapper
         {
             Id = entity.Id,
             TripReportId = entity.TripReportId,
-            Category = Enum.TryParse<DocCategory>(entity.Category, out var dc) ? dc : DocCategory.Other,
+            Category = entity.Category,
             Label = entity.Label,
             FileName = entity.FileName,
             ContentType = entity.ContentType,
             SizeBytes = entity.SizeBytes,
-            UploadedUtc = entity.UploadedUtc
+            UploadedUtc = entity.UploadedUtc,
+            DocumentDate = entity.DocumentDate,
+            DriveFileId = entity.DriveFileId,
+            DriveWebViewLink = entity.DriveWebViewLink
         };
+    }
+
+    public static ReimbursementCategory ToDto(this ReimbursementCategoryEntity entity)
+    {
+        return new ReimbursementCategory { Id = entity.Id, Name = entity.Name };
     }
 
     // --- UserSettings <-> AppSettings ---
@@ -261,7 +269,12 @@ public static class EntityMapper
             DefaultTitle = entity.DefaultTitle,
             LastOpenedMonth = entity.LastOpenedMonth,
             ThemeVariant = entity.ThemeVariant,
-            FontSizePreset = entity.FontSizePreset
+            FontSizePreset = entity.FontSizePreset,
+            DateFormat = entity.DateFormat,
+            WeekStartDay = entity.WeekStartDay,
+            DefaultLandingPage = entity.DefaultLandingPage,
+            IdleTimeoutMinutes = entity.IdleTimeoutMinutes,
+            NotificationsEnabled = entity.NotificationsEnabled
         };
     }
 
@@ -276,7 +289,12 @@ public static class EntityMapper
             DefaultTitle = settings.DefaultTitle,
             LastOpenedMonth = settings.LastOpenedMonth,
             ThemeVariant = settings.ThemeVariant,
-            FontSizePreset = settings.FontSizePreset
+            FontSizePreset = settings.FontSizePreset,
+            DateFormat = settings.DateFormat,
+            WeekStartDay = settings.WeekStartDay,
+            DefaultLandingPage = settings.DefaultLandingPage,
+            IdleTimeoutMinutes = settings.IdleTimeoutMinutes,
+            NotificationsEnabled = settings.NotificationsEnabled
         };
     }
 }

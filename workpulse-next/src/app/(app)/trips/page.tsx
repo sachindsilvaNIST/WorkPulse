@@ -2,16 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Download, Plus, Trash2, Upload, X } from "lucide-react";
+import { Briefcase, Download, FileText, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { CategoryPicker } from "@/components/ui/category-picker";
 import { tripReportsApi, downloadBlob } from "@/lib/api/client";
-import type { DocCategory, TripCategory, TripDocumentMeta, TripReport } from "@/lib/api/types";
-
-const DOC_CATEGORIES: DocCategory[] = ["Invoice", "Receipt", "FlightTicket", "Insurance", "Report", "Other"];
+import type { TripCategory, TripDocumentMeta, TripReport } from "@/lib/api/types";
 
 function emptyTrip(): Partial<TripReport> {
   const today = new Date().toISOString().slice(0, 10);
@@ -26,8 +25,9 @@ export default function TripsPage() {
   const [loading, setLoading] = useState(true);
 
   const [docs, setDocs] = useState<TripDocumentMeta[]>([]);
-  const [docCategory, setDocCategory] = useState<DocCategory>("Invoice");
+  const [docCategory, setDocCategory] = useState("");
   const [docLabel, setDocLabel] = useState("");
+  const [docDate, setDocDate] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -64,12 +64,13 @@ export default function TripsPage() {
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !selectedId) return;
+    if (!file || !selectedId || !docCategory) return;
     setUploading(true);
     try {
-      const meta = await tripReportsApi.uploadDocument(selectedId, file, docCategory, docLabel);
+      const meta = await tripReportsApi.uploadDocument(selectedId, file, docCategory, docLabel, docDate || undefined);
       setDocs((prev) => [meta, ...prev]);
       setDocLabel("");
+      setTrips((prev) => prev.map((t) => (t.id === selectedId ? { ...t, documentCount: t.documentCount + 1 } : t)));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -86,6 +87,7 @@ export default function TripsPage() {
     if (!selectedId) return;
     await tripReportsApi.deleteDocument(selectedId, docId);
     setDocs((prev) => prev.filter((d) => d.id !== docId));
+    setTrips((prev) => prev.map((t) => (t.id === selectedId ? { ...t, documentCount: Math.max(0, t.documentCount - 1) } : t)));
   }
 
   return (
@@ -160,6 +162,11 @@ export default function TripsPage() {
                       {t.startDate} → {t.endDate}
                     </p>
                     <p className="mt-1 truncate text-sm text-muted-foreground">{t.purpose}</p>
+                    {t.documentCount > 0 && (
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <FileText className="size-3" /> {t.documentCount} document{t.documentCount === 1 ? "" : "s"}
+                      </span>
+                    )}
                   </div>
                   <Trash2
                     className="size-4 shrink-0 text-muted-foreground hover:text-destructive"
@@ -188,27 +195,24 @@ export default function TripsPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-background/40 p-3">
-                <select
-                  className="h-9 rounded-full border border-input bg-background/50 px-3 text-xs outline-none"
-                  value={docCategory}
-                  onChange={(e) => setDocCategory(e.target.value as DocCategory)}
-                >
-                  {DOC_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <CategoryPicker value={docCategory} onChange={setDocCategory} className="h-9 w-40" placeholder="Category" />
+                <Input
+                  type="date"
+                  value={docDate}
+                  onChange={(e) => setDocDate(e.target.value)}
+                  className="h-9 w-36"
+                  title="Document date (optional)"
+                />
                 <Input
                   placeholder="Label (optional)"
                   value={docLabel}
                   onChange={(e) => setDocLabel(e.target.value)}
                   className="h-9 flex-1"
                 />
-                <Button asChild size="sm" variant="glass" disabled={uploading}>
-                  <label className="cursor-pointer">
+                <Button asChild size="sm" variant="glass" disabled={uploading || !docCategory}>
+                  <label className={docCategory ? "cursor-pointer" : "cursor-not-allowed opacity-60"}>
                     <Upload className="size-3.5" /> {uploading ? "Uploading…" : "Upload"}
-                    <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
+                    <input type="file" className="hidden" onChange={handleUpload} disabled={uploading || !docCategory} />
                   </label>
                 </Button>
               </div>

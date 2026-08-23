@@ -26,13 +26,13 @@ public class ApiTripDocumentService
     }
 
     public async Task<(bool Success, TripDocumentMeta? Meta, string? Error)> UploadAsync(
-        string tripId, Stream fileStream, string fileName, string contentType, DocCategory category, string? label)
+        string tripId, Stream fileStream, string fileName, string contentType, string category, string? label)
     {
         using var form = new MultipartFormDataContent();
         var fileContent = new StreamContent(fileStream);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrEmpty(contentType) ? "application/octet-stream" : contentType);
         form.Add(fileContent, "file", fileName);
-        form.Add(new StringContent(category.ToString()), "category");
+        form.Add(new StringContent(category), "category");
         form.Add(new StringContent(label ?? ""), "label");
 
         var response = await _http.PostAsync($"api/tripreports/{tripId}/documents", form);

@@ -144,9 +144,61 @@
 /* Frosted glass surface, for sidebars / floating panels over the aurora background */
 .glass-panel {
   background-color: color-mix(in srgb, var(--card) 70%, transparent);
-  backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Apple Notes-style checklist inside the rich text note editor. Purely CSS-driven (the checkbox
+   is a ::before pseudo-element, the checked state just a class on the <li>) so that pressing Enter
+   to continue the list — native browser <li> behavior — automatically renders a checkbox on the
+   new line too, with no per-item DOM surgery or extra keydown handling required. */
+.note-rich-text .note-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+.note-rich-text .note-checklist > li {
+  position: relative;
+  padding-left: 1.75rem;
+}
+.note-rich-text .note-checklist > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 0.3rem;
+  border: 1.5px solid var(--muted-foreground);
+  cursor: pointer;
+}
+.note-rich-text .note-checklist > li.checked {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+.note-rich-text .note-checklist > li.checked::before {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+}
+.note-rich-text .note-checklist > li.checked::after {
+  content: "";
+  position: absolute;
+  left: 0.36rem;
+  top: 0.42em;
+  width: 0.32rem;
+  height: 0.58rem;
+  border-right: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(45deg);
+}
+
+/* Background/border color is set per-instance via inline style (see RichTextEditor's
+   applyHighlight) since each highlighted span can have its own chosen color. Kept translucent
+   there rather than opaque so the app's existing (white) text color stays legible on top. */
+.note-rich-text mark.note-highlight {
+  border-radius: 0.15em;
+  padding: 0.02em 0;
+  color: inherit;
 }

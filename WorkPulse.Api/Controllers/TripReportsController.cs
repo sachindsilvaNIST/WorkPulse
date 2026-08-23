@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
 using WorkPulse.Api.Mapping;
+using WorkPulse.Api.Services;
 using WorkPulse.Models;
 
 namespace WorkPulse.Api.Controllers;
@@ -13,8 +14,15 @@ public class TripReportsController : ApiControllerBase
     private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
     private readonly AppDbContext _db;
+    private readonly GoogleDriveService _drive;
+    private readonly ILogger<TripReportsController> _logger;
 
-    public TripReportsController(AppDbContext db) => _db = db;
+    public TripReportsController(AppDbContext db, GoogleDriveService drive, ILogger<TripReportsController> logger)
+    {
+        _db = db;
+        _drive = drive;
+        _logger = logger;
+    }
 
     // ===== TRIP REPORTS =====
 
@@ -26,7 +34,22 @@ public class TripReportsController : ApiControllerBase
             .OrderByDescending(t => t.StartDate)
             .ToListAsync();
 
-        return Ok(reports.Select(t => t.ToTripReport()).ToList());
+        // One query for all trips' document counts rather than N+1 — Business Trips shows this
+        // count on every card in the list, so it needs to come back with the list itself.
+        var counts = await _db.TripDocuments
+            .Where(d => d.UserId == UserId)
+            .GroupBy(d => d.TripReportId)
+            .Select(g => new { TripReportId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.TripReportId, x => x.Count);
+
+        var dtos = reports.Select(t =>
+        {
+            var dto = t.ToTripReport();
+            dto.DocumentCount = counts.GetValueOrDefault(t.Id, 0);
+            return dto;
+        }).ToList();
+
+        return Ok(dtos);
     }
 
     [HttpGet("{id}")]
@@ -100,7 +123,12 @@ public class TripReportsController : ApiControllerBase
 
     [HttpPost("{tripId}/documents")]
     [RequestSizeLimit(MaxFileSizeBytes)]
-    public async Task<ActionResult<TripDocumentMeta>> UploadDocument(string tripId, IFormFile file, [FromForm] string category, [FromForm] string? label)
+    public async Task<ActionResult<TripDocumentMeta>> UploadDocument(
+        string tripId,
+        IFormFile file,
+        [FromForm] string category,
+        [FromForm] string? label,
+        [FromForm] string? documentDate)
     {
         var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == UserId);
         if (trip == null) return NotFound();
@@ -111,27 +139,57 @@ public class TripReportsController : ApiControllerBase
         if (file.Length > MaxFileSizeBytes)
             return BadRequest(new { error = "File exceeds the 10 MB limit" });
 
-        if (!Enum.TryParse<DocCategory>(category, out var parsedCategory))
-            parsedCategory = DocCategory.Other;
+        var categoryName = (category ?? "").Trim();
+        if (categoryName.Length == 0)
+            return BadRequest(new { error = "Category is required" });
+
+        DateOnly? parsedDate = DateOnly.TryParse(documentDate, out var d) ? d : null;
 
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
+        var bytes = stream.ToArray();
 
         var entity = new TripDocumentEntity
         {
             TripReportId = tripId,
             UserId = UserId,
-            Category = parsedCategory.ToString(),
+            Category = categoryName,
             Label = label ?? "",
             FileName = file.FileName,
             ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType,
             SizeBytes = file.Length,
-            Content = stream.ToArray(),
-            UploadedUtc = DateTime.UtcNow
+            Content = bytes,
+            UploadedUtc = DateTime.UtcNow,
+            DocumentDate = parsedDate
         };
+
+        // A category typed at upload time that doesn't exist yet becomes a real, reusable row —
+        // matches "user can create new categories ... reused for other reimbursements" without
+        // requiring a separate create-category round-trip before every first-time use.
+        var categoryExists = await _db.ReimbursementCategories
+            .AnyAsync(c => c.UserId == UserId && c.Name.ToLower() == categoryName.ToLower());
+        if (!categoryExists)
+            _db.ReimbursementCategories.Add(new ReimbursementCategoryEntity { UserId = UserId, Name = categoryName });
 
         _db.TripDocuments.Add(entity);
         await _db.SaveChangesAsync();
+
+        // Local bytes above are the guaranteed copy (already saved) — Drive is a best-effort
+        // mirror on top of that, so a Drive hiccup never blocks the upload itself.
+        try
+        {
+            var mirrored = await _drive.TryUploadAsync(UserId, entity.FileName, entity.ContentType, bytes);
+            if (mirrored != null)
+            {
+                entity.DriveFileId = mirrored.Value.FileId;
+                entity.DriveWebViewLink = mirrored.Value.WebViewLink;
+                await _db.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Google Drive mirror upload failed for document {DocId}", entity.Id);
+        }
 
         return Ok(entity.ToMeta());
     }
@@ -155,6 +213,13 @@ public class TripReportsController : ApiControllerBase
 
         _db.TripDocuments.Remove(doc);
         await _db.SaveChangesAsync();
+
+        if (doc.DriveFileId != null)
+        {
+            try { await _drive.TryDeleteAsync(UserId, doc.DriveFileId); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Google Drive delete failed for document {DocId}", doc.Id); }
+        }
+
         return NoContent();
     }
 }

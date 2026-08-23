@@ -16,6 +16,26 @@ export interface RegisterRequest {
   displayName: string;
 }
 
+export interface LoginResult {
+  requiresTwoFactor: boolean;
+  email: string | null;
+  auth: AuthResponse | null;
+}
+
+export interface CurrentUser {
+  email: string;
+  displayName: string;
+  twoFactorEnabled: boolean;
+}
+
+export interface UserSession {
+  id: number;
+  deviceLabel: string;
+  ipAddress: string | null;
+  createdUtc: string;
+  lastUsedUtc: string;
+}
+
 export type DayType =
   | "WorkDay"
   | "HalfDayLeave"
@@ -87,19 +107,22 @@ export interface TripReport {
   purpose: string;
   notes: string;
   lastModifiedUtc?: string;
+  documentCount: number;
 }
-
-export type DocCategory = "Invoice" | "Receipt" | "FlightTicket" | "Insurance" | "Report" | "Other";
 
 export interface TripDocumentMeta {
   id: string;
   tripReportId: string;
-  category: DocCategory;
+  /** User-created, DB-backed category name — see ReimbursementCategory / reimbursementApi. */
+  category: string;
   label: string;
   fileName: string;
   contentType: string;
   sizeBytes: number;
   uploadedUtc: string;
+  documentDate?: string | null;
+  driveFileId?: string | null;
+  driveWebViewLink?: string | null;
 }
 
 export interface TripDocumentWithTrip extends TripDocumentMeta {
@@ -107,6 +130,17 @@ export interface TripDocumentWithTrip extends TripDocumentMeta {
   tripCategory: TripCategory;
   tripStartDate: string;
   tripEndDate: string;
+}
+
+export interface ReimbursementCategory {
+  id: number;
+  name: string;
+}
+
+export interface GoogleDriveStatus {
+  configured: boolean;
+  connected: boolean;
+  connectedUtc: string | null;
 }
 
 export interface ContactRecord {
@@ -145,6 +179,37 @@ export interface AppSettings {
   lastOpenedMonth?: string | null;
   themeVariant: string;
   fontSizePreset: string;
+  dateFormat: string;
+  weekStartDay: string; // "Sunday" | "Monday"
+  defaultLandingPage: string;
+  idleTimeoutMinutes: number; // 0 = disabled
+  notificationsEnabled: boolean;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  displayName: string;
+  isAdmin: boolean;
+  isDisabled: boolean;
+}
+
+export interface AdminUserCreateRequest {
+  email: string;
+  displayName: string;
+  password: string;
+  isAdmin: boolean;
+}
+
+export interface AdminUserUpdateRequest {
+  email: string;
+  displayName: string;
+  isAdmin: boolean;
+}
+
+export interface AdminUserFeatures {
+  catalog: string[];
+  disabled: string[];
 }
 
 export interface DictEntryDto {

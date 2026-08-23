@@ -69,7 +69,7 @@ public class ContactsController : ApiControllerBase
         entity.LastModifiedUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
-        return Ok();
+        return NoContent();
     }
 
     [HttpDelete("{id}")]

@@ -10,15 +10,18 @@ import type { AttendanceRecord, DayType, TripCategory } from "@/lib/api/types";
 import { PREFECTURES, COUNTRIES } from "@/lib/trip-data";
 import { DAY_TYPE_OPTIONS, NOTE_ENABLED_DAY_TYPES, TIME_TRACKED_DAY_TYPES } from "@/lib/attendance-day-types";
 
-const STANDARD_LOGOUT_MIN = 17 * 60 + 30;
-const BREAK_DEDUCTION_MIN = 20;
-
-function calcOvertime(logoutTime: string): { isOvertime: boolean; hours: number; minutes: number } {
+function calcOvertime(
+  logoutTime: string,
+  standardLogoutTime: string,
+  breakDeductionMinutes: number
+): { isOvertime: boolean; hours: number; minutes: number } {
   if (!logoutTime) return { isOvertime: false, hours: 0, minutes: 0 };
   const [h, m] = logoutTime.split(":").map(Number);
   const totalMin = h * 60 + m;
-  if (totalMin <= STANDARD_LOGOUT_MIN) return { isOvertime: false, hours: 0, minutes: 0 };
-  const otMin = totalMin - STANDARD_LOGOUT_MIN - BREAK_DEDUCTION_MIN;
+  const [sh, sm] = standardLogoutTime.split(":").map(Number);
+  const standardMin = sh * 60 + sm;
+  if (totalMin <= standardMin) return { isOvertime: false, hours: 0, minutes: 0 };
+  const otMin = totalMin - standardMin - breakDeductionMinutes;
   if (otMin <= 0) return { isOvertime: false, hours: 0, minutes: 0 };
   return { isOvertime: true, hours: Math.floor(otMin / 60), minutes: otMin % 60 };
 }
@@ -27,18 +30,26 @@ export function AttendanceEntryDialog({
   initial,
   onSave,
   onCancel,
+  standardLoginTime = "08:25",
+  standardLogoutTime = "17:30",
+  overtimeBreakDeductionMinutes = 20,
 }: {
   initial: Partial<AttendanceRecord> & { date: string };
   onSave: (records: AttendanceRecord[]) => void;
   onCancel: () => void;
+  /** Defaults + overtime threshold, sourced from Settings > Work Hours — falls back to the app's
+   * factory defaults only if that hasn't loaded yet, never hardcoded as the "real" value. */
+  standardLoginTime?: string;
+  standardLogoutTime?: string;
+  overtimeBreakDeductionMinutes?: number;
 }) {
   const [date, setDate] = useState(initial.date);
   const [dayType, setDayType] = useState<DayType | "">(initial.dayType ?? "");
   const [holidayName, setHolidayName] = useState(initial.holidayName ?? "");
   const [leaveHours, setLeaveHours] = useState(initial.leaveHours ?? 0);
   const [leaveMinutes, setLeaveMinutes] = useState(initial.leaveMinutes ?? 0);
-  const [loginTime, setLoginTime] = useState(initial.loginTime ?? "08:25");
-  const [logoutTime, setLogoutTime] = useState(initial.logoutTime ?? "17:30");
+  const [loginTime, setLoginTime] = useState(initial.loginTime ?? standardLoginTime);
+  const [logoutTime, setLogoutTime] = useState(initial.logoutTime ?? standardLogoutTime);
   const [overtimeOn, setOvertimeOn] = useState<boolean>(
     initial.isOvertimeDecided ? !!initial.isOvertime : false
   );
@@ -48,7 +59,7 @@ export function AttendanceEntryDialog({
   const [returnDate, setReturnDate] = useState(initial.date);
   const [error, setError] = useState("");
 
-  const overtime = calcOvertime(overtimeOn ? logoutTime : "");
+  const overtime = calcOvertime(overtimeOn ? logoutTime : "", standardLogoutTime, overtimeBreakDeductionMinutes);
 
   useEffect(() => {
     if (!overtimeOn) return;

@@ -520,6 +520,42 @@ namespace WorkPulse.Api.Migrations
                     b.ToTable("DictionaryLabels");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.GoogleDriveConnectionEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AccessTokenExpiryUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ConnectedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DriveFolderId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("GoogleDriveConnections");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.QuickLinkEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -558,6 +594,33 @@ namespace WorkPulse.Api.Migrations
                     b.ToTable("QuickLinks");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.ReimbursementCategoryEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ReimbursementCategories");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripDocumentEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -573,6 +636,15 @@ namespace WorkPulse.Api.Migrations
 
                     b.Property<string>("ContentType")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("DocumentDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("DriveFileId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DriveWebViewLink")
                         .HasColumnType("text");
 
                     b.Property<string>("FileName")
@@ -647,6 +719,48 @@ namespace WorkPulse.Api.Migrations
                     b.ToTable("TripReports");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.UserSessionEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeviceLabel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUsedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefreshToken")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserSessions");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.UserSettingsEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -654,6 +768,14 @@ namespace WorkPulse.Api.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DateFormat")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultLandingPage")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("DefaultTitle")
                         .IsRequired()
@@ -663,8 +785,14 @@ namespace WorkPulse.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("IdleTimeoutMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<string>("LastOpenedMonth")
                         .HasColumnType("text");
+
+                    b.Property<bool>("NotificationsEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("OvertimeBreakDeductionMinutes")
                         .HasColumnType("integer");
@@ -680,6 +808,10 @@ namespace WorkPulse.Api.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WeekStartDay")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -857,7 +989,29 @@ namespace WorkPulse.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.GoogleDriveConnectionEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.QuickLinkEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.ReimbursementCategoryEntity", b =>
                 {
                     b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
                         .WithMany()
@@ -880,6 +1034,17 @@ namespace WorkPulse.Api.Migrations
                 });
 
             modelBuilder.Entity("WorkPulse.Api.Data.Entities.TripReportEntity", b =>
+                {
+                    b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WorkPulse.Api.Data.Entities.UserSessionEntity", b =>
                 {
                     b.HasOne("WorkPulse.Api.Data.Entities.AppUser", "User")
                         .WithMany()

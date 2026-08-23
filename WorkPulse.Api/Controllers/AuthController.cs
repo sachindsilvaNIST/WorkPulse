@@ -2,10 +2,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
+using WorkPulse.Api.Services;
 using WorkPulse.DTOs;
 
 namespace WorkPulse.Api.Controllers;
@@ -15,11 +19,15 @@ namespace WorkPulse.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
+    private readonly AppDbContext _db;
+    private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
 
-    public AuthController(UserManager<AppUser> userManager, IConfiguration config)
+    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config)
     {
         _userManager = userManager;
+        _db = db;
+        _emailSender = emailSender;
         _config = config;
     }
 
@@ -37,23 +45,44 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
 
-        return Ok(await GenerateAuthResponse(user));
+        return Ok(await IssueTokensAsync(user));
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
+    public async Task<ActionResult<LoginResult>> Login(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized(new { error = "Invalid email or password" });
 
-        var response = await GenerateAuthResponse(user);
+        // CheckPasswordAsync alone doesn't enforce lockout — that's normally SignInManager's job,
+        // but this controller issues JWTs directly rather than using SignInManager, so an
+        // admin-disabled account (AdminController sets LockoutEnd) could otherwise still log in.
+        if (await _userManager.IsLockedOutAsync(user))
+            return Unauthorized(new { error = "This account has been disabled." });
 
-        user.RefreshToken = response.RefreshToken;
-        user.RefreshTokenExpiryUtc = DateTime.UtcNow.AddDays(30);
-        await _userManager.UpdateAsync(user);
+        if (await _userManager.GetTwoFactorEnabledAsync(user))
+        {
+            await SendTwoFactorCodeAsync(user);
+            return Ok(new LoginResult { RequiresTwoFactor = true, Email = user.Email! });
+        }
 
-        return Ok(response);
+        return Ok(new LoginResult { Auth = await IssueTokensAsync(user) });
+    }
+
+    [HttpPost("login/verify-2fa")]
+    public async Task<ActionResult<AuthResponse>> VerifyTwoFactorLogin(TwoFactorVerifyRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null) return Unauthorized(new { error = "Invalid or expired code." });
+
+        if (await _userManager.IsLockedOutAsync(user))
+            return Unauthorized(new { error = "This account has been disabled." });
+
+        var valid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.Code);
+        if (!valid) return Unauthorized(new { error = "Invalid or expired code." });
+
+        return Ok(await IssueTokensAsync(user));
     }
 
     [HttpPost("refresh")]
@@ -68,20 +97,104 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Invalid token" });
 
         var user = await _userManager.FindByEmailAsync(email);
-        if (user == null || user.RefreshToken != request.RefreshToken
-            || user.RefreshTokenExpiryUtc <= DateTime.UtcNow)
+        var session = user == null
+            ? null
+            : await _db.UserSessions.FirstOrDefaultAsync(s => s.UserId == user.Id && s.RefreshToken == request.RefreshToken);
+        if (user == null || session == null || session.ExpiresUtc <= DateTime.UtcNow)
             return Unauthorized(new { error = "Invalid or expired refresh token" });
 
-        var response = await GenerateAuthResponse(user);
+        // Same lockout gap as Login: a disabled account could otherwise keep renewing its access
+        // token via a still-valid refresh token, staying signed in indefinitely.
+        if (await _userManager.IsLockedOutAsync(user))
+            return Unauthorized(new { error = "This account has been disabled." });
 
-        user.RefreshToken = response.RefreshToken;
-        user.RefreshTokenExpiryUtc = DateTime.UtcNow.AddDays(30);
-        await _userManager.UpdateAsync(user);
-
+        _db.UserSessions.Remove(session);
+        var response = await IssueTokensAsync(user);
         return Ok(response);
     }
 
-    private async Task<AuthResponse> GenerateAuthResponse(AppUser user)
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var session = await _db.UserSessions.FirstOrDefaultAsync(s => s.UserId == userId && s.RefreshToken == request.RefreshToken);
+        if (session != null)
+        {
+            _db.UserSessions.Remove(session);
+            await _db.SaveChangesAsync();
+        }
+        return Ok();
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<ActionResult<CurrentUserDto>> Me()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        return Ok(new CurrentUserDto
+        {
+            Email = user.Email ?? "",
+            DisplayName = user.DisplayName,
+            TwoFactorEnabled = user.TwoFactorEnabled
+        });
+    }
+
+    // ===== Two-factor enable/disable (authenticated user managing their own account) =====
+
+    [HttpPost("2fa/send-code")]
+    [Authorize]
+    public async Task<IActionResult> SendTwoFactorSetupCode()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        await SendTwoFactorCodeAsync(user);
+        return Ok();
+    }
+
+    [HttpPost("2fa/enable")]
+    [Authorize]
+    public async Task<IActionResult> EnableTwoFactor(TwoFactorCodeRequest request)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        var valid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.Code);
+        if (!valid) return BadRequest(new { error = "Invalid or expired code." });
+
+        await _userManager.SetTwoFactorEnabledAsync(user, true);
+        return Ok();
+    }
+
+    [HttpPost("2fa/disable")]
+    [Authorize]
+    public async Task<IActionResult> DisableTwoFactor()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        await _userManager.SetTwoFactorEnabledAsync(user, false);
+        return Ok();
+    }
+
+    private async Task SendTwoFactorCodeAsync(AppUser user)
+    {
+        var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+        await _emailSender.SendAsync(
+            user.Email!,
+            "Your WorkPulse verification code",
+            $"Your verification code is: {code}\n\nThis code expires in a few minutes. If you didn't request this, you can ignore this email."
+        );
+    }
+
+    private async Task<AuthResponse> IssueTokensAsync(AppUser user)
     {
         var secret = _config["Jwt:Secret"]!;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
@@ -109,13 +222,58 @@ public class AuthController : ControllerBase
             expires: expires,
             signingCredentials: credentials);
 
+        var refreshToken = GenerateRefreshToken();
+        var now = DateTime.UtcNow;
+
+        _db.UserSessions.Add(new UserSessionEntity
+        {
+            UserId = user.Id,
+            RefreshToken = refreshToken,
+            DeviceLabel = DescribeDevice(Request.Headers.UserAgent.ToString()),
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            CreatedUtc = now,
+            LastUsedUtc = now,
+            ExpiresUtc = now.AddDays(30)
+        });
+        await _db.SaveChangesAsync();
+
         return new AuthResponse
         {
             Token = new JwtSecurityTokenHandler().WriteToken(token),
-            RefreshToken = GenerateRefreshToken(),
+            RefreshToken = refreshToken,
             ExpiresAt = expires,
             DisplayName = user.DisplayName
         };
+    }
+
+    /// <summary>Best-effort, human-readable device label from a User-Agent string — good enough
+    /// to tell sessions apart in a list ("Chrome on macOS" vs "Safari on iPhone"), not meant to be
+    /// a precise UA parser.</summary>
+    private static string DescribeDevice(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent)) return "Unknown device";
+
+        string browser = userAgent switch
+        {
+            var ua when ua.Contains("Edg/") => "Edge",
+            var ua when ua.Contains("Chrome/") => "Chrome",
+            var ua when ua.Contains("Firefox/") => "Firefox",
+            var ua when ua.Contains("Safari/") && !ua.Contains("Chrome") => "Safari",
+            _ => "Browser"
+        };
+
+        string os = userAgent switch
+        {
+            var ua when ua.Contains("iPhone") => "iPhone",
+            var ua when ua.Contains("iPad") => "iPad",
+            var ua when ua.Contains("Android") => "Android",
+            var ua when ua.Contains("Mac OS X") => "macOS",
+            var ua when ua.Contains("Windows") => "Windows",
+            var ua when ua.Contains("Linux") => "Linux",
+            _ => "Unknown OS"
+        };
+
+        return $"{browser} on {os}";
     }
 
     private static string GenerateRefreshToken()
@@ -155,4 +313,29 @@ public class RefreshTokenRequest
 {
     public string Token { get; set; } = "";
     public string RefreshToken { get; set; } = "";
+}
+
+public class LoginResult
+{
+    public bool RequiresTwoFactor { get; set; }
+    public string? Email { get; set; }
+    public AuthResponse? Auth { get; set; }
+}
+
+public class TwoFactorVerifyRequest
+{
+    public string Email { get; set; } = "";
+    public string Code { get; set; } = "";
+}
+
+public class TwoFactorCodeRequest
+{
+    public string Code { get; set; } = "";
+}
+
+public class CurrentUserDto
+{
+    public string Email { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public bool TwoFactorEnabled { get; set; }
 }

@@ -22,8 +22,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
-import { attendanceApi } from "@/lib/api/client";
-import type { AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
+import { attendanceApi, settingsApi } from "@/lib/api/client";
+import { formatDate } from "@/lib/date-format";
+import type { AppSettings, AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
 import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
 import { getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
 
@@ -84,6 +85,14 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dialogState, setDialogState] = useState<{ date: string; record?: AttendanceRecord } | null>(null);
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
+
+  // Standard hours + overtime threshold come from Settings, not a hardcoded default, so changing
+  // them there takes effect here immediately (next time the entry dialog is opened) — the whole
+  // point of making this a "control panel" setting rather than a code constant.
+  useEffect(() => {
+    settingsApi.get().then(setAppSettings);
+  }, []);
 
   useEffect(() => {
     attendanceApi
@@ -406,7 +415,7 @@ export default function DashboardPage() {
                           selectedDate === r.date ? "bg-primary/10" : "hover:bg-foreground/5"
                         }`}
                       >
-                        <td className="px-4 py-2">{r.date}</td>
+                        <td className="px-4 py-2">{formatDate(r.date, appSettings?.dateFormat ?? "MM/dd/yyyy")}</td>
                         <td className="px-4 py-2">
                           <Badge
                             variant="outline"
@@ -472,6 +481,9 @@ export default function DashboardPage() {
           initial={{ date: dialogState.date, ...dialogState.record }}
           onSave={handleDialogSave}
           onCancel={() => setDialogState(null)}
+          standardLoginTime={appSettings?.standardLoginTime.slice(0, 5)}
+          standardLogoutTime={appSettings?.standardLogoutTime.slice(0, 5)}
+          overtimeBreakDeductionMinutes={appSettings?.overtimeBreakDeductionMinutes}
         />
       )}
 

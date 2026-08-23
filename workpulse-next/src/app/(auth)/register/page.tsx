@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api/client";
+import { useShakeAnimation } from "@/hooks/use-shake-animation";
+import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/lib/validation";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -18,9 +20,24 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { controls: emailShakeControls, shake: shakeEmail } = useShakeAnimation();
+
+  const emailValid = email.trim() === "" || EMAIL_PATTERN.test(email.trim());
+
+  function handleEmailKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (isControlKeystroke(e)) return;
+    if (!isEmailKeystrokeAllowed(e.key, email)) {
+      e.preventDefault();
+      shakeEmail();
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      shakeEmail();
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -66,7 +83,7 @@ export default function RegisterPage() {
                 autoComplete="name"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <motion.div className="flex flex-col gap-1.5" animate={emailShakeControls} initial={{ x: 0 }}>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -74,10 +91,13 @@ export default function RegisterPage() {
                 placeholder="you@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={handleEmailKeyDown}
                 required
                 autoComplete="email"
+                className={!emailValid ? "border-destructive focus-visible:ring-destructive/40" : undefined}
               />
-            </div>
+              {!emailValid && <p className="text-xs text-destructive">Enter a valid email, e.g. name@domain.com</p>}
+            </motion.div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="password">Password</Label>
               <Input

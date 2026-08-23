@@ -11,6 +11,11 @@ public class UserSettingsEntity
     public string? LastOpenedMonth { get; set; }
     public string ThemeVariant { get; set; } = "Light";
     public string FontSizePreset { get; set; } = "Medium";
+    public string DateFormat { get; set; } = "MM/dd/yyyy";
+    public string WeekStartDay { get; set; } = "Monday";
+    public string DefaultLandingPage { get; set; } = "/home";
+    public int IdleTimeoutMinutes { get; set; } = 0;
+    public bool NotificationsEnabled { get; set; } = true;
 
     public AppUser User { get; set; } = null!;
 }

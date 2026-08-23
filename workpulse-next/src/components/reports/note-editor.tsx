@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Plus, Search, Trash2, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/reports/rich-text-editor";
 import { cn } from "@/lib/utils";
 
 export interface NoteRecord {
@@ -14,6 +14,17 @@ export interface NoteRecord {
   body: string;
   lastModifiedUtc?: string;
 }
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// Restoring the last-open note should happen once per real page load (an actual browser
+// refresh), never when this component simply remounts because the user switched tabs and
+// navigated back within the app — module scope survives client-side route changes but gets
+// reset to empty on a true reload, which is exactly the distinction we need. Keyed per
+// basePath since Daily and Weekly Reports share this component but should restore independently.
+const restoredThisPageLoad = new Set<string>();
 
 interface NoteApi<T extends NoteRecord> {
   getAll: () => Promise<T[]>;
@@ -72,10 +83,34 @@ export function NoteEditor<T extends NoteRecord>({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const newIdsRef = useRef<Set<string>>(new Set());
 
+  // Remembers which record was open (per report type) so a page refresh reopens it instead of
+  // landing on the empty "Select an entry" placeholder — the data was never gone, just deselected.
+  const storageKey = `workpulse.noteeditor.selected:${basePath}`;
+
+  function persistSelection(id: string | null) {
+    setSelectedId(id);
+    if (typeof window === "undefined") return;
+    if (id) localStorage.setItem(storageKey, id);
+    else localStorage.removeItem(storageKey);
+  }
+
   useEffect(() => {
     api.getAll().then((list) => {
       setRecords(list);
       setLoading(false);
+
+      if (restoredThisPageLoad.has(basePath)) return;
+      restoredThisPageLoad.add(basePath);
+
+      const savedId = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+      if (savedId && list.some((r) => r.id === savedId)) {
+        setSelectedId(savedId);
+      } else if (list.length > 0) {
+        const mostRecent = [...list].sort((a, b) =>
+          (b.lastModifiedUtc ?? "").localeCompare(a.lastModifiedUtc ?? "")
+        )[0];
+        persistSelection(mostRecent.id);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -129,7 +164,7 @@ export function NoteEditor<T extends NoteRecord>({
   // Flush whenever the selection is about to change, and on unmount.
   async function selectRecord(id: string | null) {
     await flush.current();
-    setSelectedId(id);
+    persistSelection(id);
   }
 
   useEffect(() => {
@@ -139,21 +174,37 @@ export function NoteEditor<T extends NoteRecord>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Escape closes the open note, Apple Notes-style — autosave still flushes first via selectRecord.
+  useEffect(() => {
+    if (!selectedId) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") void selectRecord(null);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
   const selected = useMemo(() => records.find((r) => r.id === selectedId) ?? null, [records, selectedId]);
 
-  useEffect(() => {
-    if (!selected) return;
+  // Sync title/body/date the instant selectedId changes, DURING render rather than in an effect.
+  // RichTextEditor is remounted (via key={selectedId}) in this same render, and reads `body` as
+  // its one-time initial value — if the sync happened in an effect instead, it would run one tick
+  // too late: the new editor would mount with the previous note's stale content already frozen in
+  // and never catch up, since its own mount-sync only fires once.
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  if (selected && loadedId !== selectedId) {
+    setLoadedId(selectedId);
     setTitle(selected.title);
     setBody(selected.body);
     setDateValue(String(selected[dateField]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const sorted = [...records].sort((a, b) => String(b[dateField]).localeCompare(String(a[dateField])));
     if (!q) return sorted;
-    return sorted.filter((r) => `${r.title} ${r.body}`.toLowerCase().includes(q));
+    return sorted.filter((r) => `${r.title} ${stripHtml(r.body)}`.toLowerCase().includes(q));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [records, search]);
 
@@ -171,7 +222,7 @@ export function NoteEditor<T extends NoteRecord>({
     const draft = { id: crypto.randomUUID(), title: "", body: "", ...makeNew() } as T;
     newIdsRef.current.add(draft.id);
     setRecords((prev) => [draft, ...prev]);
-    setSelectedId(draft.id);
+    persistSelection(draft.id);
     setTitle("");
     setBody("");
     setDateValue(String(draft[dateField]));
@@ -183,7 +234,7 @@ export function NoteEditor<T extends NoteRecord>({
       if (timerRef.current) clearTimeout(timerRef.current);
     }
     setRecords((prev) => prev.filter((r) => r.id !== id));
-    if (selectedId === id) setSelectedId(null);
+    if (selectedId === id) persistSelection(null);
     if (!newIdsRef.current.has(id)) {
       await api.delete(id);
     }
@@ -239,7 +290,7 @@ export function NoteEditor<T extends NoteRecord>({
                 />
               </div>
               <span className="text-xs text-muted-foreground">{String(r[dateField])}</span>
-              <span className="truncate text-xs text-muted-foreground/70">{r.body || "No content"}</span>
+              <span className="truncate text-xs text-muted-foreground/70">{stripHtml(r.body) || "No content"}</span>
             </button>
           ))}
         </div>
@@ -260,7 +311,7 @@ export function NoteEditor<T extends NoteRecord>({
           </div>
         ) : (
           <div className="flex flex-1 flex-col gap-4 overflow-hidden">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <Input
                 value={title}
                 onChange={(e) => {
@@ -269,9 +320,9 @@ export function NoteEditor<T extends NoteRecord>({
                 }}
                 onBlur={() => flush.current()}
                 placeholder="Title"
-                className="flex-1 border-none bg-transparent px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
+                className="h-auto flex-1 border-none bg-transparent p-0 text-xl font-semibold leading-tight shadow-none focus-visible:ring-0"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-0.5">
                 <span className="text-xs text-muted-foreground">{dateLabel}</span>
                 <Input
                   type="date"
@@ -285,15 +336,16 @@ export function NoteEditor<T extends NoteRecord>({
                 />
               </div>
             </div>
-            <Textarea
-              value={body}
-              onChange={(e) => {
-                setBody(e.target.value);
-                scheduleSave(title, e.target.value, dateValue);
+            <RichTextEditor
+              key={selectedId}
+              initialValue={body}
+              onChange={(html) => {
+                setBody(html);
+                scheduleSave(title, html, dateValue);
               }}
               onBlur={() => flush.current()}
               placeholder="Start writing…"
-              className="flex-1 resize-none border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
+              className="p-0"
             />
           </div>
         )}

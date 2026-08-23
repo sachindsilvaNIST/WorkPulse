@@ -13,6 +13,18 @@ public class AppSettings
     // Theme and display settings
     public string ThemeVariant { get; set; } = "Light";
     public string FontSizePreset { get; set; } = "Medium";
+    public string DateFormat { get; set; } = "MM/dd/yyyy";
+
+    // Calendar / navigation
+    public string WeekStartDay { get; set; } = "Monday";
+    public string DefaultLandingPage { get; set; } = "/home";
+
+    // Session behavior
+    /// <summary>Minutes of inactivity before auto-logout. 0 = disabled.</summary>
+    public int IdleTimeoutMinutes { get; set; } = 0;
+
+    // Notifications (preference only — no send mechanism exists yet, see project notes)
+    public bool NotificationsEnabled { get; set; } = true;
 
     // Sync settings (desktop only, not synced to server)
     public bool SyncEnabled { get; set; }

@@ -359,8 +359,7 @@ else
             return;
         }
 
-        if (!Enum.TryParse<DocCategory>(_uploadCategory, out var category))
-            category = DocCategory.Other;
+        var category = string.IsNullOrWhiteSpace(_uploadCategory) ? "Other" : _uploadCategory;
 
         _uploading = true;
         StateHasChanged();

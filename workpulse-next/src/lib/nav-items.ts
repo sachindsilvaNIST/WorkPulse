@@ -12,12 +12,22 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/** NavItem.color is either a literal CSS color ("#D13438") or a "brand-*" token name resolving to
+ * the matching --brand-* custom property defined in globals.css — this turns either form into a
+ * value usable directly in inline styles / color-mix(). */
+export function resolveNavColor(color: string): string {
+  return color.startsWith("brand-") ? `var(--${color})` : color;
+}
+
 export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
   color: string; // tailwind text/bg color token suffix, matches brand palette
   description: string;
+  /** Temporarily hidden from the sidebar and Home tiles. The route itself stays live — this is a
+   * discoverability toggle, not an access gate — so it's a one-line flip to bring back later. */
+  disabled?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -48,6 +58,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: CalendarRange,
     color: "#106EBE",
     description: "Summarize your weekly progress",
+    disabled: true,
   },
   {
     href: "/trips",
@@ -83,6 +94,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: BookOpen,
     color: "brand-orange",
     description: "Store and search Japanese words and phrases",
+    disabled: true,
   },
   {
     href: "/settings",

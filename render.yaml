@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: nist-attendance
+    name: workpulse-api
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
     envVars:
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
-          name: nist-attendance-db
+          name: workpulse-db
           property: connectionString
       - key: Jwt__Secret
         generateValue: true
@@ -16,12 +16,22 @@ services:
       - key: Jwt__Audience
         value: WorkPulseApp
       - key: AllowedOrigins__0
-        value: https://nist-attendance.onrender.com
+        value: https://workpulse-api.onrender.com
+      - key: AllowedOrigins__1
+        value: https://workpulse.vercel.app
+      - key: FrontendBaseUrl
+        value: https://workpulse.vercel.app
+      - key: Google__ClientId
+        sync: false
+      - key: Google__ClientSecret
+        sync: false
+      - key: Google__RedirectUri
+        value: https://workpulse-api.onrender.com/api/googledrive/callback
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
 
 databases:
-  - name: nist-attendance-db
+  - name: workpulse-db
     plan: free
-    databaseName: nist_attendance
-    user: nist_user
+    databaseName: workpulse
+    user: workpulse_user

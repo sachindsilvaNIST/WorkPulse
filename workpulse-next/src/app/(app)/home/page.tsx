@@ -3,16 +3,12 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { NAV_ITEMS } from "@/lib/nav-items";
+import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
-
-function resolveColor(color: string) {
-  return color.startsWith("brand-") ? `var(--${color})` : color;
-}
 
 export default function HomePage() {
   const { displayName } = useAuth();
-  const tiles = NAV_ITEMS.filter((item) => item.href !== "/home");
+  const tiles = NAV_ITEMS.filter((item) => item.href !== "/home" && !item.disabled);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -31,7 +27,7 @@ export default function HomePage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((tile, i) => {
           const Icon = tile.icon;
-          const color = resolveColor(tile.color);
+          const color = resolveNavColor(tile.color);
           return (
             <motion.div
               key={tile.href}

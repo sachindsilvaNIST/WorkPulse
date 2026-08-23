@@ -8,12 +8,15 @@ public class TripDocumentWithTrip
 {
     public string Id { get; set; } = "";
     public string TripReportId { get; set; } = "";
-    public DocCategory Category { get; set; } = DocCategory.Other;
+    public string Category { get; set; } = "";
     public string Label { get; set; } = "";
     public string FileName { get; set; } = "";
     public string ContentType { get; set; } = "";
     public long SizeBytes { get; set; }
     public DateTime UploadedUtc { get; set; }
+    public DateOnly? DocumentDate { get; set; }
+    public string? DriveFileId { get; set; }
+    public string? DriveWebViewLink { get; set; }
 
     public string TripDestination { get; set; } = "";
     public TripCategory TripCategory { get; set; } = TripCategory.Domestic;

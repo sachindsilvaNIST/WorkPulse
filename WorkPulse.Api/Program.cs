@@ -86,6 +86,14 @@ builder.Services.AddAuthentication(options =>
 // Anthropic API client for AI features
 builder.Services.AddHttpClient<WorkPulse.Api.Services.AnthropicService>();
 
+// Email (2FA login codes) — logs instead of sending when Smtp:Host isn't configured
+builder.Services.AddSingleton<WorkPulse.Api.Services.IEmailSender, WorkPulse.Api.Services.SmtpEmailSender>();
+
+// Google Drive (Reimbursement document mirroring) — needs a generic IHttpClientFactory for the
+// raw OAuth token-exchange/refresh calls, and AppDbContext (scoped) for connection storage.
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<WorkPulse.Api.Services.GoogleDriveService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {

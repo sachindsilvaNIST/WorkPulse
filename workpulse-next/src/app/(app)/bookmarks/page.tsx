@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Download, Pencil, Plus, Search, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Search, Tag, Text, Trash2, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DetailRow } from "@/components/ui/detail-row";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
 import { categoryColor } from "@/lib/category-color";
@@ -13,6 +17,16 @@ import { cn } from "@/lib/utils";
 
 function emptyLink(): Partial<QuickLink> {
   return { label: "", url: "", category: "", keywords: "" };
+}
+
+/** Distinct, non-empty previously entered values for one bookmark field, newest first. */
+function fieldHistory(links: QuickLink[], field: keyof QuickLink): string[] {
+  const seen = new Set<string>();
+  for (let i = links.length - 1; i >= 0; i--) {
+    const v = (links[i][field] as string | undefined)?.trim();
+    if (v) seen.add(v);
+  }
+  return Array.from(seen);
 }
 
 function normalizeUrl(url: string) {
@@ -28,6 +42,7 @@ export default function BookmarksPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<QuickLink>>(emptyLink());
+  const [detail, setDetail] = useState<QuickLink | null>(null);
 
   useEffect(() => {
     quickLinksApi.getAll().then((list) => {
@@ -40,6 +55,11 @@ export default function BookmarksPage() {
     const set = new Set(links.map((l) => l.category).filter(Boolean));
     return ["All", ...Array.from(set).sort()];
   }, [links]);
+
+  const labelHistory = useMemo(() => fieldHistory(links, "label"), [links]);
+  const urlHistory = useMemo(() => fieldHistory(links, "url"), [links]);
+  const categoryHistory = useMemo(() => fieldHistory(links, "category"), [links]);
+  const keywordsHistory = useMemo(() => fieldHistory(links, "keywords"), [links]);
 
   const filtered = useMemo(() => {
     let list = links;
@@ -63,6 +83,33 @@ export default function BookmarksPage() {
     setShowForm(true);
   }
 
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: QuickLink } | null>(null);
+
+  function handleCardContextMenu(e: React.MouseEvent, link: QuickLink) {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, link });
+  }
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (!contextMenuRef.current?.contains(e.target as Node)) setContextMenu(null);
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setContextMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape, true);
+    };
+  }, [contextMenu]);
+
   async function handleSave() {
     if (!form.label || !form.url) return;
     if (editingId) {
@@ -81,25 +128,47 @@ export default function BookmarksPage() {
   }
 
   const [importMessage, setImportMessage] = useState("");
+  const [importing, setImporting] = useState(false);
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
-    const html = await file.text();
-    const parsed = parseNetscapeBookmarks(html);
+    if (files.length === 0) return;
+
+    setImporting(true);
     const existingUrls = new Set(links.map((l) => l.url.replace(/\/$/, "").toLowerCase()));
-    let added = 0;
-    for (const link of parsed) {
-      const key = (link.url ?? "").replace(/\/$/, "").toLowerCase();
-      if (!key || existingUrls.has(key)) continue;
-      existingUrls.add(key);
-      const created = await quickLinksApi.create(link);
-      setLinks((prev) => [...prev, created]);
-      added++;
+    const perFile: { name: string; added: number }[] = [];
+    let totalAdded = 0;
+
+    // Files are imported one at a time (rather than parsed and created in parallel) so the
+    // dedupe set stays consistent — two profiles both bookmarking the same URL should only
+    // produce one entry, and that only works if each file sees the previous file's additions.
+    for (const file of files) {
+      const html = await file.text();
+      const parsed = parseNetscapeBookmarks(html);
+      let added = 0;
+      for (const link of parsed) {
+        const key = (link.url ?? "").replace(/\/$/, "").toLowerCase();
+        if (!key || existingUrls.has(key)) continue;
+        existingUrls.add(key);
+        const created = await quickLinksApi.create(link);
+        setLinks((prev) => [...prev, created]);
+        added++;
+      }
+      perFile.push({ name: file.name, added });
+      totalAdded += added;
     }
-    setImportMessage(added > 0 ? `Imported ${added} bookmark(s).` : "No new bookmarks found — all already imported.");
-    setTimeout(() => setImportMessage(""), 4000);
+
+    setImporting(false);
+    if (files.length === 1) {
+      setImportMessage(totalAdded > 0 ? `Imported ${totalAdded} bookmark(s).` : "No new bookmarks found — all already imported.");
+    } else if (totalAdded > 0) {
+      const breakdown = perFile.map((f) => `${f.name}: ${f.added}`).join(", ");
+      setImportMessage(`Imported ${totalAdded} bookmark(s) from ${files.length} profiles (${breakdown}).`);
+    } else {
+      setImportMessage(`No new bookmarks found across ${files.length} profiles — all already imported.`);
+    }
+    setTimeout(() => setImportMessage(""), 6000);
   }
 
   function handleExport() {
@@ -121,10 +190,20 @@ export default function BookmarksPage() {
           <p className="mt-1 text-muted-foreground">Find any saved link by name, synonym, or category</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <label className="cursor-pointer">
-              <Upload className="size-4" /> Import from Chrome
-              <input type="file" accept=".html,.htm" className="hidden" onChange={handleImportFile} />
+          <Button asChild variant="outline" disabled={importing}>
+            <label
+              className={cn("cursor-pointer", importing && "pointer-events-none opacity-60")}
+              title="Select bookmark HTML files from multiple Chrome profiles at once"
+            >
+              <Upload className="size-4" /> {importing ? "Importing…" : "Import from Chrome"}
+              <input
+                type="file"
+                accept=".html,.htm"
+                multiple
+                className="hidden"
+                onChange={handleImportFile}
+                disabled={importing}
+              />
             </label>
           </Button>
           <Button variant="outline" onClick={handleExport} disabled={links.length === 0}>
@@ -177,17 +256,29 @@ export default function BookmarksPage() {
       {showForm && (
         <Card className="mb-6 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input placeholder="Label (e.g. My Drive)" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-            <Input placeholder="https://example.com" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-            <Input
-              placeholder="Category (e.g. Cloud Storage)"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            <AutocompleteInput
+              placeholder="Label (e.g. My Drive)"
+              value={form.label ?? ""}
+              onValueChange={(v) => setForm({ ...form, label: v })}
+              suggestions={labelHistory}
             />
-            <Input
+            <AutocompleteInput
+              placeholder="https://example.com"
+              value={form.url ?? ""}
+              onValueChange={(v) => setForm({ ...form, url: v })}
+              suggestions={urlHistory}
+            />
+            <AutocompleteInput
+              placeholder="Category (e.g. Cloud Storage)"
+              value={form.category ?? ""}
+              onValueChange={(v) => setForm({ ...form, category: v })}
+              suggestions={categoryHistory}
+            />
+            <AutocompleteInput
               placeholder="Keywords, comma-separated"
-              value={form.keywords}
-              onChange={(e) => setForm({ ...form, keywords: e.target.value })}
+              value={form.keywords ?? ""}
+              onValueChange={(v) => setForm({ ...form, keywords: v })}
+              suggestions={keywordsHistory}
             />
           </div>
           <div className="mt-3 flex gap-2">
@@ -213,13 +304,27 @@ export default function BookmarksPage() {
           return (
             <Card
               key={link.id}
-              className="group relative flex h-28 flex-col p-3"
+              className="group relative flex min-h-28 flex-col p-3 pb-3.5"
               style={{
                 backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--card))`,
                 borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
               }}
+              onContextMenu={(e) => handleCardContextMenu(e, link)}
             >
-              <a href={normalizeUrl(link.url)} target="_blank" rel="noopener noreferrer" className="absolute inset-0" />
+              <a
+                href={normalizeUrl(link.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0"
+                onClick={(e) => {
+                  // Cmd-click (Mac) / Ctrl-click (Windows) shows details instead of opening the
+                  // link — a plain click still opens it exactly as before.
+                  if (e.metaKey || e.ctrlKey) {
+                    e.preventDefault();
+                    setDetail(link);
+                  }
+                }}
+              />
               {link.category && (
                 <span
                   className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -254,6 +359,97 @@ export default function BookmarksPage() {
           );
         })}
       </div>
+
+      {contextMenu &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="glass-panel fixed z-50 min-w-[160px] p-1"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                openEdit(contextMenu.link);
+                setContextMenu(null);
+              }}
+              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10"
+            >
+              <Pencil className="size-3.5" /> Edit Bookmark
+            </button>
+            <button
+              type="button"
+              onClick={() => setContextMenu(null)}
+              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
+            >
+              <X className="size-3.5" /> Cancel
+            </button>
+          </div>,
+          document.body
+        )}
+
+      <AnimatePresence>
+        {detail && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setDetail(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md"
+            >
+              <Card className="p-6">
+                <div className="mb-4 flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">{detail.label}</h2>
+                    {detail.category && <p className="text-sm text-muted-foreground">{detail.category}</p>}
+                  </div>
+                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <DetailRow icon={Link2} label="URL" value={normalizeUrl(detail.url)} href={normalizeUrl(detail.url)} copyable />
+                  <DetailRow icon={Tag} label="Category" value={detail.category} />
+                  <DetailRow icon={Text} label="Keywords" value={detail.keywords} />
+                </div>
+                <div className="mt-6 flex gap-2">
+                  <Button asChild>
+                    <a href={normalizeUrl(detail.url)} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="size-4" /> Open Link
+                    </a>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      openEdit(detail);
+                      setDetail(null);
+                    }}
+                  >
+                    <Pencil className="size-4" /> Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      handleDelete(detail.id);
+                      setDetail(null);
+                    }}
+                  >
+                    <Trash2 className="size-4" /> Delete
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
