@@ -16,7 +16,7 @@ services:
       - key: Jwt__Audience
         value: WorkPulseApp
       - key: AllowedOrigins__0
-        value: https://workpulse-api.onrender.com
+        value: https://workpulse-api-mbco.onrender.com
       - key: AllowedOrigins__1
         value: https://workpulse.vercel.app
       - key: FrontendBaseUrl
@@ -26,7 +26,7 @@ services:
       - key: Google__ClientSecret
         sync: false
       - key: Google__RedirectUri
-        value: https://workpulse-api.onrender.com/api/googledrive/callback
+        value: https://workpulse-api-mbco.onrender.com/api/googledrive/callback
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
 
