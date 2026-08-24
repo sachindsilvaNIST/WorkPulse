@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WorkPulse.Api.Data;
@@ -32,6 +33,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
         var user = new AppUser
@@ -49,6 +51,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<LoginResult>> Login(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -71,6 +74,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login/verify-2fa")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> VerifyTwoFactorLogin(TwoFactorVerifyRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -86,6 +90,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshTokenRequest request)
     {
         var principal = GetPrincipalFromExpiredToken(request.Token);

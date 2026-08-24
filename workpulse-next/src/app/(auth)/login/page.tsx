@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api/client";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
+import { useSlowRequest } from "@/hooks/use-slow-request";
 import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/lib/validation";
 
 export default function LoginPage() {
@@ -20,6 +21,7 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { slow, run } = useSlowRequest();
   const { controls: emailShakeControls, shake: shakeEmail } = useShakeAnimation();
 
   const emailValid = email.trim() === "" || EMAIL_PATTERN.test(email.trim());
@@ -41,7 +43,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login({ email, password });
+      await run(() => login({ email, password }));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -54,7 +56,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await verifyTwoFactor(code);
+      await run(() => verifyTwoFactor(code));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Invalid or expired code.");
     } finally {
@@ -107,6 +109,15 @@ export default function LoginPage() {
               <Button type="submit" disabled={loading || code.length < 6} className="mt-2 w-full">
                 {loading ? <Loader2 className="animate-spin" /> : "Verify & Sign in"}
               </Button>
+              {loading && slow && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="-mt-2 text-center text-xs text-muted-foreground"
+                >
+                  Waking up the server — this can take up to a minute on the first request…
+                </motion.p>
+              )}
               <Button type="button" variant="outline" onClick={cancelTwoFactor} className="w-full">
                 <ArrowLeft className="size-4" /> Back
               </Button>
@@ -187,6 +198,15 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
+            {loading && slow && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="-mt-2 text-center text-xs text-muted-foreground"
+              >
+                Waking up the server — this can take up to a minute on the first request…
+              </motion.p>
+            )}
           </form>
         </CardContent>
       </Card>

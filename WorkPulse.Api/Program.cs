@@ -108,6 +108,23 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Rate limiting for unauthenticated auth endpoints (register/login/verify-2fa/refresh) — these
+// are the only endpoints a public internet visitor can hit repeatedly without a valid token,
+// so they're the brute-force/spam surface worth throttling per client IP.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -252,6 +269,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Serve Blazor WASM static files (production: embedded in wwwroot)
 app.UseBlazorFrameworkFiles();
