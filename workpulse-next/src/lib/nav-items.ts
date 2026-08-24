@@ -8,6 +8,7 @@ import {
   Bookmark,
   Users,
   BookOpen,
+  Mail,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -95,6 +96,13 @@ export const NAV_ITEMS: NavItem[] = [
     color: "brand-orange",
     description: "Store and search Japanese words and phrases",
     disabled: true,
+  },
+  {
+    href: "/gmail-labels",
+    label: "Gmail Labels",
+    icon: Mail,
+    color: "#EA4335",
+    description: "Pattern-search and manage your Gmail label tree",
   },
   {
     href: "/settings",

@@ -27,6 +27,8 @@ services:
         sync: false
       - key: Google__RedirectUri
         value: https://workpulse-api-mbco.onrender.com/api/googledrive/callback
+      - key: Gmail__RedirectUri
+        value: https://workpulse-api-mbco.onrender.com/api/gmail/callback
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
 

@@ -22,6 +22,7 @@ import type {
   UserSession,
   ReimbursementCategory,
   GoogleDriveStatus,
+  GmailStatus,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -225,6 +226,12 @@ export const googleDriveApi = {
   status: () => request<GoogleDriveStatus>("/api/googledrive/status"),
   getConnectUrl: () => request<{ url: string }>("/api/googledrive/connect"),
   disconnect: () => request<void>("/api/googledrive/disconnect", { method: "POST" }),
+};
+
+export const gmailApi = {
+  status: () => request<GmailStatus>("/api/gmail/status"),
+  getConnectUrl: () => request<{ url: string }>("/api/gmail/connect"),
+  disconnect: () => request<void>("/api/gmail/disconnect", { method: "POST" }),
 };
 
 export const contactsApi = {

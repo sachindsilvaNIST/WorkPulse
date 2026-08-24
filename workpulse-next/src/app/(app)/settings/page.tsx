@@ -13,6 +13,7 @@ import {
   Info,
   Laptop,
   LogOut,
+  Mail,
   Moon,
   Palette,
   ShieldCheck,
@@ -26,8 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/lib/auth-context";
-import { authApi, settingsApi, sessionsApi, googleDriveApi, ApiError } from "@/lib/api/client";
-import type { AppSettings, CurrentUser, GoogleDriveStatus, UserSession } from "@/lib/api/types";
+import { authApi, settingsApi, sessionsApi, googleDriveApi, gmailApi, ApiError } from "@/lib/api/client";
+import type { AppSettings, CurrentUser, GoogleDriveStatus, GmailStatus, UserSession } from "@/lib/api/types";
 import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
 import { exportUserData } from "@/lib/data-export";
@@ -109,6 +110,43 @@ export default function SettingsPage() {
   async function handleDriveDisconnect() {
     await googleDriveApi.disconnect();
     setDriveStatus((s) => (s ? { ...s, connected: false, connectedUtc: null } : s));
+  }
+
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
+  const [gmailMessage, setGmailMessage] = useState<string | null>(null);
+  const [gmailConnecting, setGmailConnecting] = useState(false);
+
+  useEffect(() => {
+    gmailApi.status().then(setGmailStatus).catch(() => {});
+  }, []);
+
+  // Same round-trip as Drive above, via the API's /gmail/callback — ?gmail=connected|error.
+  useEffect(() => {
+    const gmail = searchParams.get("gmail");
+    if (!gmail) return;
+    if (gmail === "connected") {
+      setGmailMessage("Gmail connected successfully.");
+      gmailApi.status().then(setGmailStatus).catch(() => {});
+    } else if (gmail === "error") {
+      setGmailMessage("Couldn't connect Gmail. Please try again.");
+    }
+    router.replace("/settings");
+  }, [searchParams, router]);
+
+  async function handleGmailConnect() {
+    setGmailConnecting(true);
+    try {
+      const { url } = await gmailApi.getConnectUrl();
+      window.location.href = url;
+    } catch (err) {
+      setGmailMessage(err instanceof ApiError ? err.message : "Failed to start Gmail connection.");
+      setGmailConnecting(false);
+    }
+  }
+
+  async function handleGmailDisconnect() {
+    await gmailApi.disconnect();
+    setGmailStatus((s) => (s ? { ...s, connected: false, emailAddress: null, connectedUtc: null } : s));
   }
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -582,6 +620,42 @@ export default function SettingsPage() {
               </>
             )}
             {driveMessage && <p className="text-xs text-muted-foreground">{driveMessage}</p>}
+          </CardContent>
+        </Card>
+
+        <Card style={{ backgroundColor: "color-mix(in srgb, #EA4335 6%, var(--card))" }}>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <SectionIcon color="#EA4335">
+                <Mail className="size-4" />
+              </SectionIcon>
+              <h2 className="font-semibold">Gmail</h2>
+            </div>
+            {gmailStatus === null ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : !gmailStatus.configured ? (
+              <p className="text-sm text-muted-foreground">
+                Gmail isn&apos;t configured on the server yet — an admin needs to add OAuth credentials before this can be connected.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {gmailStatus.connected
+                    ? `Connected as ${gmailStatus.emailAddress} — the Gmail Labels section stays synced with this account.`
+                    : "Connect a Gmail account to search, browse and manage its labels from WorkPulse."}
+                </p>
+                {gmailStatus.connected ? (
+                  <Button variant="outline" className="w-fit" onClick={handleGmailDisconnect}>
+                    Disconnect
+                  </Button>
+                ) : (
+                  <Button className="w-fit" onClick={handleGmailConnect} disabled={gmailConnecting}>
+                    {gmailConnecting ? "Redirecting…" : "Connect Gmail"}
+                  </Button>
+                )}
+              </>
+            )}
+            {gmailMessage && <p className="text-xs text-muted-foreground">{gmailMessage}</p>}
           </CardContent>
         </Card>
 

@@ -143,6 +143,13 @@ export interface GoogleDriveStatus {
   connectedUtc: string | null;
 }
 
+export interface GmailStatus {
+  configured: boolean;
+  connected: boolean;
+  emailAddress: string | null;
+  connectedUtc: string | null;
+}
+
 export interface ContactRecord {
   id: string;
   affiliation: string;

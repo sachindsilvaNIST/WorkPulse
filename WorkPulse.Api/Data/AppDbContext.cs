@@ -21,6 +21,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<UserSessionEntity> UserSessions => Set<UserSessionEntity>();
     public DbSet<ReimbursementCategoryEntity> ReimbursementCategories => Set<ReimbursementCategoryEntity>();
     public DbSet<GoogleDriveConnectionEntity> GoogleDriveConnections => Set<GoogleDriveConnectionEntity>();
+    public DbSet<GmailConnectionEntity> GmailConnections => Set<GmailConnectionEntity>();
+    public DbSet<GmailLabelEntity> GmailLabels => Set<GmailLabelEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -103,6 +105,28 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GmailConnection
+        builder.Entity<GmailConnectionEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GmailLabel
+        builder.Entity<GmailLabelEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.ConnectionId, x.GmailLabelId }).IsUnique();
+            e.HasOne(x => x.Connection)
+                .WithMany()
+                .HasForeignKey(x => x.ConnectionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -95,6 +95,9 @@ builder.Services.AddSingleton<WorkPulse.Api.Services.IEmailSender, WorkPulse.Api
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<WorkPulse.Api.Services.GoogleDriveService>();
 
+// Gmail (corporate label manager) — separate connection/scope from Drive above.
+builder.Services.AddScoped<WorkPulse.Api.Services.GmailService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {
