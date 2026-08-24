@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
@@ -125,8 +126,19 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var isSqlite = db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
 
-    // Ensure the Dictionary tables exist BEFORE running migrations. InitialCreate never
-    // actually created DictionaryEntries/DictionaryLabels/DictionaryEntryLabels (they were
+    // On a genuinely empty database (e.g. a fresh Render Postgres instance), AspNetUsers
+    // doesn't exist yet — but the raw SQL bootstrap below creates DictionaryEntries/Labels
+    // with a foreign key to it. Apply just InitialCreate first so that table exists; this
+    // is a no-op (MigrateAsync to an already-applied target) on any database that has run
+    // migrations before, so it's safe for existing local/dev databases too.
+    if (!(await db.Database.GetAppliedMigrationsAsync()).Any())
+    {
+        var migrator = db.Database.GetInfrastructure().GetRequiredService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
+        await migrator.MigrateAsync("20260317022327_InitialCreate");
+    }
+
+    // Ensure the Dictionary tables exist BEFORE running the remaining migrations. InitialCreate
+    // never actually created DictionaryEntries/DictionaryLabels/DictionaryEntryLabels (they were
     // bolted on later via this raw SQL bootstrap); AddJlptLevelToDictionaryEntry and
     // AddSrsFieldsToDictionaryEntry both ALTER those tables and will fail on a genuinely
     // fresh database if this runs after Migrate() instead of before it.
