@@ -34,6 +34,10 @@ COPY --from=build /app/api .
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+# Constrained containers (e.g. Render's free tier) cap inotify instances low enough that
+# ASP.NET Core's appsettings.json file-watcher crashes WebApplication.CreateBuilder() before
+# any app code runs. We don't need config hot-reload in production, so disable it outright.
+ENV DOTNET_hostBuilder__reloadConfigOnChange=false
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "WorkPulse.Api.dll"]
