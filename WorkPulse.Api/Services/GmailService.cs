@@ -146,6 +146,20 @@ public class GmailService
 
     public record GmailLabelDto(string Id, string Name, string Type, string? Color);
 
+    /// <summary>Extracts Gmail's own human-readable message from its error JSON shape
+    /// ({"error":{"message":"..."}}), falling back to the raw body if that shape isn't there.</summary>
+    private static string ExtractErrorMessage(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("error", out var err) && err.TryGetProperty("message", out var msg))
+                return msg.GetString() ?? body;
+        }
+        catch { /* not JSON, or not the shape we expect — fall through to raw body */ }
+        return body;
+    }
+
     public async Task<List<GmailLabelDto>> ListLabelsAsync(string accessToken)
     {
         var res = await SendAsync(accessToken, HttpMethod.Get, $"{GmailApiBase}/labels");
@@ -153,7 +167,7 @@ public class GmailService
         if (!res.IsSuccessStatusCode)
         {
             _logger.LogWarning("Gmail labels.list failed: {Body}", body);
-            throw new InvalidOperationException($"Gmail labels.list failed: {body}");
+            throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
         }
 
         using var doc = JsonDocument.Parse(body);
@@ -180,7 +194,7 @@ public class GmailService
         var res = await SendAsync(accessToken, HttpMethod.Post, $"{GmailApiBase}/labels", new { name });
         var body = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
-            throw new InvalidOperationException($"Gmail labels.create failed: {body}");
+            throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
 
         using var doc = JsonDocument.Parse(body);
         var el = doc.RootElement;
@@ -192,7 +206,7 @@ public class GmailService
         var res = await SendAsync(accessToken, HttpMethod.Patch, $"{GmailApiBase}/labels/{gmailLabelId}", new { name = newName });
         var body = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
-            throw new InvalidOperationException($"Gmail labels.patch failed: {body}");
+            throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
 
         using var doc = JsonDocument.Parse(body);
         var el = doc.RootElement;
@@ -205,7 +219,16 @@ public class GmailService
         if (!res.IsSuccessStatusCode)
         {
             var body = await res.Content.ReadAsStringAsync();
-            throw new InvalidOperationException($"Gmail labels.delete failed: {body}");
+            throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
         }
     }
+}
+
+/// <summary>Carries the real Gmail API status code + human-readable message through to the
+/// controller, so a 409 name conflict (for example) can be surfaced to the user as a clear
+/// message instead of a generic 500.</summary>
+public class GmailApiException : Exception
+{
+    public int StatusCode { get; }
+    public GmailApiException(int statusCode, string message) : base(message) => StatusCode = statusCode;
 }

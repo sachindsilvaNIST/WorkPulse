@@ -182,7 +182,16 @@ public class GmailController : ControllerBase
         var conn = await _gmail.GetValidConnectionAsync(UserId);
         if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
 
-        var created = await _gmail.CreateLabelAsync(conn.AccessToken!, name);
+        GmailService.GmailLabelDto created;
+        try
+        {
+            created = await _gmail.CreateLabelAsync(conn.AccessToken!, name);
+        }
+        catch (GmailApiException ex)
+        {
+            return StatusCode(ex.StatusCode, new { error = ex.Message });
+        }
+
         var entity = new GmailLabelEntity
         {
             ConnectionId = conn.Id,
@@ -210,7 +219,16 @@ public class GmailController : ControllerBase
         if (entity.Type != "user")
             return BadRequest(new { error = "System labels can't be renamed." });
 
-        var renamed = await _gmail.RenameLabelAsync(conn.AccessToken!, entity.GmailLabelId, name);
+        GmailService.GmailLabelDto renamed;
+        try
+        {
+            renamed = await _gmail.RenameLabelAsync(conn.AccessToken!, entity.GmailLabelId, name);
+        }
+        catch (GmailApiException ex)
+        {
+            return StatusCode(ex.StatusCode, new { error = ex.Message });
+        }
+
         entity.Name = renamed.Name;
         entity.LastSyncedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -229,7 +247,20 @@ public class GmailController : ControllerBase
         if (entity.Type != "user")
             return BadRequest(new { error = "System labels can't be deleted." });
 
-        await _gmail.DeleteLabelAsync(conn.AccessToken!, entity.GmailLabelId);
+        try
+        {
+            await _gmail.DeleteLabelAsync(conn.AccessToken!, entity.GmailLabelId);
+        }
+        catch (GmailApiException ex) when (ex.StatusCode == 404)
+        {
+            // Already gone on Gmail's side (e.g. deleted directly in Gmail since our last sync) —
+            // still clean up the stale local mirror row rather than surfacing this as a failure.
+        }
+        catch (GmailApiException ex)
+        {
+            return StatusCode(ex.StatusCode, new { error = ex.Message });
+        }
+
         _db.GmailLabels.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
