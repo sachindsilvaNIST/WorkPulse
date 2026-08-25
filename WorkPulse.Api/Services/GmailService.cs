@@ -175,19 +175,20 @@ public class GmailService
         if (doc.RootElement.TryGetProperty("labels", out var arr))
         {
             foreach (var el in arr.EnumerateArray())
-            {
-                var color = el.TryGetProperty("color", out var c) && c.TryGetProperty("backgroundColor", out var bg)
-                    ? bg.GetString()
-                    : null;
-                labels.Add(new GmailLabelDto(
-                    el.GetProperty("id").GetString()!,
-                    el.GetProperty("name").GetString()!,
-                    el.GetProperty("type").GetString()!,
-                    color));
-            }
+                labels.Add(ParseLabel(el));
         }
         return labels;
     }
+
+    /// <summary>Only "id" is guaranteed present on every label response shape Gmail returns —
+    /// "type" in particular isn't always included on create/patch responses even though it always
+    /// is on labels.list, so this defaults it to "user" (the only type this endpoint can produce)
+    /// rather than assuming the field exists.</summary>
+    private static GmailLabelDto ParseLabel(JsonElement el) => new(
+        el.GetProperty("id").GetString()!,
+        el.TryGetProperty("name", out var n) ? n.GetString()! : "",
+        el.TryGetProperty("type", out var t) ? t.GetString()! : "user",
+        el.TryGetProperty("color", out var c) && c.TryGetProperty("backgroundColor", out var bg) ? bg.GetString() : null);
 
     public async Task<GmailLabelDto> CreateLabelAsync(string accessToken, string name)
     {
@@ -197,8 +198,7 @@ public class GmailService
             throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
 
         using var doc = JsonDocument.Parse(body);
-        var el = doc.RootElement;
-        return new GmailLabelDto(el.GetProperty("id").GetString()!, el.GetProperty("name").GetString()!, el.GetProperty("type").GetString()!, null);
+        return ParseLabel(doc.RootElement);
     }
 
     public async Task<GmailLabelDto> RenameLabelAsync(string accessToken, string gmailLabelId, string newName)
@@ -209,8 +209,7 @@ public class GmailService
             throw new GmailApiException((int)res.StatusCode, ExtractErrorMessage(body));
 
         using var doc = JsonDocument.Parse(body);
-        var el = doc.RootElement;
-        return new GmailLabelDto(el.GetProperty("id").GetString()!, el.GetProperty("name").GetString()!, el.GetProperty("type").GetString()!, null);
+        return ParseLabel(doc.RootElement);
     }
 
     public async Task DeleteLabelAsync(string accessToken, string gmailLabelId)
