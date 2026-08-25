@@ -23,6 +23,7 @@ import type {
   ReimbursementCategory,
   GoogleDriveStatus,
   GmailStatus,
+  GmailLabel,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -232,6 +233,11 @@ export const gmailApi = {
   status: () => request<GmailStatus>("/api/gmail/status"),
   getConnectUrl: () => request<{ url: string }>("/api/gmail/connect"),
   disconnect: () => request<void>("/api/gmail/disconnect", { method: "POST" }),
+  getLabels: () => request<GmailLabel[]>("/api/gmail/labels"),
+  createLabel: (name: string) => request<GmailLabel>("/api/gmail/labels", { method: "POST", body: JSON.stringify({ name }) }),
+  renameLabel: (id: number, name: string) =>
+    request<GmailLabel>(`/api/gmail/labels/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteLabel: (id: number) => request<void>(`/api/gmail/labels/${id}`, { method: "DELETE" }),
 };
 
 export const contactsApi = {

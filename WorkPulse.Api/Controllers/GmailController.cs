@@ -121,6 +121,126 @@ public class GmailController : ControllerBase
         }
         return Ok();
     }
+
+    // ===== Labels (Stage 2: browse, search, CRUD) =====
+
+    private static GmailLabelDto ToDto(GmailLabelEntity e) => new(e.Id, e.Name, e.Type, e.Color);
+
+    /// <summary>Refreshes the local label mirror from the live Gmail API and returns it. There's
+    /// no push sync yet (Stage 4), so every call re-syncs — labels.list is lightweight and this
+    /// is single-user, so there's no real cost to always fetching fresh rather than trusting a
+    /// mirror that could silently drift.</summary>
+    [HttpGet("labels")]
+    [Authorize]
+    public async Task<ActionResult<List<GmailLabelDto>>> GetLabels()
+    {
+        var conn = await _gmail.GetValidConnectionAsync(UserId);
+        if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
+
+        var live = await _gmail.ListLabelsAsync(conn.AccessToken!);
+        var existing = await _db.GmailLabels.Where(l => l.ConnectionId == conn.Id).ToListAsync();
+
+        var liveIds = live.Select(l => l.Id).ToHashSet();
+        foreach (var stale in existing.Where(e => !liveIds.Contains(e.GmailLabelId)))
+            _db.GmailLabels.Remove(stale);
+
+        var byGmailId = existing.ToDictionary(e => e.GmailLabelId);
+        foreach (var l in live)
+        {
+            if (byGmailId.TryGetValue(l.Id, out var entity))
+            {
+                entity.Name = l.Name;
+                entity.Type = l.Type;
+                entity.Color = l.Color;
+                entity.LastSyncedUtc = DateTime.UtcNow;
+            }
+            else
+            {
+                _db.GmailLabels.Add(new GmailLabelEntity
+                {
+                    ConnectionId = conn.Id,
+                    GmailLabelId = l.Id,
+                    Name = l.Name,
+                    Type = l.Type,
+                    Color = l.Color,
+                });
+            }
+        }
+        await _db.SaveChangesAsync();
+
+        var result = await _db.GmailLabels.Where(l => l.ConnectionId == conn.Id).OrderBy(l => l.Name).ToListAsync();
+        return Ok(result.Select(ToDto).ToList());
+    }
+
+    [HttpPost("labels")]
+    [Authorize]
+    public async Task<ActionResult<GmailLabelDto>> CreateLabel([FromBody] GmailLabelRequest request)
+    {
+        var name = (request.Name ?? "").Trim();
+        if (name.Length == 0) return BadRequest(new { error = "Label name is required." });
+
+        var conn = await _gmail.GetValidConnectionAsync(UserId);
+        if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
+
+        var created = await _gmail.CreateLabelAsync(conn.AccessToken!, name);
+        var entity = new GmailLabelEntity
+        {
+            ConnectionId = conn.Id,
+            GmailLabelId = created.Id,
+            Name = created.Name,
+            Type = created.Type,
+        };
+        _db.GmailLabels.Add(entity);
+        await _db.SaveChangesAsync();
+        return Ok(ToDto(entity));
+    }
+
+    [HttpPut("labels/{id}")]
+    [Authorize]
+    public async Task<ActionResult<GmailLabelDto>> RenameLabel(int id, [FromBody] GmailLabelRequest request)
+    {
+        var name = (request.Name ?? "").Trim();
+        if (name.Length == 0) return BadRequest(new { error = "Label name is required." });
+
+        var conn = await _gmail.GetValidConnectionAsync(UserId);
+        if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
+
+        var entity = await _db.GmailLabels.FirstOrDefaultAsync(l => l.Id == id && l.ConnectionId == conn.Id);
+        if (entity == null) return NotFound();
+        if (entity.Type != "user")
+            return BadRequest(new { error = "System labels can't be renamed." });
+
+        var renamed = await _gmail.RenameLabelAsync(conn.AccessToken!, entity.GmailLabelId, name);
+        entity.Name = renamed.Name;
+        entity.LastSyncedUtc = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(ToDto(entity));
+    }
+
+    [HttpDelete("labels/{id}")]
+    [Authorize]
+    public async Task<ActionResult> DeleteLabel(int id)
+    {
+        var conn = await _gmail.GetValidConnectionAsync(UserId);
+        if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
+
+        var entity = await _db.GmailLabels.FirstOrDefaultAsync(l => l.Id == id && l.ConnectionId == conn.Id);
+        if (entity == null) return NotFound();
+        if (entity.Type != "user")
+            return BadRequest(new { error = "System labels can't be deleted." });
+
+        await _gmail.DeleteLabelAsync(conn.AccessToken!, entity.GmailLabelId);
+        _db.GmailLabels.Remove(entity);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+}
+
+public record GmailLabelDto(int Id, string Name, string Type, string? Color);
+
+public class GmailLabelRequest
+{
+    public string Name { get; set; } = "";
 }
 
 public class GmailStatusDto

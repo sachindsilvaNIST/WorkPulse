@@ -150,6 +150,13 @@ export interface GmailStatus {
   connectedUtc: string | null;
 }
 
+export interface GmailLabel {
+  id: number;
+  name: string;
+  type: "system" | "user";
+  color: string | null;
+}
+
 export interface ContactRecord {
   id: string;
   affiliation: string;
