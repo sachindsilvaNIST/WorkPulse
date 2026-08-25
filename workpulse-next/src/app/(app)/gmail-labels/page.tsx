@@ -22,25 +22,33 @@ import { cn } from "@/lib/utils";
 
 // Stage 2 of the Gmail Label Manager: browse/search/CRUD over the label tree. Message browsing
 // (Stage 3) and real-time push sync (Stage 4) land in later passes — see the approved plan.
+//
+// Gmail's API has NO concept of label hierarchy — "Clients/Acme Corp" is just a flat string with
+// a "/" in it. The nesting you see in Gmail's own web UI is purely presentational: when you rename
+// or delete a "folder" there, Gmail's UI silently loops over every label sharing that prefix and
+// patches/deletes each one individually. We replicate that here so renaming/deleting a folder (or
+// a label that has children) behaves the same way a Gmail user already expects.
 
 interface TreeNode {
   segment: string;
   fullPath: string;
+  parentPath: string;
   label: GmailLabel | null;
   children: Map<string, TreeNode>;
 }
 
 function buildTree(labels: GmailLabel[]): TreeNode {
-  const root: TreeNode = { segment: "", fullPath: "", label: null, children: new Map() };
+  const root: TreeNode = { segment: "", fullPath: "", parentPath: "", label: null, children: new Map() };
   for (const label of labels) {
     const parts = label.name.split("/");
     let node = root;
     let path = "";
     for (const part of parts) {
+      const parentPath = path;
       path = path ? `${path}/${part}` : part;
       let child = node.children.get(part);
       if (!child) {
-        child = { segment: part, fullPath: path, label: null, children: new Map() };
+        child = { segment: part, fullPath: path, parentPath, label: null, children: new Map() };
         node.children.set(part, child);
       }
       node = child;
@@ -54,6 +62,14 @@ function sortedChildren(node: TreeNode): TreeNode[] {
   return [...node.children.values()].sort((a, b) => a.segment.localeCompare(b.segment));
 }
 
+/** Every real label at or beneath this node — what a cascading rename/delete has to touch. */
+function collectLabels(node: TreeNode): GmailLabel[] {
+  const out: GmailLabel[] = [];
+  if (node.label) out.push(node.label);
+  for (const child of sortedChildren(node)) out.push(...collectLabels(child));
+  return out;
+}
+
 export default function GmailLabelsPage() {
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [labels, setLabels] = useState<GmailLabel[] | null>(null);
@@ -65,10 +81,13 @@ export default function GmailLabelsPage() {
   const [newName, setNewName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
 
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Editing/deleting targets a tree node by its fullPath (works for both a real label and a
+  // synthetic folder — both can have children that need to cascade).
+  const [editingPath, setEditingPath] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
+  const [busyPath, setBusyPath] = useState<string | null>(null);
 
   useEffect(() => {
     gmailApi.status().then(setStatus).catch(() => {});
@@ -99,6 +118,12 @@ export default function GmailLabelsPage() {
 
   const tree = useMemo(() => (labels ? buildTree(labels) : null), [labels]);
 
+  function startCreate(underPath?: string) {
+    setCreating(true);
+    setCreateError(null);
+    setNewName(underPath ? `${underPath}/` : "");
+  }
+
   async function handleCreate() {
     const name = newName.trim();
     if (!name) return;
@@ -113,44 +138,71 @@ export default function GmailLabelsPage() {
     }
   }
 
-  function startEdit(label: GmailLabel) {
-    setEditingId(label.id);
-    setEditingName(label.name);
+  function startEdit(node: TreeNode) {
+    setEditingPath(node.fullPath);
+    setEditingName(node.segment);
     setEditError(null);
-    setConfirmDeleteId(null);
+    setConfirmDeletePath(null);
   }
 
-  async function confirmRename(label: GmailLabel) {
-    const name = editingName.trim();
-    if (!name) return;
+  async function confirmRename(node: TreeNode) {
+    const newLeaf = editingName.trim();
+    if (!newLeaf) return;
+    const newPrefix = node.parentPath ? `${node.parentPath}/${newLeaf}` : newLeaf;
+    if (newPrefix === node.fullPath) {
+      setEditingPath(null);
+      return;
+    }
+
+    const affected = collectLabels(node);
+    setBusyPath(node.fullPath);
+    setEditError(null);
     try {
-      const updated = await gmailApi.renameLabel(label.id, name);
-      setLabels((prev) => (prev ? prev.map((l) => (l.id === label.id ? updated : l)) : prev));
-      setEditingId(null);
+      for (const l of affected) {
+        const renamedFull = l.name === node.fullPath ? newPrefix : newPrefix + l.name.slice(node.fullPath.length);
+        await gmailApi.renameLabel(l.id, renamedFull);
+      }
+      setEditingPath(null);
+      await loadLabels();
     } catch (err) {
       setEditError(err instanceof ApiError ? err.message : "Rename failed.");
+    } finally {
+      setBusyPath(null);
     }
   }
 
-  async function confirmDelete(label: GmailLabel) {
-    await gmailApi.deleteLabel(label.id);
-    setLabels((prev) => (prev ? prev.filter((l) => l.id !== label.id) : prev));
-    setConfirmDeleteId(null);
+  async function confirmDelete(node: TreeNode) {
+    const affected = collectLabels(node);
+    setBusyPath(node.fullPath);
+    try {
+      for (const l of affected) await gmailApi.deleteLabel(l.id);
+      setConfirmDeletePath(null);
+      await loadLabels();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Delete failed.");
+    } finally {
+      setBusyPath(null);
+    }
   }
 
-  function LabelRow({ label, depth, displayName }: { label: GmailLabel; depth: number; displayName: string }) {
-    const isSystem = label.type !== "user";
-    const accent = label.color || "#EA4335";
+  function NodeRow({ node, depth, displayName }: { node: TreeNode; depth: number; displayName: string }) {
+    const isSystem = node.label?.type === "system";
+    const hasChildren = node.children.size > 0;
+    const affectedCount = hasChildren ? collectLabels(node).length : 1;
+    const accent = node.label?.color || "#EA4335";
+    const busy = busyPath === node.fullPath;
 
-    if (confirmDeleteId === label.id) {
+    if (confirmDeletePath === node.fullPath) {
       return (
         <div className="flex items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2" style={{ paddingLeft: 12 + depth * 16 }}>
-          <span className="truncate text-sm text-destructive">Delete &quot;{label.name}&quot;?</span>
+          <span className="truncate text-sm text-destructive">
+            Delete &quot;{displayName}&quot;{hasChildren ? ` and its ${affectedCount} nested label${affectedCount === 1 ? "" : "s"}` : ""}?
+          </span>
           <div className="flex shrink-0 items-center gap-1">
-            <button type="button" onClick={() => void confirmDelete(label)} className="cursor-pointer rounded-md bg-destructive px-2 py-1 text-xs font-medium text-white">
-              Delete
+            <button type="button" disabled={busy} onClick={() => void confirmDelete(node)} className="cursor-pointer rounded-md bg-destructive px-2 py-1 text-xs font-medium text-white disabled:opacity-50">
+              {busy ? "Deleting…" : "Delete"}
             </button>
-            <button type="button" onClick={() => setConfirmDeleteId(null)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium hover:bg-foreground/10">
+            <button type="button" onClick={() => setConfirmDeletePath(null)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium hover:bg-foreground/10">
               Cancel
             </button>
           </div>
@@ -158,7 +210,7 @@ export default function GmailLabelsPage() {
       );
     }
 
-    if (editingId === label.id) {
+    if (editingPath === node.fullPath) {
       return (
         <div className="flex flex-col gap-1 rounded-lg bg-foreground/5 px-3 py-2" style={{ paddingLeft: 12 + depth * 16 }}>
           <div className="flex items-center gap-1">
@@ -169,20 +221,21 @@ export default function GmailLabelsPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  void confirmRename(label);
+                  void confirmRename(node);
                 } else if (e.key === "Escape") {
-                  setEditingId(null);
+                  setEditingPath(null);
                 }
               }}
               className="min-w-0 flex-1 rounded-md bg-background/60 px-2 py-1 text-sm outline-none"
             />
-            <button type="button" onClick={() => void confirmRename(label)} className="cursor-pointer rounded-md p-1 text-primary hover:bg-primary/10" title="Save">
+            <button type="button" disabled={busy} onClick={() => void confirmRename(node)} className="cursor-pointer rounded-md p-1 text-primary hover:bg-primary/10 disabled:opacity-50" title="Save">
               <Check className="size-3.5" />
             </button>
-            <button type="button" onClick={() => setEditingId(null)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10" title="Cancel">
+            <button type="button" onClick={() => setEditingPath(null)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10" title="Cancel">
               <X className="size-3.5" />
             </button>
           </div>
+          {hasChildren && <p className="px-1 text-xs text-muted-foreground">Renames all {affectedCount} nested label{affectedCount === 1 ? "" : "s"} too.</p>}
           {editError && <p className="px-1 text-xs text-destructive">{editError}</p>}
         </div>
       );
@@ -191,16 +244,23 @@ export default function GmailLabelsPage() {
     return (
       <div className="group flex items-center rounded-lg hover:bg-foreground/5" style={{ paddingLeft: 12 + depth * 16 }}>
         <div className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-sm">
-          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
-          <span className="truncate">{displayName}</span>
+          {node.label ? (
+            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+          ) : (
+            <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+          )}
+          <span className={cn("truncate", !node.label && "text-muted-foreground")}>{displayName}</span>
           {isSystem && <span className="shrink-0 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] text-muted-foreground">system</span>}
         </div>
         {!isSystem && (
           <div className="hidden shrink-0 items-center gap-0.5 pr-2 group-hover:flex">
-            <button type="button" onClick={() => startEdit(label)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary" title="Rename">
+            <button type="button" onClick={() => startCreate(node.fullPath)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary" title="Add label here">
+              <Plus className="size-3.5" />
+            </button>
+            <button type="button" onClick={() => startEdit(node)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary" title="Rename">
               <Pencil className="size-3.5" />
             </button>
-            <button type="button" onClick={() => setConfirmDeleteId(label.id)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+            <button type="button" onClick={() => setConfirmDeletePath(node.fullPath)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
               <Trash2 className="size-3.5" />
             </button>
           </div>
@@ -210,17 +270,10 @@ export default function GmailLabelsPage() {
   }
 
   function TreeRows({ node, depth }: { node: TreeNode; depth: number }) {
-    const children = sortedChildren(node);
     return (
       <>
-        {node.label && <LabelRow label={node.label} depth={depth} displayName={node.segment} />}
-        {!node.label && node.fullPath && (
-          <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground" style={{ paddingLeft: 12 + depth * 16 }}>
-            <Folder className="size-3.5 shrink-0" />
-            <span className="truncate">{node.segment}</span>
-          </div>
-        )}
-        {children.map((child) => (
+        {node.fullPath && <NodeRow node={node} depth={depth} displayName={node.segment} />}
+        {sortedChildren(node).map((child) => (
           <TreeRows key={child.fullPath} node={child} depth={depth + 1} />
         ))}
       </>
@@ -270,7 +323,7 @@ export default function GmailLabelsPage() {
                   {searchMatches ? `${searchMatches.length} match${searchMatches.length === 1 ? "" : "es"}` : "All labels"}
                 </h2>
                 {!creating ? (
-                  <button type="button" onClick={() => setCreating(true)} className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
+                  <button type="button" onClick={() => startCreate()} className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
                     <Plus className="size-3.5" /> New label
                   </button>
                 ) : null}
@@ -311,6 +364,7 @@ export default function GmailLabelsPage() {
                       <X className="size-3.5" />
                     </button>
                   </div>
+                  <p className="px-1 text-xs text-muted-foreground">Use &quot;/&quot; to nest, e.g. Clients/Acme Corp</p>
                   {createError && <p className="px-1 text-xs text-destructive">{createError}</p>}
                 </div>
               )}
@@ -323,7 +377,19 @@ export default function GmailLabelsPage() {
                 searchMatches.length === 0 ? (
                   <p className="px-1 py-6 text-center text-sm text-muted-foreground">No labels match &quot;{query.trim()}&quot;.</p>
                 ) : (
-                  searchMatches.map((l) => <LabelRow key={l.id} label={l} depth={0} displayName={l.name} />)
+                  searchMatches.map((l) => {
+                    const slash = l.name.lastIndexOf("/");
+                    const parentPath = slash === -1 ? "" : l.name.slice(0, slash);
+                    const segment = slash === -1 ? l.name : l.name.slice(slash + 1);
+                    return (
+                      <NodeRow
+                        key={l.id}
+                        node={{ segment, fullPath: l.name, parentPath, label: l, children: new Map() }}
+                        depth={0}
+                        displayName={l.name}
+                      />
+                    );
+                  })
                 )
               ) : (
                 tree && sortedChildren(tree).map((child) => <TreeRows key={child.fullPath} node={child} depth={0} />)
