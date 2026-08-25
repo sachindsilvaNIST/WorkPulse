@@ -13,9 +13,10 @@ public class GmailService
     private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
     private const string AuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
     private const string GmailApiBase = "https://gmail.googleapis.com/gmail/v1/users/me";
-    // gmail.modify alone covers reading messages, label CRUD, and applying/removing labels on
-    // messages — one scope keeps the consent screen to a single, simpler grant.
-    private const string GmailScope = "https://www.googleapis.com/auth/gmail.modify";
+    // gmail.modify covers reading messages, label CRUD, and applying/removing labels on messages.
+    // userinfo.email is also needed — without it, the userinfo call GetEmailAddressAsync makes to
+    // show "Connected as ..." on the Settings card returns 401.
+    private const string GmailScope = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/userinfo.email";
 
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
