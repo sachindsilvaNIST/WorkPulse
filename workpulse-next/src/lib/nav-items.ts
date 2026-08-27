@@ -9,6 +9,7 @@ import {
   Users,
   BookOpen,
   Mail,
+  Library,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -103,6 +104,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Mail,
     color: "#EA4335",
     description: "Pattern-search and manage your Gmail label tree",
+  },
+  {
+    href: "/resources",
+    label: "Resources",
+    icon: Library,
+    color: "brand-teal",
+    description: "Every saved guide, link, and file — found by keyword",
   },
   {
     href: "/settings",

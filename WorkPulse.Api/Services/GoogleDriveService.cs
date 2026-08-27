@@ -15,6 +15,7 @@ public class GoogleDriveService
     private const string AuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
     private const string DriveFileScope = "https://www.googleapis.com/auth/drive.file";
     private const string FolderName = "WorkPulse Reimbursements";
+    private const string ResourceFolderName = "WorkPulse Resources";
     private const string FolderMimeType = "application/vnd.google-apps.folder";
 
     private readonly AppDbContext _db;
@@ -126,38 +127,33 @@ public class GoogleDriveService
             ApplicationName = "WorkPulse",
         });
 
-    private async Task<string> EnsureFolderAsync(DriveService service, GoogleDriveConnectionEntity conn)
+    /// <summary>Resolves (creating if needed) the Drive folder with the given name, independent of
+    /// which local column caches its id — generalized so more than one feature (Reimbursement,
+    /// Resources, ...) can each get their own mirror folder without duplicating this search/create
+    /// logic per feature.</summary>
+    private async Task<string> ResolveFolderIdAsync(DriveService service, string folderName, string? cachedFolderId)
     {
-        if (!string.IsNullOrEmpty(conn.DriveFolderId)) return conn.DriveFolderId;
+        if (!string.IsNullOrEmpty(cachedFolderId)) return cachedFolderId;
 
         var listRequest = service.Files.List();
-        listRequest.Q = $"mimeType='{FolderMimeType}' and name='{FolderName}' and trashed=false";
+        listRequest.Q = $"mimeType='{FolderMimeType}' and name='{folderName}' and trashed=false";
         listRequest.Fields = "files(id)";
         var existing = await listRequest.ExecuteAsync();
         var folderId = existing.Files.FirstOrDefault()?.Id;
 
         if (folderId == null)
         {
-            var folder = new DriveFile { Name = FolderName, MimeType = FolderMimeType };
+            var folder = new DriveFile { Name = folderName, MimeType = FolderMimeType };
             var created = await service.Files.Create(folder).ExecuteAsync();
             folderId = created.Id;
         }
 
-        conn.DriveFolderId = folderId;
-        await _db.SaveChangesAsync();
         return folderId;
     }
 
-    /// <summary>Best-effort mirror upload — returns null (not throws) if Drive isn't connected,
-    /// so callers whose primary storage is already the local DB copy can treat this as optional.</summary>
-    public async Task<(string FileId, string? WebViewLink)?> TryUploadAsync(string userId, string fileName, string contentType, byte[] bytes)
+    private async Task<(string FileId, string? WebViewLink)?> UploadToFolderAsync(
+        GoogleDriveConnectionEntity conn, DriveService service, string folderId, string fileName, string contentType, byte[] bytes)
     {
-        var conn = await GetValidConnectionAsync(userId);
-        if (conn == null) return null;
-
-        var service = BuildDriveClient(conn.AccessToken!);
-        var folderId = await EnsureFolderAsync(service, conn);
-
         var fileMetadata = new DriveFile { Name = fileName, Parents = new List<string> { folderId } };
         using var stream = new MemoryStream(bytes);
         var request = service.Files.Create(fileMetadata, stream, contentType);
@@ -170,6 +166,42 @@ public class GoogleDriveService
         }
 
         return (request.ResponseBody.Id, request.ResponseBody.WebViewLink);
+    }
+
+    /// <summary>Best-effort mirror upload — returns null (not throws) if Drive isn't connected,
+    /// so callers whose primary storage is already the local DB copy can treat this as optional.</summary>
+    public async Task<(string FileId, string? WebViewLink)?> TryUploadAsync(string userId, string fileName, string contentType, byte[] bytes)
+    {
+        var conn = await GetValidConnectionAsync(userId);
+        if (conn == null) return null;
+
+        var service = BuildDriveClient(conn.AccessToken!);
+        var folderId = await ResolveFolderIdAsync(service, FolderName, conn.DriveFolderId);
+        if (conn.DriveFolderId != folderId)
+        {
+            conn.DriveFolderId = folderId;
+            await _db.SaveChangesAsync();
+        }
+
+        return await UploadToFolderAsync(conn, service, folderId, fileName, contentType, bytes);
+    }
+
+    /// <summary>Same best-effort mirror as TryUploadAsync, into a separate "WorkPulse Resources"
+    /// folder so saved guides/files stay visually distinct from Reimbursement documents in Drive.</summary>
+    public async Task<(string FileId, string? WebViewLink)?> TryUploadResourceAsync(string userId, string fileName, string contentType, byte[] bytes)
+    {
+        var conn = await GetValidConnectionAsync(userId);
+        if (conn == null) return null;
+
+        var service = BuildDriveClient(conn.AccessToken!);
+        var folderId = await ResolveFolderIdAsync(service, ResourceFolderName, conn.ResourceFolderId);
+        if (conn.ResourceFolderId != folderId)
+        {
+            conn.ResourceFolderId = folderId;
+            await _db.SaveChangesAsync();
+        }
+
+        return await UploadToFolderAsync(conn, service, folderId, fileName, contentType, bytes);
     }
 
     public async Task TryDeleteAsync(string userId, string driveFileId)

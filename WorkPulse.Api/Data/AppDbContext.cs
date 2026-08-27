@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<GoogleDriveConnectionEntity> GoogleDriveConnections => Set<GoogleDriveConnectionEntity>();
     public DbSet<GmailConnectionEntity> GmailConnections => Set<GmailConnectionEntity>();
     public DbSet<GmailLabelEntity> GmailLabels => Set<GmailLabelEntity>();
+    public DbSet<ResourceEntity> Resources => Set<ResourceEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -102,6 +103,17 @@ public class AppDbContext : IdentityDbContext<AppUser>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.UserId).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Resource
+        builder.Entity<ResourceEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId);
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)

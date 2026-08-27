@@ -13,6 +13,8 @@ public class GoogleDriveConnectionEntity
     /// <summary>Cached ID of the "WorkPulse Reimbursements" Drive folder, created on first
     /// upload so subsequent uploads don't need to search for it every time.</summary>
     public string? DriveFolderId { get; set; }
+    /// <summary>Same idea as DriveFolderId but for the separate "WorkPulse Resources" folder.</summary>
+    public string? ResourceFolderId { get; set; }
     public DateTime ConnectedUtc { get; set; } = DateTime.UtcNow;
 
     public AppUser User { get; set; } = null!;

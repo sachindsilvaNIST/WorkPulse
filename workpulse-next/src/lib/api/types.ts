@@ -240,3 +240,22 @@ export interface DictEntryDto {
   lastModifiedUtc: string;
   labels: DictLabelDto[];
 }
+
+export type ResourceType = "Link" | "File" | "Note";
+
+export interface Resource {
+  id: string;
+  type: ResourceType;
+  title: string;
+  notes: string;
+  url: string | null;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  driveFileId?: string | null;
+  driveWebViewLink?: string | null;
+  tags: string;
+  keywords: string;
+  createdUtc: string;
+  lastModifiedUtc: string;
+}

@@ -299,4 +299,27 @@ public static class EntityMapper
             NotificationChannel = settings.NotificationChannel
         };
     }
+
+    // --- ResourceEntity -> ResourceMeta ---
+
+    public static ResourceMeta ToMeta(this ResourceEntity entity)
+    {
+        return new ResourceMeta
+        {
+            Id = entity.Id,
+            Type = entity.Type,
+            Title = entity.Title,
+            Notes = entity.Notes,
+            Url = entity.Url,
+            FileName = entity.FileName,
+            ContentType = entity.ContentType,
+            SizeBytes = entity.SizeBytes,
+            DriveFileId = entity.DriveFileId,
+            DriveWebViewLink = entity.DriveWebViewLink,
+            Tags = entity.Tags,
+            Keywords = entity.Keywords,
+            CreatedUtc = entity.CreatedUtc,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
 }

@@ -24,6 +24,8 @@ import type {
   GoogleDriveStatus,
   GmailStatus,
   GmailLabel,
+  Resource,
+  ResourceType,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -305,6 +307,48 @@ export const adminApi = {
   getUserFeatures: (id: string) => request<AdminUserFeatures>(`/api/admin/users/${id}/features`),
   updateUserFeatures: (id: string, disabled: string[]) =>
     request<void>(`/api/admin/users/${id}/features`, { method: "PUT", body: JSON.stringify({ disabled }) }),
+};
+
+export const resourcesApi = {
+  getAll: () => request<Resource[]>("/api/resources"),
+  async create(input: {
+    type: ResourceType;
+    title: string;
+    notes: string;
+    url?: string;
+    tags: string;
+    keywords: string;
+    file?: File | null;
+  }): Promise<Resource> {
+    const token = getToken();
+    const form = new FormData();
+    form.append("type", input.type);
+    form.append("title", input.title);
+    form.append("notes", input.notes);
+    if (input.url) form.append("url", input.url);
+    form.append("tags", input.tags);
+    form.append("keywords", input.keywords);
+    if (input.file) form.append("file", input.file);
+    const res = await fetch(`${API_BASE}/api/resources`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        message = (await res.json()).error ?? message;
+      } catch {
+        /* no JSON body */
+      }
+      throw new ApiError(res.status, message);
+    }
+    return (await res.json()) as Resource;
+  },
+  update: (id: string, input: { title: string; notes: string; url?: string; tags: string; keywords: string }) =>
+    request<Resource>(`/api/resources/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+  delete: (id: string) => request<void>(`/api/resources/${id}`, { method: "DELETE" }),
+  download: (id: string) => requestBlob(`/api/resources/${id}/download`),
 };
 
 export { ApiError };
