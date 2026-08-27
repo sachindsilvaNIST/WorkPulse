@@ -87,8 +87,10 @@ builder.Services.AddAuthentication(options =>
 // Anthropic API client for AI features
 builder.Services.AddHttpClient<WorkPulse.Api.Services.AnthropicService>();
 
-// Email (2FA login codes) — logs instead of sending when Smtp:Host isn't configured
-builder.Services.AddSingleton<WorkPulse.Api.Services.IEmailSender, WorkPulse.Api.Services.SmtpEmailSender>();
+// Email (2FA/confirmation codes) via Resend's HTTP API — logs instead of sending when
+// Resend:ApiKey isn't configured. Not SMTP: Render's free tier blocks outbound SMTP ports
+// entirely, confirmed via a live SocketException, so an HTTP-based sender is required here.
+builder.Services.AddSingleton<WorkPulse.Api.Services.IEmailSender, WorkPulse.Api.Services.ResendEmailSender>();
 
 // Google Drive (Reimbursement document mirroring) — needs a generic IHttpClientFactory for the
 // raw OAuth token-exchange/refresh calls, and AppDbContext (scoped) for connection storage.

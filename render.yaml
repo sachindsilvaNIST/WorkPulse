@@ -29,15 +29,9 @@ services:
         value: https://workpulse-api-mbco.onrender.com/api/googledrive/callback
       - key: Gmail__RedirectUri
         value: https://workpulse-api-mbco.onrender.com/api/gmail/callback
-      - key: Smtp__Host
-        value: smtp.gmail.com
-      - key: Smtp__Port
-        value: "587"
-      - key: Smtp__User
+      - key: Resend__ApiKey
         sync: false
-      - key: Smtp__Password
-        sync: false
-      - key: Smtp__From
+      - key: Resend__From
         sync: false
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
