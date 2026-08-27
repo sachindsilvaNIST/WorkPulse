@@ -23,13 +23,15 @@ public class AuthController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config)
+    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config, ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _db = db;
         _emailSender = emailSender;
         _config = config;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -281,14 +283,26 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
+    // Both code-send helpers below are best-effort: a broken/misconfigured email provider (e.g.
+    // Resend's sandbox rejecting a recipient outside the verified domain) must never crash
+    // Register/Login with a raw 500 and leave the user stuck. Instead the caller still proceeds
+    // to the code-entry step, where "Resend code" can succeed later once the provider issue is
+    // fixed — same reasoning as the Drive-mirror uploads elsewhere in this app.
     private async Task SendTwoFactorCodeAsync(AppUser user)
     {
-        var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-        await _emailSender.SendAsync(
-            user.Email!,
-            "Your WorkPulse verification code",
-            $"Your verification code is: {code}\n\nThis code expires in a few minutes. If you didn't request this, you can ignore this email."
-        );
+        try
+        {
+            var code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+            await _emailSender.SendAsync(
+                user.Email!,
+                "Your WorkPulse verification code",
+                $"Your verification code is: {code}\n\nThis code expires in a few minutes. If you didn't request this, you can ignore this email."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send 2FA code to {Email}", user.Email);
+        }
     }
 
     // Distinct purpose string from the 2FA token above — even though both use the same email
@@ -298,12 +312,19 @@ public class AuthController : ControllerBase
 
     private async Task SendEmailConfirmationCodeAsync(AppUser user)
     {
-        var code = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose);
-        await _emailSender.SendAsync(
-            user.Email!,
-            "Confirm your WorkPulse email address",
-            $"Your confirmation code is: {code}\n\nEnter this code to finish setting up your account. This code expires in a few minutes."
-        );
+        try
+        {
+            var code = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose);
+            await _emailSender.SendAsync(
+                user.Email!,
+                "Confirm your WorkPulse email address",
+                $"Your confirmation code is: {code}\n\nEnter this code to finish setting up your account. This code expires in a few minutes."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send email confirmation code to {Email}", user.Email);
+        }
     }
 
     private async Task<AuthResponse> IssueTokensAsync(AppUser user)
