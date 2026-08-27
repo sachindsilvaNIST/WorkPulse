@@ -18,8 +18,14 @@ export interface RegisterRequest {
 
 export interface LoginResult {
   requiresTwoFactor: boolean;
+  requiresEmailConfirmation: boolean;
   email: string | null;
   auth: AuthResponse | null;
+}
+
+export interface RegisterResult {
+  requiresEmailConfirmation: boolean;
+  email: string;
 }
 
 export interface CurrentUser {

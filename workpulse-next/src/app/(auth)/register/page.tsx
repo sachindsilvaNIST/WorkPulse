@@ -14,9 +14,10 @@ import { ApiError } from "@/lib/api/client";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
 import { useSlowRequest } from "@/hooks/use-slow-request";
 import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/lib/validation";
+import { EmailConfirmationStep } from "@/components/auth/email-confirmation-step";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, pendingEmailConfirmationEmail } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +51,10 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (pendingEmailConfirmationEmail) {
+    return <EmailConfirmationStep email={pendingEmailConfirmationEmail} />;
   }
 
   return (

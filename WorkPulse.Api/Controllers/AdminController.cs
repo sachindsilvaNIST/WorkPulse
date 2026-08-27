@@ -78,7 +78,10 @@ public class AdminController : ControllerBase
         {
             UserName = dto.Email,
             Email = dto.Email,
-            DisplayName = dto.DisplayName
+            DisplayName = dto.DisplayName,
+            // An admin creating the account directly is itself a form of verification — don't
+            // also make the new user hunt down an emailed code before their first login.
+            EmailConfirmed = true
         };
 
         var result = await _userManager.CreateAsync(user, dto.Password);

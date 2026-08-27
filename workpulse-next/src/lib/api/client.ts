@@ -18,6 +18,7 @@ import type {
   AdminUserUpdateRequest,
   AdminUserFeatures,
   LoginResult,
+  RegisterResult,
   CurrentUser,
   UserSession,
   ReimbursementCategory,
@@ -118,14 +119,18 @@ export const authApi = {
     setSession(auth);
     return auth;
   },
-  async register(req: RegisterRequest): Promise<AuthResponse> {
-    const auth = await request<AuthResponse>("/api/auth/register", {
+  // No session yet — registration now always requires confirming the emailed code before the
+  // account can sign in at all (see confirmEmail below).
+  register: (req: RegisterRequest) => request<RegisterResult>("/api/auth/register", { method: "POST", body: JSON.stringify(req) }),
+  async confirmEmail(email: string, code: string): Promise<AuthResponse> {
+    const auth = await request<AuthResponse>("/api/auth/confirm-email", {
       method: "POST",
-      body: JSON.stringify(req),
+      body: JSON.stringify({ email, code }),
     });
     setSession(auth);
     return auth;
   },
+  resendConfirmationCode: (email: string) => request<void>("/api/auth/resend-confirmation-code", { method: "POST", body: JSON.stringify({ email }) }),
   logout() {
     const refreshToken = getRefreshToken();
     if (refreshToken) {

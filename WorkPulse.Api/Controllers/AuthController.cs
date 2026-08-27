@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [EnableRateLimiting("auth")]
-    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
+    public async Task<ActionResult<RegisterResult>> Register(RegisterRequest request)
     {
         var user = new AppUser
         {
@@ -47,7 +47,10 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
 
-        return Ok(await IssueTokensAsync(user));
+        // No tokens yet — email/password accounts must verify the address before they can sign
+        // in at all (see Login's EmailConfirmed check below and ConfirmEmail).
+        await SendEmailConfirmationCodeAsync(user);
+        return Ok(new RegisterResult { Email = user.Email! });
     }
 
     [HttpPost("login")]
@@ -64,6 +67,14 @@ public class AuthController : ControllerBase
         if (await _userManager.IsLockedOutAsync(user))
             return Unauthorized(new { error = "This account has been disabled." });
 
+        // A password-correct login attempt on a never-confirmed account (e.g. they registered
+        // and never entered the code) gets a fresh code right here rather than a dead end.
+        if (!await _userManager.IsEmailConfirmedAsync(user))
+        {
+            await SendEmailConfirmationCodeAsync(user);
+            return Ok(new LoginResult { RequiresEmailConfirmation = true, Email = user.Email! });
+        }
+
         if (await _userManager.GetTwoFactorEnabledAsync(user))
         {
             await SendTwoFactorCodeAsync(user);
@@ -71,6 +82,34 @@ public class AuthController : ControllerBase
         }
 
         return Ok(new LoginResult { Auth = await IssueTokensAsync(user) });
+    }
+
+    [HttpPost("confirm-email")]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<AuthResponse>> ConfirmEmail(TwoFactorVerifyRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null) return Unauthorized(new { error = "Invalid or expired code." });
+
+        var valid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose, request.Code);
+        if (!valid) return Unauthorized(new { error = "Invalid or expired code." });
+
+        user.EmailConfirmed = true;
+        await _userManager.UpdateAsync(user);
+
+        return Ok(await IssueTokensAsync(user));
+    }
+
+    [HttpPost("resend-confirmation-code")]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult> ResendConfirmationCode([FromBody] ResendConfirmationRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        // Same response whether or not the account exists / is already confirmed, so this can't
+        // be used to enumerate registered emails.
+        if (user != null && !await _userManager.IsEmailConfirmedAsync(user))
+            await SendEmailConfirmationCodeAsync(user);
+        return Ok();
     }
 
     [HttpPost("login/verify-2fa")]
@@ -252,6 +291,21 @@ public class AuthController : ControllerBase
         );
     }
 
+    // Distinct purpose string from the 2FA token above — even though both use the same email
+    // token provider, a leaked/guessed 2FA code should never be usable to confirm an email and
+    // vice versa.
+    private const string EmailConfirmationPurpose = "EmailConfirmation";
+
+    private async Task SendEmailConfirmationCodeAsync(AppUser user)
+    {
+        var code = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose);
+        await _emailSender.SendAsync(
+            user.Email!,
+            "Confirm your WorkPulse email address",
+            $"Your confirmation code is: {code}\n\nEnter this code to finish setting up your account. This code expires in a few minutes."
+        );
+    }
+
     private async Task<AuthResponse> IssueTokensAsync(AppUser user)
     {
         var secret = _config["Jwt:Secret"]!;
@@ -376,8 +430,20 @@ public class RefreshTokenRequest
 public class LoginResult
 {
     public bool RequiresTwoFactor { get; set; }
+    public bool RequiresEmailConfirmation { get; set; }
     public string? Email { get; set; }
     public AuthResponse? Auth { get; set; }
+}
+
+public class RegisterResult
+{
+    public bool RequiresEmailConfirmation { get; set; } = true;
+    public string Email { get; set; } = "";
+}
+
+public class ResendConfirmationRequest
+{
+    public string Email { get; set; } = "";
 }
 
 public class TwoFactorVerifyRequest
