@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Activity, ArrowLeft, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,7 +108,7 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" disabled={loading || code.length < 6} className="mt-2 w-full">
-                {loading ? <Loader2 className="animate-spin" /> : "Verify & Sign in"}
+                {loading ? <Spinner size={18} /> : "Verify & Sign in"}
               </Button>
               {loading && slow && (
                 <motion.p
@@ -191,7 +192,7 @@ export default function LoginPage() {
 
             <Button type="submit" disabled={loading} className="mt-2 w-full">
               {loading ? (
-                <Loader2 className="animate-spin" />
+                <Spinner size={18} />
               ) : (
                 <>
                   Sign in <ArrowRight className="size-4" />

@@ -39,6 +39,7 @@ import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
 import { exportUserData } from "@/lib/data-export";
 import { NAV_ITEMS } from "@/lib/nav-items";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
 
 const RECENT_SECTIONS_KEY = "workpulse.settings.recentSections";
@@ -626,7 +627,7 @@ export default function SettingsPage() {
                 </Button>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
             )}
           </CardContent>
         </Card>
@@ -812,7 +813,7 @@ export default function SettingsPage() {
                   </button>
                 )}
               </div>
-              {sessionsLoading && <p className="text-xs text-muted-foreground">Loading…</p>}
+              {sessionsLoading && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner size={14} /> Loading…</div>}
               {!sessionsLoading && sessions.length === 0 && (
                 <p className="text-xs text-muted-foreground">No other active sessions.</p>
               )}
@@ -857,7 +858,7 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Google Drive</h2>
             </div>
             {driveStatus === null ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
             ) : !driveStatus.configured ? (
               <p className="text-sm text-muted-foreground">
                 Google Drive isn&apos;t configured on the server yet — an admin needs to add OAuth credentials before this can be connected.
@@ -895,7 +896,7 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Gmail</h2>
             </div>
             {gmailStatus === null ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
             ) : !gmailStatus.configured ? (
               <p className="text-sm text-muted-foreground">
                 Gmail isn&apos;t configured on the server yet — an admin needs to add OAuth credentials before this can be connected.
@@ -1074,6 +1075,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex flex-col gap-1">
               {[
+                { keys: ["⌘/Ctrl", "K"], description: "Open quick search — jump to any section, resource, or bookmark" },
                 { keys: ["⌘/Ctrl", "Z"], description: "Undo — Daily Reports editor" },
                 { keys: ["⌘/Ctrl", "Shift", "Z"], description: "Redo — Daily Reports editor" },
                 { keys: ["⌘/Ctrl", "Click"], description: "View details instead of opening the link — Bookmarks" },

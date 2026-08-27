@@ -11,7 +11,7 @@ namespace WorkPulse.Api.Controllers;
 [Route("api/[controller]")]
 public class TripReportsController : ApiControllerBase
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
 
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
@@ -137,7 +137,7 @@ public class TripReportsController : ApiControllerBase
             return BadRequest(new { error = "No file uploaded" });
 
         if (file.Length > MaxFileSizeBytes)
-            return BadRequest(new { error = "File exceeds the 10 MB limit" });
+            return BadRequest(new { error = "File exceeds the 50 MB limit" });
 
         var categoryName = (category ?? "").Trim();
         if (categoryName.Length == 0)

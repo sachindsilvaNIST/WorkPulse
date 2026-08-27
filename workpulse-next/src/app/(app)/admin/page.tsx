@@ -26,6 +26,7 @@ import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/li
 import { useAuth } from "@/lib/auth-context";
 import { adminApi, ApiError } from "@/lib/api/client";
 import type { AdminUser } from "@/lib/api/types";
+import { Spinner } from "@/components/ui/spinner";
 
 const FEATURE_LABELS: Record<string, string> = {
   contacts: "Contacts",
@@ -267,7 +268,7 @@ export default function AdminPage() {
         </Card>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && users.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <Users className="size-10 opacity-40" />
@@ -428,7 +429,7 @@ export default function AdminPage() {
                 <span className="font-medium text-foreground">{featuresFor.displayName || featuresFor.email}</span> can access.
               </p>
               {featuresLoading ? (
-                <p className="text-sm text-muted-foreground">Loading…</p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {featureCatalog.map((key) => {

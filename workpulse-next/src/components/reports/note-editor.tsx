@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/reports/rich-text-editor";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 export interface NoteRecord {
   id: string;
@@ -266,7 +267,7 @@ export function NoteEditor<T extends NoteRecord>({
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          {loading && <p className="p-3 text-sm text-muted-foreground">Loading…</p>}
+          {loading && <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
           {!loading && filtered.length === 0 && (
             <p className="p-3 text-sm text-muted-foreground">No entries yet — click + to add one.</p>
           )}

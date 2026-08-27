@@ -7,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/ui/category-picker";
+import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { reimbursementApi, tripReportsApi, downloadBlob } from "@/lib/api/client";
 import type { ReimbursementCategory, TripDocumentWithTrip, TripReport } from "@/lib/api/types";
 import { categoryColor } from "@/lib/category-color";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 function emptyUpload() {
   return { file: null as File | null, category: "", tripReportId: "", label: "", documentDate: new Date().toISOString().slice(0, 10) };
@@ -111,15 +113,13 @@ export default function ReimbursementPage() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   File <span className="text-destructive">*</span>
                 </label>
-                <label className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-input bg-background/50 px-4 text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5">
+                <FileDropZone
+                  onFile={(file) => setForm({ ...form, file })}
+                  className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-input bg-background/50 px-4 text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5"
+                >
                   <CloudUpload className="size-4 shrink-0" />
-                  <span className="truncate">{form.file ? form.file.name : "PDF, Word, Excel, image…"}</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setForm({ ...form, file: e.target.files?.[0] ?? null })}
-                  />
-                </label>
+                  <span className="truncate">{form.file ? form.file.name : "PDF, Word, Excel, image, or drop it here…"}</span>
+                </FileDropZone>
               </div>
 
               <div>
@@ -174,7 +174,7 @@ export default function ReimbursementPage() {
 
             <div className="flex gap-2">
               <Button onClick={handleSubmitUpload} disabled={!canSubmit}>
-                <Upload className="size-4" /> {uploading ? "Uploading…" : "Upload"}
+                {uploading ? <Spinner size={16} /> : <Upload className="size-4" />} {uploading ? "Uploading…" : "Upload"}
               </Button>
               <Button variant="outline" onClick={() => setShowUpload(false)}>
                 <X className="size-4" /> Cancel
@@ -217,7 +217,7 @@ export default function ReimbursementPage() {
         </div>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && docs.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <Receipt className="size-10 opacity-40" />

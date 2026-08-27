@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Search, Tag, Text, Trash2, Upload, X } from "lucide-react";
@@ -14,6 +15,7 @@ import type { QuickLink } from "@/lib/api/types";
 import { categoryColor } from "@/lib/category-color";
 import { exportNetscapeBookmarks, parseNetscapeBookmarks } from "@/lib/bookmark-import";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 function emptyLink(): Partial<QuickLink> {
   return { label: "", url: "", category: "", keywords: "" };
@@ -35,7 +37,8 @@ function normalizeUrl(url: string) {
 
 export default function BookmarksPage() {
   const [links, setLinks] = useState<QuickLink[]>([]);
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
 
@@ -195,7 +198,7 @@ export default function BookmarksPage() {
               className={cn("cursor-pointer", importing && "pointer-events-none opacity-60")}
               title="Select bookmark HTML files from multiple Chrome profiles at once"
             >
-              <Upload className="size-4" /> {importing ? "Importing…" : "Import from Chrome"}
+              {importing ? <Spinner size={16} /> : <Upload className="size-4" />} {importing ? "Importing…" : "Import from Chrome"}
               <input
                 type="file"
                 accept=".html,.htm"
@@ -290,7 +293,7 @@ export default function BookmarksPage() {
         </Card>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <Bookmark className="size-10 opacity-40" />

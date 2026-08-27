@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Activity } from "lucide-react";
 import { Sidebar } from "@/components/shell/sidebar";
+import { SpotlightSearch } from "@/components/shell/spotlight-search";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth-context";
 import { useIdleLogout } from "@/hooks/use-idle-logout";
+import { SpotlightProvider } from "@/lib/spotlight-context";
 import { settingsApi } from "@/lib/api/client";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,12 +31,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Activity className="size-6 animate-pulse text-primary" />
+        <Spinner size={28} className="text-primary" />
       </div>
     );
   }
 
   return (
+    <SpotlightProvider>
     <div className="flex h-screen w-full overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden shrink-0 p-3 md:block">
@@ -86,6 +90,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <main className="flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8">{children}</main>
+
+      <SpotlightSearch />
     </div>
+    </SpotlightProvider>
   );
 }

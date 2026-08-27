@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
+import { useSpotlight } from "@/lib/spotlight-context";
 
 export default function HomePage() {
   const { displayName } = useAuth();
+  const { setOpen } = useSpotlight();
   const tiles = NAV_ITEMS.filter((item) => item.href !== "/home" && !item.disabled);
+  const isMac = typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac");
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -22,6 +25,18 @@ export default function HomePage() {
           Welcome back{displayName ? `, ${displayName.split(" ")[0]}` : ""}
         </h1>
         <p className="mt-1 text-muted-foreground">Select a module to get started</p>
+
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-4 flex w-full max-w-md cursor-pointer items-center gap-2.5 rounded-full border border-input bg-background/50 px-4 py-2.5 text-left text-sm text-muted-foreground backdrop-blur-md transition-colors hover:bg-foreground/5"
+        >
+          <Search className="size-4 shrink-0" />
+          <span className="flex-1">Search WorkPulse…</span>
+          <kbd className="rounded-md border border-border bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium">
+            {isMac ? "⌘" : "Ctrl"} K
+          </kbd>
+        </button>
       </motion.div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

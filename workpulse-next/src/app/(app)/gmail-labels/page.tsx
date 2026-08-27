@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { gmailApi, ApiError } from "@/lib/api/client";
 import type { GmailLabel, GmailStatus } from "@/lib/api/types";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 // Stage 2 of the Gmail Label Manager: browse/search/CRUD over the label tree. Message browsing
@@ -289,7 +290,7 @@ export default function GmailLabelsPage() {
         </div>
         {status?.connected && (
           <Button variant="outline" onClick={() => void loadLabels()} disabled={loading}>
-            <RefreshCw className={cn("size-4", loading && "animate-spin")} /> {loading ? "Syncing…" : "Sync now"}
+            {loading ? <Spinner size={16} /> : <RefreshCw className="size-4" />} {loading ? "Syncing…" : "Sync now"}
           </Button>
         )}
       </div>
@@ -370,7 +371,11 @@ export default function GmailLabelsPage() {
               )}
 
               {error && <p className="px-1 py-2 text-sm text-destructive">{error}</p>}
-              {!error && loading && !labels && <p className="px-1 py-6 text-center text-sm text-muted-foreground">Loading labels…</p>}
+              {!error && loading && !labels && (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <Spinner size={16} /> Loading labels…
+                </div>
+              )}
               {!error && labels && labels.length === 0 && <p className="px-1 py-6 text-center text-sm text-muted-foreground">No labels found.</p>}
 
               {searchMatches ? (

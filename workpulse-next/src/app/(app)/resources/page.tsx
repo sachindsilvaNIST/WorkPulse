@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Download,
@@ -22,7 +23,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagInput } from "@/components/ui/tag-input";
+import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { DetailRow } from "@/components/ui/detail-row";
+import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { resourcesApi, downloadBlob, ApiError } from "@/lib/api/client";
 import type { Resource, ResourceType } from "@/lib/api/types";
@@ -58,7 +61,8 @@ function emptyForm() {
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [selectedTag, setSelectedTag] = useState("All");
 
   const [showForm, setShowForm] = useState(false);
@@ -239,11 +243,13 @@ export default function ResourcesPage() {
               />
             )}
             {form.type === "File" && !editingId && (
-              <label className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-input bg-background/50 px-4 text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5 sm:col-span-2">
+              <FileDropZone
+                onFile={(file) => setForm({ ...form, file })}
+                className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-input bg-background/50 px-4 text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5 sm:col-span-2"
+              >
                 <Upload className="size-4 shrink-0" />
-                <span className="truncate">{form.file ? form.file.name : "PDF, Word, Excel, image…"}</span>
-                <input type="file" className="hidden" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] ?? null })} />
-              </label>
+                <span className="truncate">{form.file ? form.file.name : "PDF, Word, Excel, image, or drop it here…"}</span>
+              </FileDropZone>
             )}
             <textarea
               placeholder="Notes — what this is, what worked, anything future-you should know"
@@ -264,7 +270,7 @@ export default function ResourcesPage() {
 
           <div className="mt-3 flex gap-2">
             <Button onClick={handleSave} disabled={!canSubmit || saving}>
-              {saving ? "Saving…" : editingId ? "Update" : "Add"}
+              {saving ? <Spinner size={16} /> : editingId ? "Update" : "Add"}
             </Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>
               Cancel
@@ -273,7 +279,7 @@ export default function ResourcesPage() {
         </Card>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <Library className="size-10 opacity-40" />

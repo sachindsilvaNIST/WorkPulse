@@ -141,6 +141,17 @@
   }
 }
 
+/* Apple/iOS-style activity indicator — bars don't rotate, each just fades in sequence around the
+   circle, which is what actually reads as "Apple style" rather than a generic spinning ring. */
+@keyframes apple-spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
 /* Frosted glass surface, for sidebars / floating panels over the aurora background */
 .glass-panel {
   background-color: color-mix(in srgb, var(--card) 70%, transparent);

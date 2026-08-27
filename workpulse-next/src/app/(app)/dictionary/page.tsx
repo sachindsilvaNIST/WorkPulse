@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { dictionaryApi } from "@/lib/api/client";
 import type { DictEntryDto } from "@/lib/api/types";
+import { Spinner } from "@/components/ui/spinner";
 
 function emptyEntry(): Partial<DictEntryDto> {
   return { japanese: "", reading: "", meaning: "", exampleJp: "", exampleEn: "", notes: "", jlptLevel: "" };
@@ -85,7 +86,7 @@ export default function DictionaryPage() {
         </Card>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && sorted.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <BookOpen className="size-10 opacity-40" />

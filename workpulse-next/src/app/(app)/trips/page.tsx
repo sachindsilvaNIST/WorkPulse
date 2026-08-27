@@ -9,8 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CategoryPicker } from "@/components/ui/category-picker";
+import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { tripReportsApi, downloadBlob } from "@/lib/api/client";
 import type { TripCategory, TripDocumentMeta, TripReport } from "@/lib/api/types";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 function emptyTrip(): Partial<TripReport> {
   const today = new Date().toISOString().slice(0, 10);
@@ -62,9 +65,8 @@ export default function TripsPage() {
     if (selectedId === id) setSelectedId(null);
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !selectedId || !docCategory) return;
+  async function handleFile(file: File) {
+    if (!selectedId || !docCategory) return;
     setUploading(true);
     try {
       const meta = await tripReportsApi.uploadDocument(selectedId, file, docCategory, docLabel, docDate || undefined);
@@ -73,7 +75,6 @@ export default function TripsPage() {
       setTrips((prev) => prev.map((t) => (t.id === selectedId ? { ...t, documentCount: t.documentCount + 1 } : t)));
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
 
@@ -144,7 +145,7 @@ export default function TripsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.2fr]">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
           {!loading && trips.length === 0 && <p className="text-sm text-muted-foreground">No trips yet.</p>}
           {trips.map((t) => (
             <motion.div key={t.id} whileHover={{ y: -2 }}>
@@ -209,12 +210,16 @@ export default function TripsPage() {
                   onChange={(e) => setDocLabel(e.target.value)}
                   className="h-9 flex-1"
                 />
-                <Button asChild size="sm" variant="glass" disabled={uploading || !docCategory}>
-                  <label className={docCategory ? "cursor-pointer" : "cursor-not-allowed opacity-60"}>
-                    <Upload className="size-3.5" /> {uploading ? "Uploading…" : "Upload"}
-                    <input type="file" className="hidden" onChange={handleUpload} disabled={uploading || !docCategory} />
-                  </label>
-                </Button>
+                <FileDropZone
+                  onFile={handleFile}
+                  disabled={uploading || !docCategory}
+                  className={cn(
+                    "inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-3 text-xs font-medium text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md hover:bg-white/15",
+                    (uploading || !docCategory) && "pointer-events-none cursor-not-allowed opacity-50"
+                  )}
+                >
+                  {uploading ? <Spinner size={14} /> : <Upload className="size-3.5" />} {uploading ? "Uploading…" : "Upload or drop a file"}
+                </FileDropZone>
               </div>
 
               <div className="flex flex-col gap-2">

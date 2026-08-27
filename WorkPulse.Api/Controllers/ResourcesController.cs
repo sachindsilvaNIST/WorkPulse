@@ -17,7 +17,7 @@ namespace WorkPulse.Api.Controllers;
 [Route("api/[controller]")]
 public class ResourcesController : ApiControllerBase
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB, same cap as Reimbursement documents
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB, same cap as Reimbursement documents
 
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
@@ -78,7 +78,7 @@ public class ResourcesController : ApiControllerBase
             if (file == null || file.Length == 0)
                 return BadRequest(new { error = "A file is required for a File resource." });
             if (file.Length > MaxFileSizeBytes)
-                return BadRequest(new { error = "File exceeds the 10 MB limit." });
+                return BadRequest(new { error = "File exceeds the 50 MB limit." });
 
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);

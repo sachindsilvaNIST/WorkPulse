@@ -17,6 +17,7 @@ import { categoryColor } from "@/lib/category-color";
 import { cn } from "@/lib/utils";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
 import { EMAIL_PATTERN, NUMERIC_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed, isNumericKeystrokeAllowed } from "@/lib/validation";
+import { Spinner } from "@/components/ui/spinner";
 
 function emptyContact(): Partial<ContactRecord> {
   return { affiliation: "", familyName: "", givenName: "", department: "", email: "", intercom: "", contactNumber: "", notes: "" };
@@ -304,7 +305,7 @@ export default function ContactsPage() {
         </Card>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
           <Users className="size-10 opacity-40" />

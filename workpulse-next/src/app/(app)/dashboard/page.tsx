@@ -27,6 +27,7 @@ import { formatDate } from "@/lib/date-format";
 import type { AppSettings, AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
 import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
 import { getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
+import { Spinner } from "@/components/ui/spinner";
 
 function emptyMonth(year: number, month: number): MonthlyData {
   return {
@@ -309,7 +310,7 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {error && !loading && <p className="text-sm text-muted-foreground">{error}</p>}
 
       {!loading && data && stats && (
