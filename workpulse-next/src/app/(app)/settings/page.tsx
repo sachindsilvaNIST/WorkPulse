@@ -39,6 +39,7 @@ import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
 import { exportUserData } from "@/lib/data-export";
 import { NAV_ITEMS } from "@/lib/nav-items";
 import { cn } from "@/lib/utils";
+import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
 
 const RECENT_SECTIONS_KEY = "workpulse.settings.recentSections";
 
@@ -1104,6 +1105,18 @@ export default function SettingsPage() {
               <h2 className="font-semibold">About</h2>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
+            <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[11px] font-medium">v{APP_VERSION}</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  APP_ENV === "Production" ? "bg-[#34C759]/15 text-[#34C759]" : "bg-[#FF9500]/15 text-[#FF9500]"
+                )}
+              >
+                {APP_ENV}
+              </span>
+              <span className="font-mono text-[11px] text-muted-foreground">{GIT_SHA}</span>
+            </div>
           </CardContent>
         </Card>
         )}
