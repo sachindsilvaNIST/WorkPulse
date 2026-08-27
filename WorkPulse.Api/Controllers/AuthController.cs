@@ -148,6 +148,59 @@ public class AuthController : ControllerBase
         });
     }
 
+    // ===== Profile self-service (display name, password, account deletion) =====
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<ActionResult<CurrentUserDto>> UpdateProfile(UpdateProfileRequest request)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        var displayName = (request.DisplayName ?? "").Trim();
+        if (displayName.Length == 0) return BadRequest(new { error = "Display name is required." });
+
+        user.DisplayName = displayName;
+        await _userManager.UpdateAsync(user);
+
+        return Ok(new CurrentUserDto { Email = user.Email ?? "", DisplayName = user.DisplayName, TwoFactorEnabled = user.TwoFactorEnabled });
+    }
+
+    [HttpPost("change-password")]
+    [EnableRateLimiting("auth")]
+    [Authorize]
+    public async Task<ActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+
+        return Ok();
+    }
+
+    [HttpDelete("account")]
+    [EnableRateLimiting("auth")]
+    [Authorize]
+    public async Task<ActionResult> DeleteAccount(DeleteAccountRequest request)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
+
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
+            return BadRequest(new { error = "Incorrect password." });
+
+        // Every user-owned table cascades on AspNetUsers.Id via ON DELETE CASCADE (see
+        // AppDbContext.OnModelCreating), so this one call cleans up everything the user owns.
+        await _userManager.DeleteAsync(user);
+        return Ok();
+    }
+
     // ===== Two-factor enable/disable (authenticated user managing their own account) =====
 
     [HttpPost("2fa/send-code")]
@@ -343,4 +396,20 @@ public class CurrentUserDto
     public string Email { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public bool TwoFactorEnabled { get; set; }
+}
+
+public class UpdateProfileRequest
+{
+    public string DisplayName { get; set; } = "";
+}
+
+public class ChangePasswordRequest
+{
+    public string CurrentPassword { get; set; } = "";
+    public string NewPassword { get; set; } = "";
+}
+
+public class DeleteAccountRequest
+{
+    public string Password { get; set; } = "";
 }

@@ -274,7 +274,8 @@ public static class EntityMapper
             WeekStartDay = entity.WeekStartDay,
             DefaultLandingPage = entity.DefaultLandingPage,
             IdleTimeoutMinutes = entity.IdleTimeoutMinutes,
-            NotificationsEnabled = entity.NotificationsEnabled
+            NotificationsEnabled = entity.NotificationsEnabled,
+            NotificationChannel = entity.NotificationChannel
         };
     }
 
@@ -294,7 +295,8 @@ public static class EntityMapper
             WeekStartDay = settings.WeekStartDay,
             DefaultLandingPage = settings.DefaultLandingPage,
             IdleTimeoutMinutes = settings.IdleTimeoutMinutes,
-            NotificationsEnabled = settings.NotificationsEnabled
+            NotificationsEnabled = settings.NotificationsEnabled,
+            NotificationChannel = settings.NotificationChannel
         };
     }
 }

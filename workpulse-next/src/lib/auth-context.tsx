@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { authApi, settingsApi, getToken, getDisplayName } from "@/lib/api/client";
+import { authApi, settingsApi, getToken, getDisplayName, setDisplayName as persistDisplayName } from "@/lib/api/client";
 import type { LoginRequest, RegisterRequest } from "@/lib/api/types";
 import { decodeJwt, isAdminClaims, disabledFeaturesClaims, type JwtClaims } from "@/lib/jwt";
 
@@ -20,6 +20,7 @@ interface AuthContextValue {
   cancelTwoFactor: () => void;
   register: (req: RegisterRequest) => Promise<void>;
   logout: () => void;
+  updateDisplayName: (name: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -99,6 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [completeSession]
   );
 
+  const updateDisplayName = useCallback((name: string) => {
+    persistDisplayName(name);
+    setDisplayName(name);
+  }, []);
+
   const logout = useCallback(() => {
     authApi.logout();
     setIsAuthenticated(false);
@@ -123,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         cancelTwoFactor,
         register,
         logout,
+        updateDisplayName,
       }}
     >
       {children}

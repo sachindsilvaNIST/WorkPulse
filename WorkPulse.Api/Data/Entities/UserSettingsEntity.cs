@@ -16,6 +16,7 @@ public class UserSettingsEntity
     public string DefaultLandingPage { get; set; } = "/home";
     public int IdleTimeoutMinutes { get; set; } = 0;
     public bool NotificationsEnabled { get; set; } = true;
+    public string NotificationChannel { get; set; } = "Email";
 
     public AppUser User { get; set; } = null!;
 }

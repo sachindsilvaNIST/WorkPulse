@@ -42,6 +42,7 @@ public class SettingsController : ApiControllerBase
             entity.DefaultLandingPage = settings.DefaultLandingPage;
             entity.IdleTimeoutMinutes = settings.IdleTimeoutMinutes;
             entity.NotificationsEnabled = settings.NotificationsEnabled;
+            entity.NotificationChannel = settings.NotificationChannel;
         }
         else
         {

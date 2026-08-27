@@ -41,6 +41,12 @@ export function getDisplayName(): string | null {
   return localStorage.getItem(NAME_KEY);
 }
 
+/** Keeps the persisted display name (and anything reading it, e.g. AuthContext) in sync after a
+ * profile edit — session creation writes this via setSession, this is the update-in-place path. */
+export function setDisplayName(name: string) {
+  localStorage.setItem(NAME_KEY, name);
+}
+
 export function getRefreshToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(REFRESH_KEY);
@@ -130,6 +136,14 @@ export const authApi = {
   send2faSetupCode: () => request<void>("/api/auth/2fa/send-code", { method: "POST" }),
   enable2fa: (code: string) => request<void>("/api/auth/2fa/enable", { method: "POST", body: JSON.stringify({ code }) }),
   disable2fa: () => request<void>("/api/auth/2fa/disable", { method: "POST" }),
+  updateProfile: (displayName: string) =>
+    request<CurrentUser>("/api/auth/profile", { method: "PUT", body: JSON.stringify({ displayName }) }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }),
+  async deleteAccount(password: string) {
+    await request<void>("/api/auth/account", { method: "DELETE", body: JSON.stringify({ password }) });
+    clearSession();
+  },
 };
 
 export const attendanceApi = {

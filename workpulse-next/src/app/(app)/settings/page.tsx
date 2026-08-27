@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  AlertTriangle,
   Bell,
   Check,
   ChevronDown,
@@ -11,15 +12,19 @@ import {
   CloudCog,
   Download,
   Info,
+  Keyboard,
   Laptop,
   LogOut,
   Mail,
   Moon,
   Palette,
+  Search,
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
+  UserCog,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +38,9 @@ import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
 import { exportUserData } from "@/lib/data-export";
 import { NAV_ITEMS } from "@/lib/nav-items";
+import { cn } from "@/lib/utils";
+
+const RECENT_SECTIONS_KEY = "workpulse.settings.recentSections";
 
 const FONT_SIZES = ["Small", "Medium", "Large"];
 const IDLE_TIMEOUT_OPTIONS = [
@@ -41,6 +49,29 @@ const IDLE_TIMEOUT_OPTIONS = [
   { label: "15 min", minutes: 15 },
   { label: "30 min", minutes: 30 },
   { label: "1 hour", minutes: 60 },
+];
+
+interface SettingsNavEntry {
+  id: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  color: string;
+  group: string;
+}
+
+const SETTINGS_NAV: SettingsNavEntry[] = [
+  { id: "appearance", label: "Appearance", description: "Theme, font size, date format", icon: Palette, color: "#8B5CF6", group: "General" },
+  { id: "work-hours", label: "Work Hours", description: "Standard hours for overtime calculation", icon: Clock3, color: "#0078D4", group: "General" },
+  { id: "preferences", label: "Preferences", description: "Week start, landing page, idle sign-out", icon: SlidersHorizontal, color: "#FF9500", group: "General" },
+  { id: "shortcuts", label: "Keyboard Shortcuts", description: "Quick reference for this app", icon: Keyboard, color: "#5AC8FA", group: "General" },
+  { id: "security", label: "Security", description: "Two-factor authentication, active sessions", icon: ShieldCheck, color: "#FF3B30", group: "Security & Access" },
+  { id: "google-drive", label: "Google Drive", description: "Reimbursement document backup", icon: CloudCog, color: "#4285F4", group: "Connections" },
+  { id: "gmail", label: "Gmail", description: "Label manager sync account", icon: Mail, color: "#EA4335", group: "Connections" },
+  { id: "data", label: "Your Data", description: "Export a backup of everything", icon: Download, color: "#00C7BE", group: "Account" },
+  { id: "account", label: "Account", description: "Profile, password, log out", icon: UserCog, color: "#34C759", group: "Account" },
+  { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: AlertTriangle, color: "#FF3B30", group: "Account" },
+  { id: "about", label: "About", description: "App info", icon: Info, color: "#6E6E73", group: "Account" },
 ];
 
 function SectionIcon({ children, color }: { children: React.ReactNode; color: string }) {
@@ -67,12 +98,34 @@ function timeAgo(iso: string): string {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { displayName, logout } = useAuth();
+  const { displayName, logout, updateDisplayName } = useAuth();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [activeSection, setActiveSection] = useState("appearance");
+  const [navQuery, setNavQuery] = useState("");
+
+  // Recently viewed sections, most-recent-first, persisted so the quick-access widgets below
+  // survive a reload. Read lazily (not in an effect) so it's ready on the very first paint —
+  // gated behind `mounted` when rendered to avoid an SSR/client hydration mismatch.
+  const [recentIds, setRecentIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem(RECENT_SECTIONS_KEY) ?? "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    setRecentIds((prev) => {
+      const next = [activeSection, ...prev.filter((id) => id !== activeSection)].slice(0, 6);
+      localStorage.setItem(RECENT_SECTIONS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [activeSection]);
   const [driveStatus, setDriveStatus] = useState<GoogleDriveStatus | null>(null);
   const [driveMessage, setDriveMessage] = useState<string | null>(null);
   const [driveConnecting, setDriveConnecting] = useState(false);
@@ -87,6 +140,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const drive = searchParams.get("drive");
     if (!drive) return;
+    setActiveSection("google-drive");
     if (drive === "connected") {
       setDriveMessage("Google Drive connected successfully.");
       googleDriveApi.status().then(setDriveStatus).catch(() => {});
@@ -124,6 +178,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const gmail = searchParams.get("gmail");
     if (!gmail) return;
+    setActiveSection("gmail");
     if (gmail === "connected") {
       setGmailMessage("Gmail connected successfully.");
       gmailApi.status().then(setGmailStatus).catch(() => {});
@@ -199,6 +254,79 @@ export default function SettingsPage() {
     authApi.me().then(setCurrentUser).catch(() => {});
   }, []);
 
+  // ===== Profile (display name, password, delete account) =====
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [displayNameSaved, setDisplayNameSaved] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) setDisplayNameInput(currentUser.displayName);
+  }, [currentUser]);
+
+  async function handleSaveDisplayName() {
+    const name = displayNameInput.trim();
+    if (!name) return;
+    setDisplayNameError(null);
+    setSavingDisplayName(true);
+    try {
+      const updated = await authApi.updateProfile(name);
+      setCurrentUser(updated);
+      updateDisplayName(updated.displayName);
+      setDisplayNameSaved(true);
+      setTimeout(() => setDisplayNameSaved(false), 2000);
+    } catch (err) {
+      setDisplayNameError(err instanceof ApiError ? err.message : "Failed to update display name.");
+    } finally {
+      setSavingDisplayName(false);
+    }
+  }
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  async function handleChangePassword() {
+    setPasswordError(null);
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords don't match.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await authApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSaved(true);
+      setTimeout(() => setPasswordSaved(false), 2500);
+    } catch (err) {
+      setPasswordError(err instanceof ApiError ? err.message : "Failed to change password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+
+  async function handleDeleteAccount() {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await authApi.deleteAccount(deletePassword);
+      router.replace("/login");
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Failed to delete account.");
+      setDeleting(false);
+    }
+  }
+
   async function startEnableTwoFactor() {
     setTwoFactorError(null);
     setTwoFactorBusy(true);
@@ -273,11 +401,114 @@ export default function SettingsPage() {
 
   const landingPageOptions = [{ href: "/home", label: "Home" }, ...NAV_ITEMS.filter((i) => !i.disabled && i.href !== "/home")];
 
+  const trimmedNavQuery = navQuery.trim().toLowerCase();
+  const filteredNav = trimmedNavQuery
+    ? SETTINGS_NAV.filter(
+        (n) => n.label.toLowerCase().includes(trimmedNavQuery) || n.description.toLowerCase().includes(trimmedNavQuery)
+      )
+    : SETTINGS_NAV;
+  const navGroups = Array.from(new Set(filteredNav.map((n) => n.group)));
+  const activeEntry = SETTINGS_NAV.find((n) => n.id === activeSection);
+
+  function selectSection(id: string) {
+    setActiveSection(id);
+    setNavQuery("");
+  }
+
+  const recentEntries = recentIds
+    .filter((id) => id !== activeSection)
+    .map((id) => SETTINGS_NAV.find((n) => n.id === id))
+    .filter((n): n is SettingsNavEntry => !!n)
+    .slice(0, 4);
+
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">Settings</h1>
 
-      <div className="flex flex-col gap-4">
+      {mounted && recentEntries.length > 0 && (
+        <div className="mb-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recently Viewed</p>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {recentEntries.map((entry) => {
+              const Icon = entry.icon;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => selectSection(entry.id)}
+                  className="flex w-40 shrink-0 cursor-pointer flex-col gap-2 rounded-2xl border border-border p-3 text-left transition-colors hover:bg-foreground/5"
+                  style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 6%, var(--card))` }}
+                >
+                  <span
+                    className="flex size-8 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 15%, transparent)`, color: entry.color }}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="truncate text-sm font-medium">{entry.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
+        <aside className="glass-panel w-full shrink-0 p-3 md:w-64">
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={navQuery}
+              onChange={(e) => setNavQuery(e.target.value)}
+              placeholder="Find a setting…"
+              className="h-9 w-full rounded-full border border-input bg-background/50 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <nav className="flex flex-col gap-3">
+            {navGroups.length === 0 && <p className="px-2 py-4 text-center text-xs text-muted-foreground">No matches.</p>}
+            {navGroups.map((group) => (
+              <div key={group}>
+                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
+                <div className="flex flex-col gap-0.5">
+                  {filteredNav
+                    .filter((n) => n.group === group)
+                    .map((entry) => {
+                      const Icon = entry.icon;
+                      const active = entry.id === activeSection;
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => selectSection(entry.id)}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors",
+                            active ? "bg-foreground/10" : "hover:bg-foreground/5"
+                          )}
+                        >
+                          <span
+                            className="flex size-7 shrink-0 items-center justify-center rounded-md"
+                            style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 18%, transparent)`, color: entry.color }}
+                          >
+                            <Icon className="size-3.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">{entry.label}</span>
+                            {trimmedNavQuery && <span className="block truncate text-[11px] text-muted-foreground">{entry.description}</span>}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+        {activeEntry && (
+          <p className="mb-3 text-xs text-muted-foreground md:hidden">{activeEntry.description}</p>
+        )}
+        {activeSection === "appearance" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #8B5CF6 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -340,7 +571,9 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "work-hours" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #0078D4 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -396,7 +629,9 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "preferences" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF9500 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -479,11 +714,34 @@ export default function SettingsPage() {
                     onCheckedChange={(checked) => updatePreference("notificationsEnabled", checked)}
                   />
                 </div>
+
+                {settings.notificationsEnabled && (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm">Notification Channel</p>
+                      <p className="text-xs text-muted-foreground">Where reminders would be delivered</p>
+                    </div>
+                    <div className="flex gap-1">
+                      {["Email", "In-app"].map((channel) => (
+                        <Button
+                          key={channel}
+                          size="sm"
+                          variant={settings.notificationChannel === channel ? "default" : "outline"}
+                          onClick={() => updatePreference("notificationChannel", channel)}
+                        >
+                          {channel}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "security" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF3B30 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -586,7 +844,9 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "google-drive" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #4285F4 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
@@ -622,7 +882,9 @@ export default function SettingsPage() {
             {driveMessage && <p className="text-xs text-muted-foreground">{driveMessage}</p>}
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "gmail" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #EA4335 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
@@ -658,7 +920,9 @@ export default function SettingsPage() {
             {gmailMessage && <p className="text-xs text-muted-foreground">{gmailMessage}</p>}
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "data" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #00C7BE 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
@@ -675,24 +939,162 @@ export default function SettingsPage() {
             </Button>
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "account" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #34C759 6%, var(--card))" }}>
-          <CardContent className="flex flex-col gap-3">
+          <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <SectionIcon color="#34C759">
-                <Info className="size-4" />
+                <UserCog className="size-4" />
               </SectionIcon>
               <h2 className="font-semibold">Account</h2>
             </div>
             <p className="text-sm text-muted-foreground">
               Signed in as <span className="font-medium text-foreground">{displayName}</span>
             </p>
+
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <label className="text-sm">Display Name</label>
+              <div className="flex gap-2">
+                <Input value={displayNameInput} onChange={(e) => setDisplayNameInput(e.target.value)} className="max-w-64" />
+                <Button size="sm" onClick={handleSaveDisplayName} disabled={savingDisplayName || !displayNameInput.trim()}>
+                  {displayNameSaved ? <Check className="size-3.5" /> : null}
+                  {displayNameSaved ? "Saved" : "Save"}
+                </Button>
+              </div>
+              {displayNameError && <p className="text-xs text-destructive">{displayNameError}</p>}
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="text-sm">Change Password</p>
+              <div className="grid max-w-64 grid-cols-1 gap-2">
+                <Input
+                  type="password"
+                  placeholder="Current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <Input
+                  type="password"
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={handleChangePassword}
+                disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+              >
+                {passwordSaved ? <Check className="size-3.5" /> : null}
+                {passwordSaved ? "Password updated" : changingPassword ? "Updating…" : "Update Password"}
+              </Button>
+              {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
+            </div>
+
             <Button variant="outline" className="w-fit" onClick={logout}>
               <LogOut className="size-4" /> Log out
             </Button>
           </CardContent>
         </Card>
+        )}
 
+        {activeSection === "danger-zone" && (
+        <Card style={{ backgroundColor: "color-mix(in srgb, #FF3B30 6%, var(--card))" }}>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <SectionIcon color="#FF3B30">
+                <AlertTriangle className="size-4" />
+              </SectionIcon>
+              <h2 className="font-semibold">Danger Zone</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Permanently delete your WorkPulse account and everything in it — attendance records, reports, trips,
+              reimbursement documents, contacts, bookmarks, and connected integrations. This can&apos;t be undone.
+            </p>
+
+            {!confirmDeleteAccount ? (
+              <Button variant="outline" className="w-fit border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setConfirmDeleteAccount(true)}>
+                <AlertTriangle className="size-4" /> Delete My Account
+              </Button>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs text-muted-foreground">Enter your password to confirm permanent deletion.</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="password"
+                    placeholder="Password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="max-w-56"
+                    autoComplete="current-password"
+                  />
+                  <Button variant="destructive" size="sm" onClick={handleDeleteAccount} disabled={deleting || !deletePassword}>
+                    {deleting ? "Deleting…" : "Permanently Delete"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setConfirmDeleteAccount(false);
+                      setDeletePassword("");
+                      setDeleteError(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
+        {activeSection === "shortcuts" && (
+        <Card style={{ backgroundColor: "color-mix(in srgb, #5AC8FA 6%, var(--card))" }}>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <SectionIcon color="#5AC8FA">
+                <Keyboard className="size-4" />
+              </SectionIcon>
+              <h2 className="font-semibold">Keyboard Shortcuts</h2>
+            </div>
+            <div className="flex flex-col gap-1">
+              {[
+                { keys: ["⌘/Ctrl", "Z"], description: "Undo — Daily Reports editor" },
+                { keys: ["⌘/Ctrl", "Shift", "Z"], description: "Redo — Daily Reports editor" },
+                { keys: ["⌘/Ctrl", "Click"], description: "View details instead of opening the link — Bookmarks" },
+                { keys: ["Esc"], description: "Close the open dropdown, dialog, or inline edit box" },
+              ].map((shortcut, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 rounded-lg px-1 py-2">
+                  <span className="text-sm text-muted-foreground">{shortcut.description}</span>
+                  <div className="flex shrink-0 gap-1">
+                    {shortcut.keys.map((k, j) => (
+                      <kbd key={j} className="rounded-md border border-border bg-foreground/5 px-1.5 py-0.5 font-mono text-xs">
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        )}
+
+        {activeSection === "about" && (
         <Card style={{ backgroundColor: "color-mix(in srgb, #6E6E73 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
@@ -704,6 +1106,8 @@ export default function SettingsPage() {
             <p className="mt-2 text-sm text-muted-foreground">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
           </CardContent>
         </Card>
+        )}
+        </div>
       </div>
 
       {confirmDisable2fa && (

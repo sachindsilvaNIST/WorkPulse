@@ -198,6 +198,7 @@ export interface AppSettings {
   defaultLandingPage: string;
   idleTimeoutMinutes: number; // 0 = disabled
   notificationsEnabled: boolean;
+  notificationChannel: string; // "Email" | "In-app"
 }
 
 export interface AdminUser {

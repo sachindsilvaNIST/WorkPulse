@@ -25,6 +25,7 @@ public class AppSettings
 
     // Notifications (preference only — no send mechanism exists yet, see project notes)
     public bool NotificationsEnabled { get; set; } = true;
+    public string NotificationChannel { get; set; } = "Email";
 
     // Sync settings (desktop only, not synced to server)
     public bool SyncEnabled { get; set; }
