@@ -119,18 +119,20 @@ export const authApi = {
     setSession(auth);
     return auth;
   },
-  // No session yet — registration now always requires confirming the emailed code before the
-  // account can sign in at all (see confirmEmail below).
+  // No account exists yet — the pending signup lives server-side (in-memory, keyed by
+  // registrationId) until confirmEmail succeeds, so nothing is ever created in the database for
+  // an abandoned registration.
   register: (req: RegisterRequest) => request<RegisterResult>("/api/auth/register", { method: "POST", body: JSON.stringify(req) }),
-  async confirmEmail(email: string, code: string): Promise<AuthResponse> {
+  async confirmEmail(registrationId: string, code: string): Promise<AuthResponse> {
     const auth = await request<AuthResponse>("/api/auth/confirm-email", {
       method: "POST",
-      body: JSON.stringify({ email, code }),
+      body: JSON.stringify({ registrationId, code }),
     });
     setSession(auth);
     return auth;
   },
-  resendConfirmationCode: (email: string) => request<void>("/api/auth/resend-confirmation-code", { method: "POST", body: JSON.stringify({ email }) }),
+  resendConfirmationCode: (registrationId: string) =>
+    request<void>("/api/auth/resend-confirmation-code", { method: "POST", body: JSON.stringify({ registrationId }) }),
   logout() {
     const refreshToken = getRefreshToken();
     if (refreshToken) {

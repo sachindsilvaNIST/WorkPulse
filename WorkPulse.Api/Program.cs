@@ -92,6 +92,10 @@ builder.Services.AddHttpClient<WorkPulse.Api.Services.AnthropicService>();
 // entirely, confirmed via a live SocketException, so an HTTP-based sender is required here.
 builder.Services.AddSingleton<WorkPulse.Api.Services.IEmailSender, WorkPulse.Api.Services.ResendEmailSender>();
 
+// Holds pending (not-yet-confirmed) registrations in-process — AuthController.Register never
+// writes to AspNetUsers until the emailed code is actually verified.
+builder.Services.AddMemoryCache();
+
 // Google Drive (Reimbursement document mirroring) — needs a generic IHttpClientFactory for the
 // raw OAuth token-exchange/refresh calls, and AppDbContext (scoped) for connection storage.
 builder.Services.AddHttpClient();

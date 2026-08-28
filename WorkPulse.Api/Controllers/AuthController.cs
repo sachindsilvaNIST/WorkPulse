@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WorkPulse.Api.Data;
@@ -24,35 +25,53 @@ public class AuthController : ControllerBase
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
+    private readonly IMemoryCache _cache;
 
-    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config, ILogger<AuthController> logger)
+    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config, ILogger<AuthController> logger, IMemoryCache cache)
     {
         _userManager = userManager;
         _db = db;
         _emailSender = emailSender;
         _config = config;
         _logger = logger;
+        _cache = cache;
     }
+
+    // Registering no longer touches AspNetUsers at all until the code is confirmed — the pending
+    // signup (including the plaintext password, since it still needs to reach CreateAsync's own
+    // hasher) lives only in this in-process cache, keyed by an opaque id handed to the client.
+    // This is what makes an abandoned registration truly disappear (auto-expires) instead of
+    // permanently squatting on that email address as an unconfirmed row forever.
+    private const string PendingRegistrationPrefix = "pending-registration:";
+    private static readonly TimeSpan PendingRegistrationLifetime = TimeSpan.FromMinutes(15);
+
+    private record PendingRegistration(string Email, string DisplayName, string Password, string Code);
 
     [HttpPost("register")]
     [EnableRateLimiting("auth")]
     public async Task<ActionResult<RegisterResult>> Register(RegisterRequest request)
     {
-        var user = new AppUser
+        var email = (request.Email ?? "").Trim();
+        if (await _userManager.FindByEmailAsync(email) != null)
+            return BadRequest(new { errors = new[] { "An account with this email already exists." } });
+
+        // Runs the same password-strength rules CreateAsync would, without persisting anything —
+        // the default validator only inspects the raw password string, so a transient,
+        // never-saved AppUser is a safe stand-in for the "user" parameter it expects.
+        var transientUser = new AppUser { UserName = email, Email = email };
+        foreach (var validator in _userManager.PasswordValidators)
         {
-            UserName = request.Email,
-            Email = request.Email,
-            DisplayName = request.DisplayName
-        };
+            var validation = await validator.ValidateAsync(_userManager, transientUser, request.Password);
+            if (!validation.Succeeded)
+                return BadRequest(new { errors = validation.Errors.Select(e => e.Description) });
+        }
 
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        var registrationId = Guid.NewGuid().ToString("N");
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        _cache.Set(PendingRegistrationPrefix + registrationId, new PendingRegistration(email, request.DisplayName, request.Password, code), PendingRegistrationLifetime);
 
-        // No tokens yet — email/password accounts must verify the address before they can sign
-        // in at all (see Login's EmailConfirmed check below and ConfirmEmail).
-        await SendEmailConfirmationCodeAsync(user);
-        return Ok(new RegisterResult { Email = user.Email! });
+        await SendCodeAsync(email, code, "Confirm your WorkPulse email address", "Enter this code to finish setting up your account.");
+        return Ok(new RegisterResult { RegistrationId = registrationId, Email = email });
     }
 
     [HttpPost("login")]
@@ -69,13 +88,8 @@ public class AuthController : ControllerBase
         if (await _userManager.IsLockedOutAsync(user))
             return Unauthorized(new { error = "This account has been disabled." });
 
-        // A password-correct login attempt on a never-confirmed account (e.g. they registered
-        // and never entered the code) gets a fresh code right here rather than a dead end.
-        if (!await _userManager.IsEmailConfirmedAsync(user))
-        {
-            await SendEmailConfirmationCodeAsync(user);
-            return Ok(new LoginResult { RequiresEmailConfirmation = true, Email = user.Email! });
-        }
+        // No EmailConfirmed check needed here — every AspNetUsers row is confirmed by
+        // construction now (see ConfirmRegistration), so this can never be false.
 
         if (await _userManager.GetTwoFactorEnabledAsync(user))
         {
@@ -88,17 +102,26 @@ public class AuthController : ControllerBase
 
     [HttpPost("confirm-email")]
     [EnableRateLimiting("auth")]
-    public async Task<ActionResult<AuthResponse>> ConfirmEmail(TwoFactorVerifyRequest request)
+    public async Task<ActionResult<AuthResponse>> ConfirmRegistration(ConfirmRegistrationRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null) return Unauthorized(new { error = "Invalid or expired code." });
+        var cacheKey = PendingRegistrationPrefix + request.RegistrationId;
+        if (!_cache.TryGetValue(cacheKey, out PendingRegistration? pending) || pending == null || pending.Code != request.Code)
+            return Unauthorized(new { error = "Invalid or expired code." });
 
-        var valid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose, request.Code);
-        if (!valid) return Unauthorized(new { error = "Invalid or expired code." });
+        // The account is only ever created here, already confirmed — an abandoned or failed
+        // attempt before this point leaves no trace in AspNetUsers at all.
+        var user = new AppUser
+        {
+            UserName = pending.Email,
+            Email = pending.Email,
+            DisplayName = pending.DisplayName,
+            EmailConfirmed = true
+        };
+        var result = await _userManager.CreateAsync(user, pending.Password);
+        if (!result.Succeeded)
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
 
-        user.EmailConfirmed = true;
-        await _userManager.UpdateAsync(user);
-
+        _cache.Remove(cacheKey);
         return Ok(await IssueTokensAsync(user));
     }
 
@@ -106,11 +129,15 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("auth")]
     public async Task<ActionResult> ResendConfirmationCode([FromBody] ResendConfirmationRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        // Same response whether or not the account exists / is already confirmed, so this can't
-        // be used to enumerate registered emails.
-        if (user != null && !await _userManager.IsEmailConfirmedAsync(user))
-            await SendEmailConfirmationCodeAsync(user);
+        var cacheKey = PendingRegistrationPrefix + request.RegistrationId;
+        if (_cache.TryGetValue(cacheKey, out PendingRegistration? pending) && pending != null)
+        {
+            var refreshed = pending with { Code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString() };
+            _cache.Set(cacheKey, refreshed, PendingRegistrationLifetime);
+            await SendCodeAsync(refreshed.Email, refreshed.Code, "Confirm your WorkPulse email address", "Enter this code to finish setting up your account.");
+        }
+        // Same response whether or not the registration id is still valid, so this can't be used
+        // to probe for anything.
         return Ok();
     }
 
@@ -305,25 +332,18 @@ public class AuthController : ControllerBase
         }
     }
 
-    // Distinct purpose string from the 2FA token above — even though both use the same email
-    // token provider, a leaked/guessed 2FA code should never be usable to confirm an email and
-    // vice versa.
-    private const string EmailConfirmationPurpose = "EmailConfirmation";
-
-    private async Task SendEmailConfirmationCodeAsync(AppUser user)
+    // Used by the pending-registration flow above — unlike 2FA, there's no persisted AppUser yet
+    // to hang an Identity token provider off of, so the code itself is just a random 6 digits
+    // generated at Register/ResendConfirmationCode time and compared directly.
+    private async Task SendCodeAsync(string email, string code, string subject, string instructions)
     {
         try
         {
-            var code = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailConfirmationPurpose);
-            await _emailSender.SendAsync(
-                user.Email!,
-                "Confirm your WorkPulse email address",
-                $"Your confirmation code is: {code}\n\nEnter this code to finish setting up your account. This code expires in a few minutes."
-            );
+            await _emailSender.SendAsync(email, subject, $"Your confirmation code is: {code}\n\n{instructions} This code expires in 15 minutes.");
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send email confirmation code to {Email}", user.Email);
+            _logger.LogWarning(ex, "Failed to send confirmation code to {Email}", email);
         }
     }
 
@@ -451,20 +471,25 @@ public class RefreshTokenRequest
 public class LoginResult
 {
     public bool RequiresTwoFactor { get; set; }
-    public bool RequiresEmailConfirmation { get; set; }
     public string? Email { get; set; }
     public AuthResponse? Auth { get; set; }
 }
 
 public class RegisterResult
 {
-    public bool RequiresEmailConfirmation { get; set; } = true;
+    public string RegistrationId { get; set; } = "";
     public string Email { get; set; } = "";
+}
+
+public class ConfirmRegistrationRequest
+{
+    public string RegistrationId { get; set; } = "";
+    public string Code { get; set; } = "";
 }
 
 public class ResendConfirmationRequest
 {
-    public string Email { get; set; } = "";
+    public string RegistrationId { get; set; } = "";
 }
 
 public class TwoFactorVerifyRequest

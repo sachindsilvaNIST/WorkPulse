@@ -18,8 +18,8 @@ interface AuthContextValue {
   login: (req: LoginRequest) => Promise<{ requiresTwoFactor: boolean }>;
   verifyTwoFactor: (code: string) => Promise<void>;
   cancelTwoFactor: () => void;
-  /** Set right after registering (or after a login attempt on a never-confirmed account) — the
-   * login/register pages show the same code-entry step as 2FA while this is non-null. */
+  /** Set right after registering — the register page shows a code-entry step while this is
+   * non-null. No account exists yet at this point; it's only created once confirmEmail succeeds. */
   pendingEmailConfirmationEmail: string | null;
   register: (req: RegisterRequest) => Promise<void>;
   confirmEmail: (code: string) => Promise<void>;
@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingTwoFactorEmail, setPendingTwoFactorEmail] = useState<string | null>(null);
   const [pendingEmailConfirmationEmail, setPendingEmailConfirmationEmail] = useState<string | null>(null);
+  const [pendingRegistrationId, setPendingRegistrationId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -77,10 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (req: LoginRequest) => {
       const result = await authApi.login(req);
-      if (result.requiresEmailConfirmation) {
-        setPendingEmailConfirmationEmail(result.email);
-        return { requiresTwoFactor: false };
-      }
       if (result.requiresTwoFactor) {
         setPendingTwoFactorEmail(result.email);
         return { requiresTwoFactor: true };
@@ -105,25 +102,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (req: RegisterRequest) => {
     const result = await authApi.register(req);
+    setPendingRegistrationId(result.registrationId);
     setPendingEmailConfirmationEmail(result.email);
   }, []);
 
   const confirmEmail = useCallback(
     async (code: string) => {
-      if (!pendingEmailConfirmationEmail) throw new Error("No pending email confirmation");
-      const auth = await authApi.confirmEmail(pendingEmailConfirmationEmail, code);
+      if (!pendingRegistrationId) throw new Error("No pending registration");
+      const auth = await authApi.confirmEmail(pendingRegistrationId, code);
+      setPendingRegistrationId(null);
       setPendingEmailConfirmationEmail(null);
       await completeSession(auth.token, auth.displayName);
     },
-    [pendingEmailConfirmationEmail, completeSession]
+    [pendingRegistrationId, completeSession]
   );
 
   const resendConfirmationCode = useCallback(async () => {
-    if (!pendingEmailConfirmationEmail) throw new Error("No pending email confirmation");
-    await authApi.resendConfirmationCode(pendingEmailConfirmationEmail);
-  }, [pendingEmailConfirmationEmail]);
+    if (!pendingRegistrationId) throw new Error("No pending registration");
+    await authApi.resendConfirmationCode(pendingRegistrationId);
+  }, [pendingRegistrationId]);
 
-  const cancelEmailConfirmation = useCallback(() => setPendingEmailConfirmationEmail(null), []);
+  const cancelEmailConfirmation = useCallback(() => {
+    setPendingRegistrationId(null);
+    setPendingEmailConfirmationEmail(null);
+  }, []);
 
   const updateDisplayName = useCallback((name: string) => {
     persistDisplayName(name);
@@ -138,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setDisabledFeatures([]);
     setPendingTwoFactorEmail(null);
     setPendingEmailConfirmationEmail(null);
+    setPendingRegistrationId(null);
     router.push("/login");
   }, [router]);
 
