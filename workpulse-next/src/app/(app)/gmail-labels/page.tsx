@@ -9,13 +9,12 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { gmailApi, ApiError } from "@/lib/api/client";
 import type { GmailLabel, GmailStatus } from "@/lib/api/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -312,10 +311,7 @@ export default function GmailLabelsPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search labels…" value={query} onChange={(e) => setQuery(e.target.value)} className="pl-9" />
-          </div>
+          <SearchInput placeholder="Search labels…" value={query} onValueChange={setQuery} />
 
           <Card>
             <CardContent className="flex flex-col gap-1 py-3">

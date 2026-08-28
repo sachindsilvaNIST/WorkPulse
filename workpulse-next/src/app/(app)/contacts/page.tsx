@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Mail, MessageSquare, Pencil, Phone, Plus, Search, StickyNote, Trash2, Users, X } from "lucide-react";
+import { Building2, Mail, MessageSquare, Pencil, Phone, Plus, StickyNote, Trash2, Users, X } from "lucide-react";
+import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -196,10 +197,7 @@ export default function ContactsPage() {
         </Button>
       </div>
 
-      <div className="relative mb-4 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-      </div>
+      <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 
       {departments.length > 1 && (
         <div className="mb-6 flex flex-wrap gap-2">

@@ -15,10 +15,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarClock, ChevronDown, Clock, Pencil, Plus, Search, Trash2, TrendingUp, Umbrella } from "lucide-react";
+import { CalendarClock, ChevronDown, Clock, Pencil, Plus, Trash2, TrendingUp, Umbrella } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
@@ -369,15 +370,7 @@ export default function DashboardPage() {
             <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
               <CardTitle>Attendance Records</CardTitle>
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 w-40 pl-8 text-xs"
-                  />
-                </div>
+                <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} small inputClassName="h-8 w-40 text-xs" />
                 {editMode && (
                   <>
                     <Button size="sm" onClick={() => setDialogState({ date: new Date().toISOString().slice(0, 10) })}>

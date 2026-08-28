@@ -463,8 +463,21 @@ export default function SettingsPage() {
               value={navQuery}
               onChange={(e) => setNavQuery(e.target.value)}
               placeholder="Find a setting…"
-              className="h-9 w-full rounded-full border border-input bg-background/50 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground"
+              className={cn(
+                "h-9 w-full rounded-full border border-input bg-background/50 pl-8 text-sm outline-none placeholder:text-muted-foreground",
+                navQuery ? "pr-8" : "pr-3"
+              )}
             />
+            {navQuery && (
+              <button
+                type="button"
+                onClick={() => setNavQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                title="Clear search"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
           <nav className="flex flex-col gap-3">
             {navGroups.length === 0 && <p className="px-2 py-4 text-center text-xs text-muted-foreground">No matches.</p>}

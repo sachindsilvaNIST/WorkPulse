@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, CloudUpload, Download, ExternalLink, Receipt, Search, Upload, X } from "lucide-react";
+import { ChevronDown, CloudUpload, Download, ExternalLink, Receipt, Upload, X } from "lucide-react";
+import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -184,15 +185,7 @@ export default function ReimbursementPage() {
         </Card>
       )}
 
-      <div className="relative mb-4 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by file name, label, or destination…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <SearchInput placeholder="Search by file name, label, or destination…" value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 
       {categories.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">

@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Search, Tag, Text, Trash2, Upload, X } from "lucide-react";
+import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Tag, Text, Trash2, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -220,15 +221,7 @@ export default function BookmarksPage() {
 
       {importMessage && <p className="mb-4 text-sm text-muted-foreground">{importMessage}</p>}
 
-      <div className="relative mb-4 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder='Search — try "drive", "wiki", a category…'
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <SearchInput placeholder='Search — try "drive", "wiki", a category…' value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 
       {categories.length > 1 && (
         <div className="mb-6 flex flex-wrap gap-2">

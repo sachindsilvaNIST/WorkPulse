@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagInput } from "@/components/ui/tag-input";
+import { SearchInput } from "@/components/ui/search-input";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { DetailRow } from "@/components/ui/detail-row";
 import { Spinner } from "@/components/ui/spinner";
@@ -173,15 +174,7 @@ export default function ResourcesPage() {
         </Button>
       </div>
 
-      <div className="relative mb-4 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder='Search — try "taiwan", "visa", a tag…'
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <SearchInput placeholder='Search — try "taiwan", "visa", a tag…' value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 
       {allTags.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">

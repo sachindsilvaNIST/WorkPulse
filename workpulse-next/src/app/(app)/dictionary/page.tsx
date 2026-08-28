@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,10 +63,7 @@ export default function DictionaryPage() {
         </Button>
       </div>
 
-      <div className="relative mb-6 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-      </div>
+      <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-6 max-w-md" />
 
       {showForm && (
         <Card className="mb-6">
