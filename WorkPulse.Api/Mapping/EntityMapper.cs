@@ -300,6 +300,22 @@ public static class EntityMapper
         };
     }
 
+    // --- NotificationEntity -> AppNotification ---
+
+    public static AppNotification ToDto(this NotificationEntity entity)
+    {
+        return new AppNotification
+        {
+            Id = entity.Id,
+            Type = entity.Type,
+            Title = entity.Title,
+            Message = entity.Message,
+            Href = entity.Href,
+            CreatedUtc = entity.CreatedUtc,
+            ReadUtc = entity.ReadUtc
+        };
+    }
+
     // --- ResourceEntity -> ResourceMeta ---
 
     public static ResourceMeta ToMeta(this ResourceEntity entity)

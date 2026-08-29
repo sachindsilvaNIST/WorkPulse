@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagInput } from "@/components/ui/tag-input";
@@ -30,6 +31,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { resourcesApi, downloadBlob, ApiError } from "@/lib/api/client";
 import type { Resource, ResourceType } from "@/lib/api/types";
+import { accentCardStyle } from "@/lib/category-color";
+import { recordView } from "@/lib/recently-viewed";
 import { cn } from "@/lib/utils";
 
 const TYPE_META: Record<ResourceType, { label: string; icon: typeof Link2; color: string }> = {
@@ -66,7 +69,7 @@ export default function ResourcesPage() {
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [selectedTag, setSelectedTag] = useState("All");
 
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -196,8 +199,7 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {showForm && (
-        <Card className="mb-6 p-4">
+      <FormModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Edit Resource" : "New Resource"}>
           <div className="mb-3 flex gap-1.5">
             {(Object.keys(TYPE_META) as ResourceType[]).map((t) => {
               const meta = TYPE_META[t];
@@ -261,7 +263,7 @@ export default function ResourcesPage() {
 
           {saveError && <p className="mt-2 text-sm text-destructive">{saveError}</p>}
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex gap-2">
             <Button onClick={handleSave} disabled={!canSubmit || saving}>
               {saving ? <Spinner size={16} /> : editingId ? "Update" : "Add"}
             </Button>
@@ -269,8 +271,7 @@ export default function ResourcesPage() {
               Cancel
             </Button>
           </div>
-        </Card>
-      )}
+      </FormModal>
 
       {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
@@ -289,12 +290,11 @@ export default function ResourcesPage() {
             <Card
               key={r.id}
               className="group relative flex min-h-32 cursor-pointer flex-col overflow-hidden border-l-4 p-3 pb-3.5"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${meta.color} 8%, var(--card))`,
-                borderColor: `color-mix(in srgb, ${meta.color} 25%, transparent)`,
-                borderLeftColor: meta.color,
+              style={{ ...accentCardStyle(meta.color), borderLeftColor: meta.color }}
+              onClick={() => {
+                setDetail(r);
+                recordView({ type: "resource", id: r.id, label: r.title, description: meta.label, href: "/resources" });
               }}
-              onClick={() => setDetail(r)}
             >
               <div className="flex items-center justify-between gap-2">
                 <span

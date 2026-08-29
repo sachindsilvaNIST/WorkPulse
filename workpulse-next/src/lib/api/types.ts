@@ -155,6 +155,16 @@ export interface GmailStatus {
   connectedUtc: string | null;
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  href: string | null;
+  createdUtc: string;
+  readUtc: string | null;
+}
+
 export interface GmailLabel {
   id: number;
   name: string;

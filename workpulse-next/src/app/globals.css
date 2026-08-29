@@ -152,6 +152,44 @@
   }
 }
 
+/* Liquid Glass tiles (Home widgets) — a slow-moving specular highlight sweeping across the
+   surface, the thing that actually reads as "glass catching light" rather than a static gradient. */
+@keyframes liquid-sheen {
+  0%,
+  100% {
+    background-position: -40% -40%;
+  }
+  50% {
+    background-position: 140% 140%;
+  }
+}
+.liquid-sheen {
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 48%, transparent 65%);
+  background-size: 260% 260%;
+  animation: liquid-sheen 9s ease-in-out infinite;
+}
+
+/* Gentle float for widget icons/glyphs — delight without being distracting. */
+@keyframes widget-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.widget-float {
+  animation: widget-float 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-sheen,
+  .widget-float {
+    animation: none;
+  }
+}
+
 /* Frosted glass surface, for sidebars / floating panels over the aurora background */
 .glass-panel {
   background-color: color-mix(in srgb, var(--card) 70%, transparent);

@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Activity, ChevronRight, ChevronsLeft, ChevronsRight, LogOut, SlidersHorizontal, ShieldCheck } from "lucide-react";
 import { NAV_ITEMS, resolveNavColor, type NavItem } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationBell } from "@/components/shell/notification-bell";
 import { cn } from "@/lib/utils";
 
 const COLLAPSED_KEY = "workpulse.sidebar.collapsed";
@@ -127,14 +128,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           {!collapsed && <span className="text-base font-semibold tracking-tight">WorkPulse</span>}
         </div>
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          className={cn("cursor-pointer rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/8 hover:text-foreground", !collapsed && "ml-auto")}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
-        </button>
+        <div className={cn("flex items-center gap-1", !collapsed && "ml-auto")}>
+          <NotificationBell />
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="cursor-pointer rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/8 hover:text-foreground"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
+          </button>
+        </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">

@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<GmailConnectionEntity> GmailConnections => Set<GmailConnectionEntity>();
     public DbSet<GmailLabelEntity> GmailLabels => Set<GmailLabelEntity>();
     public DbSet<ResourceEntity> Resources => Set<ResourceEntity>();
+    public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -231,6 +232,18 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(x => x.TripReport)
                 .WithMany(t => t.Documents)
                 .HasForeignKey(x => x.TripReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Notification
+        builder.Entity<NotificationEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.UserId, x.DedupeKey }).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.CreatedUtc });
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

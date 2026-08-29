@@ -27,6 +27,7 @@ import type {
   GmailLabel,
   Resource,
   ResourceType,
+  AppNotification,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -261,6 +262,12 @@ export const gmailApi = {
   renameLabel: (id: number, name: string) =>
     request<GmailLabel>(`/api/gmail/labels/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
   deleteLabel: (id: number) => request<void>(`/api/gmail/labels/${id}`, { method: "DELETE" }),
+};
+
+export const notificationsApi = {
+  getAll: () => request<AppNotification[]>("/api/notifications"),
+  markRead: (id: string) => request<AppNotification>(`/api/notifications/${id}/read`, { method: "POST" }),
+  markAllRead: () => request<void>("/api/notifications/read-all", { method: "POST" }),
 };
 
 export const contactsApi = {

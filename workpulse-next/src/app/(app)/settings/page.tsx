@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
+  Sparkles,
   UserCog,
   X,
   type LucideIcon,
@@ -41,6 +42,7 @@ import { NAV_ITEMS } from "@/lib/nav-items";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
+import { CHANGELOG } from "@/lib/changelog";
 
 const RECENT_SECTIONS_KEY = "workpulse.settings.recentSections";
 
@@ -74,6 +76,7 @@ const SETTINGS_NAV: SettingsNavEntry[] = [
   { id: "account", label: "Account", description: "Profile, password, log out", icon: UserCog, color: "#34C759", group: "Account" },
   { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: AlertTriangle, color: "#FF3B30", group: "Account" },
   { id: "about", label: "About", description: "App info", icon: Info, color: "#6E6E73", group: "Account" },
+  { id: "whats-new", label: "What's New", description: "Recent changes and improvements", icon: Sparkles, color: "#FF9500", group: "Account" },
 ];
 
 function SectionIcon({ children, color }: { children: React.ReactNode; color: string }) {
@@ -721,7 +724,7 @@ export default function SettingsPage() {
                     <Bell className="size-3.5 text-muted-foreground" />
                     <div>
                       <p className="text-sm">Notifications</p>
-                      <p className="text-xs text-muted-foreground">Reminders and alerts (not yet wired to a sender)</p>
+                      <p className="text-xs text-muted-foreground">Reminders for empty daily reports and upcoming trips</p>
                     </div>
                   </div>
                   <Switch
@@ -734,7 +737,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm">Notification Channel</p>
-                      <p className="text-xs text-muted-foreground">Where reminders would be delivered</p>
+                      <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
                     </div>
                     <div className="flex gap-1">
                       {["Email", "In-app"].map((channel) => (
@@ -1132,6 +1135,39 @@ export default function SettingsPage() {
               </span>
               <span className="font-mono text-[11px] text-muted-foreground">{GIT_SHA}</span>
             </div>
+            <button
+              type="button"
+              onClick={() => setActiveSection("whats-new")}
+              className="mt-3 flex w-fit cursor-pointer items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <Sparkles className="size-3.5" /> See what&apos;s new
+            </button>
+          </CardContent>
+        </Card>
+        )}
+
+        {activeSection === "whats-new" && (
+        <Card style={{ backgroundColor: "color-mix(in srgb, #FF9500 6%, var(--card))" }}>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <SectionIcon color="#FF9500">
+                <Sparkles className="size-4" />
+              </SectionIcon>
+              <h2 className="font-semibold">What&apos;s New</h2>
+            </div>
+            {CHANGELOG.map((entry) => (
+              <div key={entry.version} className="border-t border-border pt-3 first:border-t-0 first:pt-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold">v{entry.version}</span>
+                  <span className="text-xs text-muted-foreground">{entry.date}</span>
+                </div>
+                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {entry.highlights.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </CardContent>
         </Card>
         )}

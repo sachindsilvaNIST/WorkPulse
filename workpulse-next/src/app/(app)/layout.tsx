@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Activity } from "lucide-react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { SpotlightSearch } from "@/components/shell/spotlight-search";
+import { NotificationBell } from "@/components/shell/notification-bell";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth-context";
 import { useIdleLogout } from "@/hooks/use-idle-logout";
@@ -54,6 +55,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Activity className="size-3.5 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-sm font-semibold">WorkPulse</span>
+        </div>
+        <div className="ml-auto">
+          <NotificationBell />
         </div>
       </div>
 

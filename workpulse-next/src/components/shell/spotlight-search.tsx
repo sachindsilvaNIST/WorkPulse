@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Library, Search, type LucideIcon } from "lucide-react";
+import { Bookmark, Library, Search, Users, type LucideIcon } from "lucide-react";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { resourcesApi, quickLinksApi } from "@/lib/api/client";
@@ -20,9 +20,18 @@ interface SpotlightResult {
   action: () => void;
 }
 
+// Fixed shortcuts to each "add new" flow — each target page reads `?new=1` on mount and opens its
+// add form immediately, so selecting one of these is a single jump straight into data entry.
+const QUICK_ACTIONS: { label: string; description: string; icon: LucideIcon; color: string; href: string }[] = [
+  { label: "Add Bookmark", description: "Save a new link", icon: Bookmark, color: "#FFD60A", href: "/bookmarks?new=1" },
+  { label: "New Resource", description: "Save a link, file, or note", icon: Library, color: "#40C8E0", href: "/resources?new=1" },
+  { label: "Add Contact", description: "Save a new contact", icon: Users, color: "#30D158", href: "/contacts?new=1" },
+];
+
 /** App-wide quick search — Cmd/Ctrl+K from anywhere, or the search bar on Home. Searches nav
  * sections plus your own saved Resources and Bookmarks by keyword, so "taiwan" jumps straight to
- * the visa guide instead of making you go find the right section first. */
+ * the visa guide instead of making you go find the right section first. Also surfaces a handful of
+ * "add new" quick actions so starting an entry doesn't require navigating to the section first. */
 export function SpotlightSearch() {
   const { open, setOpen } = useSpotlight();
   const router = useRouter();
@@ -60,6 +69,18 @@ export function SpotlightSearch() {
 
   const results = useMemo<SpotlightResult[]>(() => {
     const q = query.trim().toLowerCase();
+
+    const quickActionResults: SpotlightResult[] = QUICK_ACTIONS.filter(
+      (a) => !q || `${a.label} ${a.description}`.toLowerCase().includes(q)
+    ).map((a) => ({
+      id: `quick-action-${a.href}`,
+      group: "Quick Actions",
+      label: a.label,
+      description: a.description,
+      icon: a.icon,
+      color: a.color,
+      action: () => router.push(a.href),
+    }));
 
     const navResults: SpotlightResult[] = NAV_ITEMS.filter((item) => !item.disabled)
       .filter((item) => !q || `${item.label} ${item.description}`.toLowerCase().includes(q))
@@ -103,7 +124,7 @@ export function SpotlightSearch() {
           }))
       : [];
 
-    return [...navResults, ...resourceResults, ...bookmarkResults];
+    return [...quickActionResults, ...navResults, ...resourceResults, ...bookmarkResults];
   }, [query, resources, bookmarks, router]);
 
   const groups = Array.from(new Set(results.map((r) => r.group)));

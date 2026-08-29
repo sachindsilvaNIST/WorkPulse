@@ -104,6 +104,11 @@ builder.Services.AddScoped<WorkPulse.Api.Services.GoogleDriveService>();
 // Gmail (corporate label manager) — separate connection/scope from Drive above.
 builder.Services.AddScoped<WorkPulse.Api.Services.GmailService>();
 
+// In-app + email notifications (daily report reminders, upcoming trips) — the background
+// scheduler ticks every 30 minutes for as long as the process stays alive.
+builder.Services.AddScoped<WorkPulse.Api.Services.NotificationTriggerService>();
+builder.Services.AddHostedService<WorkPulse.Api.Services.NotificationSchedulerService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {

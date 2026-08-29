@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, Mail, MessageSquare, Pencil, Phone, Plus, StickyNote, Trash2, Users, X } from "lucide-react";
 import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { contactsApi } from "@/lib/api/client";
 import type { ContactRecord } from "@/lib/api/types";
-import { categoryColor } from "@/lib/category-color";
+import { accentCardStyle, categoryColor } from "@/lib/category-color";
+import { recordView } from "@/lib/recently-viewed";
 import { cn } from "@/lib/utils";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
 import { EMAIL_PATTERN, NUMERIC_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed, isNumericKeystrokeAllowed } from "@/lib/validation";
@@ -38,11 +41,12 @@ function fieldHistory(contacts: ContactRecord[], field: keyof ContactRecord): st
 
 
 export default function ContactsPage() {
+  const searchParams = useSearchParams();
   const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("All");
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<ContactRecord>>(emptyContact());
   const [detail, setDetail] = useState<ContactRecord | null>(null);
@@ -218,9 +222,8 @@ export default function ContactsPage() {
         </div>
       )}
 
-      {showForm && (
-        <Card className="mb-6">
-          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <FormModal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Edit Contact" : "Add Contact"}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <AutocompleteInput
               placeholder="Affiliation"
               value={form.affiliation ?? ""}
@@ -299,9 +302,8 @@ export default function ContactsPage() {
                 Cancel
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+      </FormModal>
 
       {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
@@ -318,11 +320,11 @@ export default function ContactsPage() {
             <motion.div key={c.id} layoutId={`contact-${c.id}`} whileHover={{ y: -2 }}>
               <Card
                 className="cursor-pointer p-4"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
-                  borderColor: `color-mix(in srgb, ${accent} 30%, transparent)`,
+                style={accentCardStyle(accent)}
+                onClick={() => {
+                  setDetail(c);
+                  recordView({ type: "contact", id: c.id, label: `${c.familyName} ${c.givenName}`.trim(), description: c.affiliation, href: "/contacts" });
                 }}
-                onClick={() => setDetail(c)}
                 onContextMenu={(e) => handleCardContextMenu(e, c)}
               >
                 <div className="flex items-start justify-between gap-2">

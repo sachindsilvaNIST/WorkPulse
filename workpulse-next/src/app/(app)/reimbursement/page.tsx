@@ -11,7 +11,7 @@ import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { reimbursementApi, tripReportsApi, downloadBlob } from "@/lib/api/client";
 import type { ReimbursementCategory, TripDocumentWithTrip, TripReport } from "@/lib/api/types";
-import { categoryColor } from "@/lib/category-color";
+import { accentCardStyle, categoryColor } from "@/lib/category-color";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -225,10 +225,7 @@ export default function ReimbursementPage() {
             <Card
               key={d.id}
               className="p-4"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--card))`,
-                borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
-              }}
+              style={accentCardStyle(accent)}
             >
               <div className="flex items-start justify-between gap-2">
                 <Badge style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}>

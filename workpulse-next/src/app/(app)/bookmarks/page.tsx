@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
+import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
-import { categoryColor } from "@/lib/category-color";
+import { accentCardStyle, categoryColor } from "@/lib/category-color";
+import { recordView } from "@/lib/recently-viewed";
 import { exportNetscapeBookmarks, parseNetscapeBookmarks } from "@/lib/bookmark-import";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,7 +45,7 @@ export default function BookmarksPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
 
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<QuickLink>>(emptyLink());
   const [detail, setDetail] = useState<QuickLink | null>(null);
@@ -249,42 +251,40 @@ export default function BookmarksPage() {
         </div>
       )}
 
-      {showForm && (
-        <Card className="mb-6 p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <AutocompleteInput
-              placeholder="Label (e.g. My Drive)"
-              value={form.label ?? ""}
-              onValueChange={(v) => setForm({ ...form, label: v })}
-              suggestions={labelHistory}
-            />
-            <AutocompleteInput
-              placeholder="https://example.com"
-              value={form.url ?? ""}
-              onValueChange={(v) => setForm({ ...form, url: v })}
-              suggestions={urlHistory}
-            />
-            <AutocompleteInput
-              placeholder="Category (e.g. Cloud Storage)"
-              value={form.category ?? ""}
-              onValueChange={(v) => setForm({ ...form, category: v })}
-              suggestions={categoryHistory}
-            />
-            <AutocompleteInput
-              placeholder="Keywords, comma-separated"
-              value={form.keywords ?? ""}
-              onValueChange={(v) => setForm({ ...form, keywords: v })}
-              suggestions={keywordsHistory}
-            />
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button onClick={handleSave}>{editingId ? "Update" : "Add"}</Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>
-              Cancel
-            </Button>
-          </div>
-        </Card>
-      )}
+      <FormModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Edit Bookmark" : "Add Bookmark"}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <AutocompleteInput
+            placeholder="Label (e.g. My Drive)"
+            value={form.label ?? ""}
+            onValueChange={(v) => setForm({ ...form, label: v })}
+            suggestions={labelHistory}
+          />
+          <AutocompleteInput
+            placeholder="https://example.com"
+            value={form.url ?? ""}
+            onValueChange={(v) => setForm({ ...form, url: v })}
+            suggestions={urlHistory}
+          />
+          <AutocompleteInput
+            placeholder="Category (e.g. Cloud Storage)"
+            value={form.category ?? ""}
+            onValueChange={(v) => setForm({ ...form, category: v })}
+            suggestions={categoryHistory}
+          />
+          <AutocompleteInput
+            placeholder="Keywords, comma-separated"
+            value={form.keywords ?? ""}
+            onValueChange={(v) => setForm({ ...form, keywords: v })}
+            suggestions={keywordsHistory}
+          />
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button onClick={handleSave}>{editingId ? "Update" : "Add"}</Button>
+          <Button variant="outline" onClick={() => setShowForm(false)}>
+            Cancel
+          </Button>
+        </div>
+      </FormModal>
 
       {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
@@ -301,10 +301,7 @@ export default function BookmarksPage() {
             <Card
               key={link.id}
               className="group relative flex min-h-28 flex-col p-3 pb-3.5"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--card))`,
-                borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
-              }}
+              style={accentCardStyle(accent)}
               onContextMenu={(e) => handleCardContextMenu(e, link)}
             >
               <a
@@ -314,7 +311,10 @@ export default function BookmarksPage() {
                 className="absolute inset-0"
                 onClick={(e) => {
                   // Cmd-click (Mac) / Ctrl-click (Windows) shows details instead of opening the
-                  // link — a plain click still opens it exactly as before.
+                  // link — a plain click still opens it exactly as before. Either way, this is the
+                  // bookmark being opened/viewed, so it's the one recordView() call that covers
+                  // both branches rather than only the (much rarer) detail-view path.
+                  recordView({ type: "bookmark", id: link.id, label: link.label, description: link.category, href: "/bookmarks" });
                   if (e.metaKey || e.ctrlKey) {
                     e.preventDefault();
                     setDetail(link);
