@@ -129,7 +129,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           {!collapsed && <span className="text-base font-semibold tracking-tight">WorkPulse</span>}
         </div>
         <div className={cn("flex items-center gap-1", !collapsed && "ml-auto")}>
-          <NotificationBell />
+          <NotificationBell align="left" />
           <button
             type="button"
             onClick={toggleCollapsed}

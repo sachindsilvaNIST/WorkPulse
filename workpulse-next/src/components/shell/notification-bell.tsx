@@ -23,8 +23,14 @@ function relativeTime(iso: string): string {
 
 /** Bell icon with unread badge + dropdown, fed by NotificationsController (daily report
  * reminders, upcoming trips, ...) — polls rather than pushing since there's no websocket/SSE
- * channel in this app. Rendered once in the sidebar and once in the mobile top bar. */
-export function NotificationBell() {
+ * channel in this app. Rendered once in the sidebar and once in the mobile top bar.
+ *
+ * `align` picks which edge of the dropdown stays fixed to the button, i.e. which direction it's
+ * safe to grow: "left" (dropdown's left edge = button's left edge, grows rightward) for the
+ * sidebar, where the button sits near the left edge of the whole viewport and growing left would
+ * push the panel off-screen; "right" (grows leftward) for the mobile top bar, where the button
+ * sits near the right edge instead. */
+export function NotificationBell({ align = "right" }: { align?: "left" | "right" }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
@@ -87,7 +93,10 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="glass-panel absolute right-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-1.5"
+            className={cn(
+              "glass-panel absolute top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-1.5",
+              align === "right" ? "right-0" : "left-0"
+            )}
           >
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-xs font-semibold text-muted-foreground">Notifications</span>

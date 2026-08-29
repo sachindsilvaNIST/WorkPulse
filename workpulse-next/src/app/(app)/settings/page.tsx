@@ -535,7 +535,7 @@ export default function SettingsPage() {
               </SectionIcon>
               <h2 className="font-semibold">Appearance</h2>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm">Dark Theme</p>
                 <p className="text-xs text-muted-foreground">Switch between light and dark appearance</p>
@@ -548,7 +548,7 @@ export default function SettingsPage() {
               )}
             </div>
             {settings && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm">Font Size</p>
                   <p className="text-xs text-muted-foreground">Adjust text size across the app</p>
@@ -568,7 +568,7 @@ export default function SettingsPage() {
               </div>
             )}
             {settings && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm">Date Format</p>
                   <p className="text-xs text-muted-foreground">Applies to dates shown in Attendance</p>
@@ -660,7 +660,7 @@ export default function SettingsPage() {
             </div>
             {settings && (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm">Week Starts On</p>
                     <p className="text-xs text-muted-foreground">Used when starting a new Weekly Report</p>
@@ -679,7 +679,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm">Default Landing Page</p>
                     <p className="text-xs text-muted-foreground">What loads right after you sign in</p>
@@ -700,7 +700,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm">Auto Sign-out After Inactivity</p>
                     <p className="text-xs text-muted-foreground">Signs you out locally if you step away</p>
@@ -719,7 +719,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="size-3.5 text-muted-foreground" />
                     <div>
@@ -734,7 +734,7 @@ export default function SettingsPage() {
                 </div>
 
                 {settings.notificationsEnabled && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm">Notification Channel</p>
                       <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
@@ -771,7 +771,7 @@ export default function SettingsPage() {
 
             {/* Two-factor authentication */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm">Two-Factor Authentication</p>
                   <p className="text-xs text-muted-foreground">
