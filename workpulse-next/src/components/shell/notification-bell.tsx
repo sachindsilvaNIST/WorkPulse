@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CheckCheck } from "lucide-react";
@@ -9,6 +10,7 @@ import type { AppNotification } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 const POLL_INTERVAL_MS = 60_000;
+const DROPDOWN_WIDTH = 320;
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -25,16 +27,19 @@ function relativeTime(iso: string): string {
  * reminders, upcoming trips, ...) — polls rather than pushing since there's no websocket/SSE
  * channel in this app. Rendered once in the sidebar and once in the mobile top bar.
  *
- * `align` picks which edge of the dropdown stays fixed to the button, i.e. which direction it's
- * safe to grow: "left" (dropdown's left edge = button's left edge, grows rightward) for the
- * sidebar, where the button sits near the left edge of the whole viewport and growing left would
- * push the panel off-screen; "right" (grows leftward) for the mobile top bar, where the button
- * sits near the right edge instead. */
+ * The dropdown is portaled to document.body (position: fixed, computed from the button's own
+ * bounding rect) rather than absolutely positioned inside the button's own DOM subtree — the
+ * sidebar's glass-panel wrapper uses backdrop-filter, which establishes a stacking context, so a
+ * z-index on a descendant can't escape it and paint above sibling content (the page's <main>) no
+ * matter how high the z-index is. Portaling sidesteps that entirely, matching the same pattern
+ * already used for the Bookmarks card context menu. */
 export function NotificationBell({ align = "right" }: { align?: "left" | "right" }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function load() {
@@ -48,11 +53,25 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (buttonRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
+
+  function toggleOpen() {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const left =
+        align === "right"
+          ? Math.max(16, rect.right - DROPDOWN_WIDTH)
+          : Math.min(rect.left, window.innerWidth - DROPDOWN_WIDTH - 16);
+      setPosition({ top: rect.bottom + 8, left });
+    }
+    setOpen((v) => !v);
+  }
 
   const unreadCount = notifications.filter((n) => !n.readUtc).length;
 
@@ -71,10 +90,11 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className="relative cursor-pointer rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/8 hover:text-foreground"
         title="Notifications"
       >
@@ -86,56 +106,59 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className={cn(
-              "glass-panel absolute top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-1.5",
-              align === "right" ? "right-0" : "left-0"
-            )}
-          >
-            <div className="flex items-center justify-between px-2 py-1.5">
-              <span className="text-xs font-semibold text-muted-foreground">Notifications</span>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleMarkAllRead}
-                  className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
-                >
-                  <CheckCheck className="size-3" /> Mark all read
-                </button>
-              )}
-            </div>
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.length === 0 && (
-                <p className="px-2 py-6 text-center text-xs text-muted-foreground">You&apos;re all caught up.</p>
-              )}
-              {notifications.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => handleSelect(n)}
-                  className={cn(
-                    "flex w-full cursor-pointer flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-foreground/6",
-                    !n.readUtc && "bg-primary/5"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {open && position && (
+              <motion.div
+                ref={dropdownRef}
+                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="glass-panel fixed z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-1.5"
+                style={{ top: position.top, left: position.left }}
+              >
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <span className="text-xs font-semibold text-muted-foreground">Notifications</span>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      <CheckCheck className="size-3" /> Mark all read
+                    </button>
                   )}
-                >
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                    {!n.readUtc && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}
-                    {n.title}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{n.message}</span>
-                  <span className="text-[10px] text-muted-foreground/70">{relativeTime(n.createdUtc)}</span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 && (
+                    <p className="px-2 py-6 text-center text-xs text-muted-foreground">You&apos;re all caught up.</p>
+                  )}
+                  {notifications.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => handleSelect(n)}
+                      className={cn(
+                        "flex w-full cursor-pointer flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-foreground/6",
+                        !n.readUtc && "bg-primary/5"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        {!n.readUtc && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}
+                        {n.title}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{n.message}</span>
+                      <span className="text-[10px] text-muted-foreground/70">{relativeTime(n.createdUtc)}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
-    </div>
+    </>
   );
 }

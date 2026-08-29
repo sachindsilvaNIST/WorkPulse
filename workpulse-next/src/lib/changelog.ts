@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.2",
+    date: "2026-08-29",
+    highlights: [
+      "Fixed the notification bell dropdown rendering behind page content instead of above it",
+      "Fixed Settings' multi-option rows (Font Size, Date Format, Week Starts On, ...) overflowing the page on narrower screens",
+    ],
+  },
+  {
     version: "0.4.1",
     date: "2026-08-29",
     highlights: [

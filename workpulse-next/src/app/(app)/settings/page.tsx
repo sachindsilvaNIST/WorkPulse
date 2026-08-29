@@ -548,12 +548,12 @@ export default function SettingsPage() {
               )}
             </div>
             {settings && (
-              <div className="flex items-start justify-between">
+              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                 <div>
                   <p className="text-sm">Font Size</p>
                   <p className="text-xs text-muted-foreground">Adjust text size across the app</p>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap justify-end gap-1">
                   {FONT_SIZES.map((size) => (
                     <Button
                       key={size}
@@ -568,12 +568,12 @@ export default function SettingsPage() {
               </div>
             )}
             {settings && (
-              <div className="flex items-start justify-between">
+              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                 <div>
                   <p className="text-sm">Date Format</p>
                   <p className="text-xs text-muted-foreground">Applies to dates shown in Attendance</p>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap justify-end gap-1">
                   {DATE_FORMAT_OPTIONS.map((fmt) => (
                     <Button
                       key={fmt}
@@ -660,12 +660,12 @@ export default function SettingsPage() {
             </div>
             {settings && (
               <>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                   <div>
                     <p className="text-sm">Week Starts On</p>
                     <p className="text-xs text-muted-foreground">Used when starting a new Weekly Report</p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap justify-end gap-1">
                     {["Sunday", "Monday"].map((day) => (
                       <Button
                         key={day}
@@ -700,7 +700,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start justify-between">
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                   <div>
                     <p className="text-sm">Auto Sign-out After Inactivity</p>
                     <p className="text-xs text-muted-foreground">Signs you out locally if you step away</p>
@@ -734,12 +734,12 @@ export default function SettingsPage() {
                 </div>
 
                 {settings.notificationsEnabled && (
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                     <div>
                       <p className="text-sm">Notification Channel</p>
                       <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap justify-end gap-1">
                       {["Email", "In-app"].map((channel) => (
                         <Button
                           key={channel}
