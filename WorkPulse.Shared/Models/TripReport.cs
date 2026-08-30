@@ -12,6 +12,7 @@ public class TripReport
     public DateOnly EndDate { get; set; }
     public string Purpose { get; set; } = "";
     public string Notes { get; set; } = "";
+    public TripStatus Status { get; set; } = TripStatus.Planned;
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public DateTime LastModifiedUtc { get; set; }

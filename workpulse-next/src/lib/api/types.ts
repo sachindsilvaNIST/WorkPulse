@@ -103,6 +103,9 @@ export interface WeeklyReport {
 
 export type TripCategory = "Domestic" | "Overseas";
 
+export type TripStatus = "Planned" | "InProgress" | "Completed";
+export type ReimbursementStatusValue = "Pending" | "Submitted" | "Reimbursed";
+
 export interface TripReport {
   id: string;
   category: TripCategory;
@@ -111,6 +114,7 @@ export interface TripReport {
   endDate: string;
   purpose: string;
   notes: string;
+  status: TripStatus;
   lastModifiedUtc?: string;
   documentCount: number;
 }
@@ -128,6 +132,10 @@ export interface TripDocumentMeta {
   documentDate?: string | null;
   driveFileId?: string | null;
   driveWebViewLink?: string | null;
+  amount?: number | null;
+  currency: string;
+  reimbursementStatus: ReimbursementStatusValue;
+  resourceId?: string | null;
 }
 
 export interface TripDocumentWithTrip extends TripDocumentMeta {

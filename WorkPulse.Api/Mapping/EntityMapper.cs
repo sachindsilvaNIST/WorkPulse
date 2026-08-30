@@ -212,6 +212,7 @@ public static class EntityMapper
             EndDate = entity.EndDate,
             Purpose = entity.Purpose,
             Notes = entity.Notes,
+            Status = Enum.TryParse<TripStatus>(entity.Status, out var ts) ? ts : TripStatus.Planned,
             LastModifiedUtc = entity.LastModifiedUtc
         };
     }
@@ -228,6 +229,7 @@ public static class EntityMapper
             EndDate = record.EndDate,
             Purpose = record.Purpose,
             Notes = record.Notes,
+            Status = record.Status.ToString(),
             LastModifiedUtc = DateTime.UtcNow
         };
     }
@@ -248,7 +250,11 @@ public static class EntityMapper
             UploadedUtc = entity.UploadedUtc,
             DocumentDate = entity.DocumentDate,
             DriveFileId = entity.DriveFileId,
-            DriveWebViewLink = entity.DriveWebViewLink
+            DriveWebViewLink = entity.DriveWebViewLink,
+            Amount = entity.Amount,
+            Currency = entity.Currency,
+            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(entity.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
+            ResourceId = entity.ResourceId
         };
     }
 

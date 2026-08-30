@@ -10,6 +10,9 @@ public class TripReportEntity
     public DateOnly EndDate { get; set; }
     public string Purpose { get; set; } = "";
     public string Notes { get; set; } = "";
+    /// <summary>"Planned" | "InProgress" | "Completed" — a lightweight status, not a full workflow
+    /// (no approval step, nothing server-enforced); just lets a trip read as more than a date range.</summary>
+    public string Status { get; set; } = "Planned";
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
 
     public AppUser User { get; set; } = null!;

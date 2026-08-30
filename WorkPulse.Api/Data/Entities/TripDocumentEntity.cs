@@ -23,5 +23,20 @@ public class TripDocumentEntity
     public string? DriveFileId { get; set; }
     public string? DriveWebViewLink { get; set; }
 
+    // Expense tracking — nullable since not every document is a receipt (e.g. an itinerary or
+    // confirmation email has no amount). A trip's total is computed client-side from these, not
+    // stored, so there's nothing to keep in sync when a document is added/edited/removed.
+    public decimal? Amount { get; set; }
+    public string Currency { get; set; } = "USD";
+
+    /// <summary>"Pending" | "Submitted" | "Reimbursed" — surfaced on the Reimbursement page (this
+    /// entity IS what Reimbursement lists, viewed cross-trip), edited from either page.</summary>
+    public string ReimbursementStatus { get; set; } = "Pending";
+
+    /// <summary>Loose reference to a Resources entry (ResourceEntity.Id) — unenforced at the DB
+    /// level, same as DriveFileId above; a deleted Resource just leaves a dangling id here rather
+    /// than requiring a cascade or blocking the delete.</summary>
+    public string? ResourceId { get; set; }
+
     public TripReportEntity TripReport { get; set; } = null!;
 }

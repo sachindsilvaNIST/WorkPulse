@@ -17,4 +17,8 @@ public class TripDocumentMeta
     public DateOnly? DocumentDate { get; set; }
     public string? DriveFileId { get; set; }
     public string? DriveWebViewLink { get; set; }
+    public decimal? Amount { get; set; }
+    public string Currency { get; set; } = "USD";
+    public ReimbursementStatus ReimbursementStatus { get; set; } = ReimbursementStatus.Pending;
+    public string? ResourceId { get; set; }
 }

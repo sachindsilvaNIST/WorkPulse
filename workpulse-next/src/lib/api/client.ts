@@ -9,6 +9,7 @@ import type {
   TripReport,
   TripDocumentMeta,
   TripDocumentWithTrip,
+  ReimbursementStatusValue,
   ContactRecord,
   QuickLink,
   DictEntryDto,
@@ -221,13 +222,23 @@ export const tripReportsApi = {
   delete: (id: string) => request<void>(`/api/tripreports/${id}`, { method: "DELETE" }),
 
   getDocuments: (tripId: string) => request<TripDocumentMeta[]>(`/api/tripreports/${tripId}/documents`),
-  uploadDocument: async (tripId: string, file: File, category: string, label: string, documentDate?: string) => {
+  uploadDocument: async (
+    tripId: string,
+    file: File,
+    category: string,
+    label: string,
+    documentDate?: string,
+    amount?: number,
+    currency?: string
+  ) => {
     const token = getToken();
     const form = new FormData();
     form.append("file", file);
     form.append("category", category);
     form.append("label", label);
     if (documentDate) form.append("documentDate", documentDate);
+    if (amount != null) form.append("amount", String(amount));
+    if (currency) form.append("currency", currency);
     const res = await fetch(`${API_BASE}/api/tripreports/${tripId}/documents`, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -239,6 +250,15 @@ export const tripReportsApi = {
   downloadDocument: (tripId: string, docId: string) => requestBlob(`/api/tripreports/${tripId}/documents/${docId}`),
   deleteDocument: (tripId: string, docId: string) =>
     request<void>(`/api/tripreports/${tripId}/documents/${docId}`, { method: "DELETE" }),
+  // Partial update — amount/resource-link (Trips) and reimbursement status/resource-link
+  // (Reimbursement) both go through this one endpoint, since it's the same underlying document.
+  updateDocument: (
+    tripId: string,
+    docId: string,
+    update: { amount?: number; currency?: string; reimbursementStatus?: ReimbursementStatusValue; resourceId?: string; clearResourceLink?: boolean }
+  ) => request<TripDocumentMeta>(`/api/tripreports/${tripId}/documents/${docId}`, { method: "PUT", body: JSON.stringify(update) }),
+  exportTrip: (tripId: string, format: "xlsx" | "html") =>
+    requestBlob(`/api/excel/trips/${tripId}/export?format=${format}`, { method: "POST" }),
 };
 
 export const reimbursementApi = {

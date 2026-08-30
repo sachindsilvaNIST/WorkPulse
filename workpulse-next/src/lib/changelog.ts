@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-08-30",
+    highlights: [
+      "Business Trips: added a status (Planned/In Progress/Completed), expense tracking (amount + currency per document, with a running total), and a per-trip Export (XLSX or HTML summary)",
+      "Reimbursement: added a status per document (Pending/Submitted/Reimbursed)",
+      "Both Trips and Reimbursement can now link a document to a saved Resource, and back",
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-08-30",
     highlights: [

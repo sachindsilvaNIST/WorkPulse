@@ -111,6 +111,25 @@ public class ExcelController : ApiControllerBase
         return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "weekly-reports.xlsx");
     }
 
+    [HttpPost("trips/{tripId}/export")]
+    public async Task<ActionResult> ExportTrip(string tripId, [FromQuery] string format = "xlsx")
+    {
+        var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == UserId);
+        if (trip == null) return NotFound();
+
+        var documents = await _db.TripDocuments.Where(d => d.TripReportId == tripId && d.UserId == UserId).ToListAsync();
+        var safeName = string.Concat(trip.Destination.Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
+        var fileBase = string.IsNullOrWhiteSpace(safeName) ? "trip" : safeName.Replace(" ", "-").ToLowerInvariant();
+
+        if (format == "html")
+        {
+            var html = TripExportService.ExportToHtml(trip, documents);
+            return File(Encoding.UTF8.GetBytes(html), "text/html", $"{fileBase}.html");
+        }
+        var stream = TripExportService.ExportToXlsx(trip, documents);
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{fileBase}.xlsx");
+    }
+
     [HttpPost("contacts/export")]
     public ActionResult ExportContacts([FromBody] List<ContactRecord> contacts)
     {

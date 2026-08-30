@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Download, FileText, Plus, Trash2, Upload, X } from "lucide-react";
+import { Briefcase, Download, FileText, Link2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
-import { tripReportsApi, downloadBlob } from "@/lib/api/client";
-import type { TripCategory, TripDocumentMeta, TripReport } from "@/lib/api/types";
+import { ResourcePickerDialog, ResourceLinkChip } from "@/components/ui/resource-picker-dialog";
+import { tripReportsApi, resourcesApi, downloadBlob } from "@/lib/api/client";
+import type { Resource, TripCategory, TripDocumentMeta, TripReport, TripStatus } from "@/lib/api/types";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 function emptyTrip(): Partial<TripReport> {
   const today = new Date().toISOString().slice(0, 10);
-  return { category: "Domestic", destination: "", startDate: today, endDate: today, purpose: "", notes: "" };
+  return { category: "Domestic", destination: "", startDate: today, endDate: today, purpose: "", notes: "", status: "Planned" };
 }
+
+const STATUS_LABEL: Record<TripStatus, string> = { Planned: "Planned", InProgress: "In Progress", Completed: "Completed" };
+const STATUS_COLOR: Record<TripStatus, string> = { Planned: "#8E8E93", InProgress: "#FF9500", Completed: "#34C759" };
+const CURRENCIES = ["USD", "JPY", "EUR", "GBP"];
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<TripReport[]>([]);
@@ -31,12 +36,20 @@ export default function TripsPage() {
   const [docCategory, setDocCategory] = useState("");
   const [docLabel, setDocLabel] = useState("");
   const [docDate, setDocDate] = useState("");
+  const [docAmount, setDocAmount] = useState("");
+  const [docCurrency, setDocCurrency] = useState("USD");
   const [uploading, setUploading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [linkingDocId, setLinkingDocId] = useState<string | null>(null);
+  const [resourceTitles, setResourceTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     tripReportsApi.getAll().then((list) => {
       setTrips(list);
       setLoading(false);
+    });
+    resourcesApi.getAll().then((list) => {
+      setResourceTitles(Object.fromEntries(list.map((r) => [r.id, r.title])));
     });
   }, []);
 
@@ -65,17 +78,48 @@ export default function TripsPage() {
     if (selectedId === id) setSelectedId(null);
   }
 
+  async function handleStatusChange(trip: TripReport, status: TripStatus) {
+    const updated = await tripReportsApi.update(trip.id, { ...trip, status });
+    setTrips((prev) => prev.map((t) => (t.id === trip.id ? updated : t)));
+  }
+
   async function handleFile(file: File) {
     if (!selectedId || !docCategory) return;
     setUploading(true);
     try {
-      const meta = await tripReportsApi.uploadDocument(selectedId, file, docCategory, docLabel, docDate || undefined);
+      const amount = docAmount.trim() ? Number(docAmount) : undefined;
+      const meta = await tripReportsApi.uploadDocument(selectedId, file, docCategory, docLabel, docDate || undefined, amount, docCurrency);
       setDocs((prev) => [meta, ...prev]);
       setDocLabel("");
+      setDocAmount("");
       setTrips((prev) => prev.map((t) => (t.id === selectedId ? { ...t, documentCount: t.documentCount + 1 } : t)));
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleExport(format: "xlsx" | "html") {
+    if (!selectedId) return;
+    setExporting(true);
+    try {
+      const { blob, fileName } = await tripReportsApi.exportTrip(selectedId, format);
+      downloadBlob(blob, fileName);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleLinkResource(docId: string, resource: Resource) {
+    if (!selectedId) return;
+    const updated = await tripReportsApi.updateDocument(selectedId, docId, { resourceId: resource.id });
+    setDocs((prev) => prev.map((d) => (d.id === docId ? updated : d)));
+    setResourceTitles((prev) => ({ ...prev, [resource.id]: resource.title }));
+  }
+
+  async function handleUnlinkResource(docId: string) {
+    if (!selectedId) return;
+    const updated = await tripReportsApi.updateDocument(selectedId, docId, { clearResourceLink: true });
+    setDocs((prev) => prev.map((d) => (d.id === docId ? updated : d)));
   }
 
   async function handleDownload(doc: TripDocumentMeta) {
@@ -114,7 +158,19 @@ export default function TripsPage() {
               <option value="Domestic">Domestic</option>
               <option value="Overseas">Overseas</option>
             </select>
+            <select
+              className="h-10 rounded-full border border-input bg-background/50 px-4 text-sm backdrop-blur-md outline-none"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as TripStatus })}
+            >
+              {(Object.keys(STATUS_LABEL) as TripStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
             <Input
+              className="sm:col-span-2"
               placeholder="Destination"
               value={form.destination}
               onChange={(e) => setForm({ ...form, destination: e.target.value })}
@@ -159,8 +215,12 @@ export default function TripsPage() {
                       <Badge variant="secondary">{t.category}</Badge>
                       <span className="font-semibold">{t.destination}</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t.startDate} → {t.endDate}
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="size-1.5 rounded-full" style={{ backgroundColor: STATUS_COLOR[t.status] }} />
+                        {STATUS_LABEL[t.status]}
+                      </span>
+                      · {t.startDate} → {t.endDate}
                     </p>
                     <p className="mt-1 truncate text-sm text-muted-foreground">{t.purpose}</p>
                     {t.documentCount > 0 && (
@@ -190,9 +250,30 @@ export default function TripsPage() {
             </CardContent>
           ) : (
             <CardContent className="flex flex-col gap-4">
-              <div>
-                <h3 className="text-lg font-semibold">{selected.destination}</h3>
-                <p className="text-sm text-muted-foreground">{selected.purpose}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold">{selected.destination}</h3>
+                  <p className="text-sm text-muted-foreground">{selected.purpose}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <select
+                    className="h-8 rounded-full border border-input bg-background/50 px-3 text-xs backdrop-blur-md outline-none"
+                    value={selected.status}
+                    onChange={(e) => handleStatusChange(selected, e.target.value as TripStatus)}
+                  >
+                    {(Object.keys(STATUS_LABEL) as TripStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABEL[s]}
+                      </option>
+                    ))}
+                  </select>
+                  <Button size="sm" variant="outline" onClick={() => handleExport("xlsx")} disabled={exporting}>
+                    {exporting ? <Spinner size={14} /> : <Download className="size-3.5" />} Export
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleExport("html")} disabled={exporting}>
+                    HTML
+                  </Button>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-background/40 p-3">
@@ -210,6 +291,25 @@ export default function TripsPage() {
                   onChange={(e) => setDocLabel(e.target.value)}
                   className="h-9 flex-1"
                 />
+                <Input
+                  type="number"
+                  placeholder="Amount"
+                  value={docAmount}
+                  onChange={(e) => setDocAmount(e.target.value)}
+                  className="h-9 w-24"
+                  title="Expense amount (optional)"
+                />
+                <select
+                  className="h-9 rounded-full border border-input bg-background/50 px-3 text-sm backdrop-blur-md outline-none"
+                  value={docCurrency}
+                  onChange={(e) => setDocCurrency(e.target.value)}
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
                 <FileDropZone
                   onFile={handleFile}
                   disabled={uploading || !docCategory}
@@ -222,6 +322,13 @@ export default function TripsPage() {
                 </FileDropZone>
               </div>
 
+              {docs.some((d) => d.amount != null) && (
+                <p className="text-right text-sm font-semibold">
+                  Total: {docs.filter((d) => d.amount != null).reduce((sum, d) => sum + (d.amount ?? 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                  {docs.find((d) => d.amount != null)?.currency}
+                </p>
+              )}
+
               <div className="flex flex-col gap-2">
                 {docs.length === 0 && <p className="text-sm text-muted-foreground">No documents yet.</p>}
                 {docs.map((d) => (
@@ -230,13 +337,24 @@ export default function TripsPage() {
                     className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-background/30 px-3 py-2"
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="secondary">{d.category}</Badge>
                         <span className="truncate text-sm font-medium">{d.fileName}</span>
+                        {d.amount != null && (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {d.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {d.currency}
+                          </span>
+                        )}
+                        {d.resourceId && resourceTitles[d.resourceId] && (
+                          <ResourceLinkChip resource={{ id: d.resourceId, title: resourceTitles[d.resourceId] }} onRemove={() => handleUnlinkResource(d.id)} />
+                        )}
                       </div>
                       {d.label && <p className="text-xs text-muted-foreground">{d.label}</p>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => setLinkingDocId(d.id)} title="Link to a Resource">
+                        <Link2 className="size-4" />
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => handleDownload(d)}>
                         <Download className="size-4" />
                       </Button>
@@ -251,6 +369,14 @@ export default function TripsPage() {
           )}
         </Card>
       </div>
+
+      <ResourcePickerDialog
+        open={linkingDocId !== null}
+        onClose={() => setLinkingDocId(null)}
+        onSelect={(resource) => {
+          if (linkingDocId) handleLinkResource(linkingDocId, resource);
+        }}
+      />
     </div>
   );
 }
