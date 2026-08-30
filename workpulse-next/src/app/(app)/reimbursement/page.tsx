@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, CloudUpload, Download, ExternalLink, Receipt, Upload, X } from "lucide-react";
+import { ChevronDown, CloudUpload, Download, ExternalLink, Link2, Receipt, Upload, X } from "lucide-react";
 import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +9,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
-import { reimbursementApi, tripReportsApi, downloadBlob } from "@/lib/api/client";
-import type { ReimbursementCategory, TripDocumentWithTrip, TripReport } from "@/lib/api/types";
+import { ResourcePickerDialog, ResourceLinkChip } from "@/components/ui/resource-picker-dialog";
+import { reimbursementApi, tripReportsApi, resourcesApi, downloadBlob } from "@/lib/api/client";
+import type { ReimbursementCategory, ReimbursementStatusValue, Resource, TripDocumentWithTrip, TripReport } from "@/lib/api/types";
 import { accentCardStyle, categoryColor } from "@/lib/category-color";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+
+const REIMBURSEMENT_STATUS_LABEL: Record<ReimbursementStatusValue, string> = {
+  Pending: "Pending",
+  Submitted: "Submitted",
+  Reimbursed: "Reimbursed",
+};
+const REIMBURSEMENT_STATUS_COLOR: Record<ReimbursementStatusValue, string> = {
+  Pending: "#8E8E93",
+  Submitted: "#FF9500",
+  Reimbursed: "#34C759",
+};
 
 function emptyUpload() {
   return { file: null as File | null, category: "", tripReportId: "", label: "", documentDate: new Date().toISOString().slice(0, 10) };
@@ -31,11 +43,32 @@ export default function ReimbursementPage() {
   const [form, setForm] = useState(emptyUpload());
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [linkingDoc, setLinkingDoc] = useState<TripDocumentWithTrip | null>(null);
+  const [resourceTitles, setResourceTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     tripReportsApi.getAll().then(setTrips);
     reimbursementApi.getCategories().then(setCategories);
+    resourcesApi.getAll().then((list) => {
+      setResourceTitles(Object.fromEntries(list.map((r) => [r.id, r.title])));
+    });
   }, []);
+
+  async function handleStatusChange(doc: TripDocumentWithTrip, status: ReimbursementStatusValue) {
+    const updated = await tripReportsApi.updateDocument(doc.tripReportId, doc.id, { reimbursementStatus: status });
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...updated } : d)));
+  }
+
+  async function handleLinkResource(doc: TripDocumentWithTrip, resource: Resource) {
+    const updated = await tripReportsApi.updateDocument(doc.tripReportId, doc.id, { resourceId: resource.id });
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...updated } : d)));
+    setResourceTitles((prev) => ({ ...prev, [resource.id]: resource.title }));
+  }
+
+  async function handleUnlinkResource(doc: TripDocumentWithTrip) {
+    const updated = await tripReportsApi.updateDocument(doc.tripReportId, doc.id, { clearResourceLink: true });
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...updated } : d)));
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -239,6 +272,9 @@ export default function ReimbursementPage() {
                       </a>
                     </Button>
                   )}
+                  <Button size="icon" variant="ghost" onClick={() => setLinkingDoc(d)} title="Link to a Resource">
+                    <Link2 className="size-4" />
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleDownload(d)} title="Download">
                     <Download className="size-4" />
                   </Button>
@@ -249,10 +285,40 @@ export default function ReimbursementPage() {
                 {d.tripDestination} · {d.documentDate ?? d.tripStartDate}
               </p>
               {d.label && <p className="mt-1 text-xs text-muted-foreground">{d.label}</p>}
+              {d.amount != null && (
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
+                  {d.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {d.currency}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <select
+                  className="h-6 rounded-full border-none px-2 text-[11px] font-semibold outline-none"
+                  style={{ backgroundColor: `color-mix(in srgb, ${REIMBURSEMENT_STATUS_COLOR[d.reimbursementStatus]} 15%, transparent)`, color: REIMBURSEMENT_STATUS_COLOR[d.reimbursementStatus] }}
+                  value={d.reimbursementStatus}
+                  onChange={(e) => handleStatusChange(d, e.target.value as ReimbursementStatusValue)}
+                >
+                  {(Object.keys(REIMBURSEMENT_STATUS_LABEL) as ReimbursementStatusValue[]).map((s) => (
+                    <option key={s} value={s}>
+                      {REIMBURSEMENT_STATUS_LABEL[s]}
+                    </option>
+                  ))}
+                </select>
+                {d.resourceId && resourceTitles[d.resourceId] && (
+                  <ResourceLinkChip resource={{ id: d.resourceId, title: resourceTitles[d.resourceId] }} onRemove={() => handleUnlinkResource(d)} />
+                )}
+              </div>
             </Card>
           );
         })}
       </div>
+
+      <ResourcePickerDialog
+        open={linkingDoc !== null}
+        onClose={() => setLinkingDoc(null)}
+        onSelect={(resource) => {
+          if (linkingDoc) handleLinkResource(linkingDoc, resource);
+        }}
+      />
     </div>
   );
 }

@@ -81,6 +81,7 @@ public class TripReportsController : ApiControllerBase
         entity.EndDate = record.EndDate;
         entity.Purpose = record.Purpose;
         entity.Notes = record.Notes;
+        entity.Status = record.Status.ToString();
         entity.LastModifiedUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -128,7 +129,9 @@ public class TripReportsController : ApiControllerBase
         IFormFile file,
         [FromForm] string category,
         [FromForm] string? label,
-        [FromForm] string? documentDate)
+        [FromForm] string? documentDate,
+        [FromForm] decimal? amount,
+        [FromForm] string? currency)
     {
         var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == UserId);
         if (trip == null) return NotFound();
@@ -160,7 +163,9 @@ public class TripReportsController : ApiControllerBase
             SizeBytes = file.Length,
             Content = bytes,
             UploadedUtc = DateTime.UtcNow,
-            DocumentDate = parsedDate
+            DocumentDate = parsedDate,
+            Amount = amount,
+            Currency = string.IsNullOrWhiteSpace(currency) ? "USD" : currency
         };
 
         // A category typed at upload time that doesn't exist yet becomes a real, reusable row —
@@ -202,6 +207,36 @@ public class TripReportsController : ApiControllerBase
         if (doc == null) return NotFound();
 
         return File(doc.Content, doc.ContentType, doc.FileName);
+    }
+
+    // Partial update — used by both Business Trips (amount, resource link) and Reimbursement
+    // (status, resource link; Reimbursement already has each document's TripReportId from
+    // GetAllDocuments, so it calls this same trip-scoped endpoint rather than needing its own).
+    public class UpdateDocumentRequest
+    {
+        public decimal? Amount { get; set; }
+        public string? Currency { get; set; }
+        public ReimbursementStatus? ReimbursementStatus { get; set; }
+        public string? ResourceId { get; set; }
+        /// <summary>True clears the link; omitted/false leaves ResourceId untouched when null.</summary>
+        public bool ClearResourceLink { get; set; }
+    }
+
+    [HttpPut("{tripId}/documents/{docId}")]
+    public async Task<ActionResult<TripDocumentMeta>> UpdateDocument(string tripId, string docId, [FromBody] UpdateDocumentRequest update)
+    {
+        var doc = await _db.TripDocuments
+            .FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId && d.UserId == UserId);
+        if (doc == null) return NotFound();
+
+        if (update.Amount.HasValue) doc.Amount = update.Amount;
+        if (!string.IsNullOrWhiteSpace(update.Currency)) doc.Currency = update.Currency;
+        if (update.ReimbursementStatus.HasValue) doc.ReimbursementStatus = update.ReimbursementStatus.Value.ToString();
+        if (update.ClearResourceLink) doc.ResourceId = null;
+        else if (update.ResourceId != null) doc.ResourceId = update.ResourceId;
+
+        await _db.SaveChangesAsync();
+        return Ok(doc.ToMeta());
     }
 
     [HttpDelete("{tripId}/documents/{docId}")]
