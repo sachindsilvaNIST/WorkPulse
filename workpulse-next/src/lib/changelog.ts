@@ -8,6 +8,21 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.0",
+    date: "2026-08-30",
+    highlights: [
+      "Redesigned every sidebar icon as an original Liquid Glass glyph — flat badges, true squircle corners, and hand-drawn artwork for all 12 nav items plus Settings' section icons",
+      "Redesigned Settings into an Apple-style drill-down layout — grouped rows with grid-line dividers, each opening its own sub-page",
+      "Added a Light/Dark/System theme selector and a 6-color accent picker that now drives selected rows, buttons, and links app-wide, synced to your account across devices",
+      "Added Reset to Defaults for Appearance",
+      "Fixed Spotlight's Add Bookmark action not opening the add-bookmark modal when already on the Bookmarks page",
+      "Fixed Home's cards overflowing into the row below them, and removed the continuous glass-sheen/floating-icon animations that were causing scroll lag",
+      "Fixed the sidebar's selected-row highlight not always rendering",
+      "Fixed opening Settings visibly resizing the whole app's font if the saved preference differed from what was already showing",
+      "Smoother scrolling site-wide (momentum + scroll-chaining containment)",
+    ],
+  },
+  {
     version: "0.4.2",
     date: "2026-08-29",
     highlights: [
