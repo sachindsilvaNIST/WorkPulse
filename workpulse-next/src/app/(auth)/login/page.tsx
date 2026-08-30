@@ -238,6 +238,17 @@ export default function LoginPage() {
           Create one
         </Link>
       </p>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        By continuing, you agree to WorkPulse&apos;s{" "}
+        <Link href="/terms" className="hover:text-foreground hover:underline">
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="hover:text-foreground hover:underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </motion.div>
   );
 }
