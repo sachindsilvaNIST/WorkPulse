@@ -8,6 +8,11 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.1",
+    date: "2026-08-30",
+    highlights: ["Added Privacy Policy and Terms of Service pages"],
+  },
+  {
     version: "1.8.0",
     date: "2026-08-30",
     highlights: [
