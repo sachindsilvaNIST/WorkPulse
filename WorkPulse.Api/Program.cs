@@ -289,6 +289,11 @@ app.UseRateLimiter();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
+// Unauthenticated, DB-free — just proves the process is awake. Used by the frontend to fire a
+// warm-up ping the moment the app loads, so Render's free-tier cold start (the container sleeps
+// after 15 min idle) happens in the background instead of blocking the first real data request.
+app.MapGet("/api/health", () => Results.Ok());
+
 app.MapControllers();
 
 // Fallback to Blazor index.html for client-side routing

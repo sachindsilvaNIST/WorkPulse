@@ -101,6 +101,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+/** Fire-and-forget ping to wake a sleeping Render free-tier instance as early as possible —
+ * called once on app mount so the ~50s cold start happens in the background while the user is
+ * still looking at the first screen, rather than blocking whichever data request they make first. */
+export function warmUpApi() {
+  fetch(`${API_BASE}/api/health`).catch(() => {});
+}
+
 export const authApi = {
   // Returns the raw challenge result rather than auto-completing the session — a 2FA-enabled
   // account gets { requiresTwoFactor: true, auth: null } here and only actually signs in once
