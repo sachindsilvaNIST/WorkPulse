@@ -1,3 +1,4 @@
+using System.Text;
 using ClosedXML.Excel;
 using WorkPulse.Models;
 
@@ -5,15 +6,21 @@ namespace WorkPulse.Api.Services;
 
 public static class StreamExcelExportService
 {
+    private static readonly XLColor HeaderFill = XLColor.FromHtml("#0078D4");
+    private static readonly XLColor DividerFill = XLColor.FromHtml("#DCEEFF");
+    private static readonly XLColor StripeFill = XLColor.FromHtml("#F5F5F7");
+    private static readonly XLColor BorderColor = XLColor.FromHtml("#E5E5E7");
+
     public static MemoryStream ExportAttendanceToStream(List<MonthlyData> months)
     {
         using var workbook = new XLWorkbook();
-        var ws = workbook.Worksheets.Add("Sheet1");
+        var ws = workbook.Worksheets.Add("Attendance");
 
-        var title = months.FirstOrDefault()?.Title ?? "MSW SETTLEMENT";
+        var title = months.Count == 1 ? months[0].Title : "Attendance Export";
         ws.Range("C1:H2").Merge().Value = title;
         ws.Range("C1:H2").Style.Font.Bold = true;
         ws.Range("C1:H2").Style.Font.FontSize = 14;
+        ws.Range("C1:H2").Style.Font.FontColor = XLColor.FromHtml("#1D1D1F");
         ws.Range("C1:H2").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         ws.Cell("C3").Value = "DAY";
@@ -22,24 +29,105 @@ public static class StreamExcelExportService
         ws.Cell("F3").Value = "LOGOUT";
         ws.Range("G3:J3").Merge().Value = "OVERTIME DURATION";
         ws.Cell("K3").Value = "Overtime";
-        ws.Range("C3:K3").Style.Font.Bold = true;
-        ws.Range("C3:K3").Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+        var headerRange = ws.Range("C3:K3");
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Font.FontColor = XLColor.White;
+        headerRange.Style.Fill.BackgroundColor = HeaderFill;
+        headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        ws.Row(3).Height = 20;
 
         int row = 4;
         foreach (var monthData in months)
         {
+            // Multi-month divider row, also the key that makes round-trip import correctly split
+            // this back into separate months — the importer (StreamExcelImportService) already
+            // groups rows by column B whenever it changes, a mechanism that previously went
+            // unused since nothing ever wrote to column B. Every data row below gets the same
+            // label written into column B, so multiple months in one export come back as multiple
+            // MonthlyData entries on import instead of merging into one.
+            var dividerRange = ws.Range(row, 3, row, 11).Merge();
+            dividerRange.Value = monthData.Title;
+            dividerRange.Style.Font.Bold = true;
+            dividerRange.Style.Fill.BackgroundColor = DividerFill;
+            dividerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+            ws.Row(row).Height = 20;
+            row++;
+
+            var monthKey = $"{monthData.Year:D4}-{monthData.Month:D2}";
+            var stripe = false;
             foreach (var record in monthData.Records.OrderBy(r => r.Date))
             {
-                WriteRecord(ws, row, record);
+                WriteRecord(ws, row, record, monthKey, stripe);
+                stripe = !stripe;
                 row++;
             }
             row++;
         }
 
+        var dataRange = ws.Range(4, 2, Math.Max(row - 1, 4), 11);
+        dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        dataRange.Style.Border.OutsideBorderColor = BorderColor;
+
+        ws.Column(3).Width = 8;
+        ws.Column(4).Width = 12;
+        ws.Column(5).Width = 10;
+        ws.Column(6).Width = 10;
+        ws.Column(7).Width = 6;
+        ws.Column(8).Width = 6;
+        ws.Column(9).Width = 6;
+        ws.Column(10).Width = 6;
+        ws.Column(11).Width = 10;
+        ws.SheetView.FreezeRows(3);
+
         var stream = new MemoryStream();
         workbook.SaveAs(stream);
         stream.Position = 0;
         return stream;
+    }
+
+    public static string ExportAttendanceToHtml(List<MonthlyData> months)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<h1>Attendance Export</h1>");
+        sb.Append($"<p class=\"meta\">Generated {DateTime.UtcNow:MMMM d, yyyy}</p>");
+
+        foreach (var month in months)
+        {
+            sb.Append($"<div class=\"section-title\">{HtmlExportService.Escape(month.Title)}</div>");
+            sb.Append("<table><thead><tr><th>Day</th><th>Date</th><th>Login</th><th>Logout</th><th>Overtime</th><th>Status</th></tr></thead><tbody>");
+            foreach (var record in month.Records.OrderBy(r => r.Date))
+                sb.Append(RenderAttendanceRow(record));
+            sb.Append("</tbody></table>");
+        }
+
+        return HtmlExportService.WrapDocument("Attendance Export", sb.ToString());
+    }
+
+    private static string RenderAttendanceRow(AttendanceRecord r)
+    {
+        string Esc(string? s) => HtmlExportService.Escape(s);
+
+        if (r.DayType != DayType.WorkDay)
+        {
+            var fill = r.DayType == DayType.BusinessTrip ? " style=\"background:#DCEEFF\"" : "";
+            return $"<tr{fill}><td>{Esc(r.DayAbbreviation)}</td><td>{r.Date:yyyy-MM-dd}</td>"
+                 + $"<td colspan=\"4\" class=\"center\">{Esc(r.LoginDisplay)}</td></tr>";
+        }
+
+        var otBadge = r.IsOvertimeDecided
+            ? $"<span class=\"badge {(r.IsOvertime ? "badge-yes" : "badge-no")}\">{(r.IsOvertime ? "YES" : "NO")}</span>"
+            : "<span class=\"badge badge-neutral\">—</span>";
+        var otDuration = r.IsOvertime ? $"{r.OvertimeHours}h {r.OvertimeMinutes}m" : "";
+
+        return "<tr>"
+             + $"<td>{Esc(r.DayAbbreviation)}</td>"
+             + $"<td>{r.Date:yyyy-MM-dd}</td>"
+             + $"<td>{Esc(r.LoginDisplay)}</td>"
+             + $"<td>{Esc(r.LogoutDisplay)}</td>"
+             + $"<td class=\"muted\">{Esc(otDuration)}</td>"
+             + $"<td>{otBadge}</td>"
+             + "</tr>";
     }
 
     public static MemoryStream ExportContactsToStream(List<ContactRecord> contacts)
@@ -78,11 +166,15 @@ public static class StreamExcelExportService
         return stream;
     }
 
-    private static void WriteRecord(IXLWorksheet ws, int row, AttendanceRecord record)
+    private static void WriteRecord(IXLWorksheet ws, int row, AttendanceRecord record, string monthKey, bool stripe)
     {
+        ws.Cell(row, 2).Value = monthKey;
         ws.Cell(row, 3).Value = record.DayAbbreviation;
         ws.Cell(row, 4).Value = record.Date.ToDateTime(TimeOnly.MinValue);
         ws.Cell(row, 4).Style.NumberFormat.Format = "yyyy-mm-dd";
+
+        if (stripe)
+            ws.Range(row, 3, row, 11).Style.Fill.BackgroundColor = StripeFill;
 
         if (record.DayType is DayType.AnnualPaidLeave or DayType.UnpaidLeave or DayType.PublicHoliday
             or DayType.HourlyLeave or DayType.Other)

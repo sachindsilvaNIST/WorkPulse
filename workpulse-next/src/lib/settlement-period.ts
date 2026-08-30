@@ -65,4 +65,17 @@ export function settlementBuckets(year: number, month: number): { year: number; 
   return [previousCalendarMonth(year, month), { year, month }];
 }
 
+// Which settlement period a given date falls into — e.g. Aug 25 falls after the August period's
+// (Jul 21-Aug 20) end, so it belongs to the September period (Aug 21-Sep 20), even though the
+// calendar month is still August. Used to default the dashboard to the settlement period that's
+// actually current, rather than to whichever calendar month happens to have the most recently
+// saved data (which lags behind on any day between a period's cutoff and month-end).
+export function currentSettlementPeriodKey(today: Date = new Date()): { year: number; month: number } {
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const todayIso = toISODate(year, month, today.getDate());
+  const thisMonthPeriod = getSettlementPeriod(year, month);
+  return todayIso > thisMonthPeriod.periodEnd ? nextCalendarMonth(year, month) : { year, month };
+}
+
 export { isWeekend };

@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.0",
+    date: "2026-08-30",
+    highlights: [
+      "Added Attendance export — pick any one or several months and download as a styled XLSX or HTML file",
+      "Fixed the Attendance dashboard defaulting to the wrong settlement period after payday — it now shows whichever period today's date actually falls in, not just the most recently saved month",
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-08-30",
     highlights: [
