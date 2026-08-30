@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowUpRight, Search } from "lucide-react";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
@@ -136,12 +135,7 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-8"
-      >
+      <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           Welcome back{displayName ? `, ${displayName.split(" ")[0]}` : ""}
         </h1>
@@ -158,52 +152,38 @@ export default function HomePage() {
             {isMac ? "⌘" : "Ctrl"} K
           </kbd>
         </button>
-      </motion.div>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:auto-rows-[160px]">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className={GRID_POSITION.weather}
-        >
+      {/* auto-rows is a minmax floor, not a fixed height — tiles have min-h-44 (176px), taller
+          than a fixed 160px track would allow, which was overflowing each tile into the gap
+          below it and visually colliding with the next row (worse at larger font-size presets,
+          since min-h-44 is rem-based and grows with the root font size). */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:auto-rows-[minmax(160px,auto)]">
+        <div className={GRID_POSITION.weather}>
           <WeatherWidget />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-          className={GRID_POSITION.clock}
-        >
+        </div>
+        <div className={GRID_POSITION.clock}>
           <ClockWidget />
-        </motion.div>
+        </div>
 
-        {tiles.map((tile, i) => {
+        {tiles.map((tile) => {
           const Icon = tile.icon;
           const color = resolveNavColor(tile.color);
           const color2 = resolveNavColor(tile.color2 ?? tile.color);
           const stat = stats[tile.href];
           const showStat = !NO_STAT_HREFS.has(tile.href);
           return (
-            <motion.div
-              key={tile.href}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: (i + 2) * 0.05, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ y: -4 }}
-              className={GRID_POSITION[tile.href]}
-            >
+            <div key={tile.href} className={GRID_POSITION[tile.href]}>
               <Link
                 href={tile.href}
-                className="group relative flex min-h-44 flex-col justify-between overflow-hidden rounded-2xl border border-white/20 p-6 text-white backdrop-blur-2xl backdrop-saturate-200 transition-transform duration-300 sm:h-full"
+                className="group relative flex min-h-44 flex-col justify-between overflow-hidden rounded-2xl border border-white/20 p-6 text-white backdrop-blur-2xl backdrop-saturate-200 sm:h-full"
                 style={{
                   background: `linear-gradient(150deg, color-mix(in srgb, ${color} 85%, white 12%) 0%, ${color} 45%, ${color2} 75%, color-mix(in srgb, ${color2} 80%, black 30%) 100%)`,
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -20px 40px -20px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(0,0,0,0.4)",
                 }}
               >
-                <div className="liquid-sheen pointer-events-none absolute inset-0" />
                 <div className="flex items-start justify-between">
-                  <div className="widget-float flex size-11 items-center justify-center rounded-[22%] bg-white/15 backdrop-blur-sm">
+                  <div className="flex size-11 items-center justify-center rounded-[22%] bg-white/15">
                     <Icon className="size-5.5" />
                   </div>
                   <ArrowUpRight className="size-5 opacity-0 transition-opacity duration-200 group-hover:opacity-80" />
@@ -226,7 +206,7 @@ export default function HomePage() {
                   )}
                 </div>
               </Link>
-            </motion.div>
+            </div>
           );
         })}
       </div>

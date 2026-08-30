@@ -26,11 +26,8 @@ export function ClockWidget() {
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -20px 40px -20px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(0,0,0,0.45)",
       }}
     >
-      <div className="liquid-sheen pointer-events-none absolute inset-0" />
       <div className="flex items-start justify-between">
-        <div className="widget-float">
-          <Clock className="size-7 drop-shadow-md" strokeWidth={1.75} />
-        </div>
+        <Clock className="size-7 drop-shadow-md" strokeWidth={1.75} />
       </div>
       <div>
         <p className="text-4xl font-bold leading-tight tabular-nums drop-shadow-sm">{time}</p>
