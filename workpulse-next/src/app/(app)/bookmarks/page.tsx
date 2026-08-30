@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Tag, Text, Trash2, Upload, X } from "lucide-react";
@@ -40,6 +40,7 @@ function normalizeUrl(url: string) {
 
 export default function BookmarksPage() {
   const [links, setLinks] = useState<QuickLink[]>([]);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -56,6 +57,19 @@ export default function BookmarksPage() {
       setLoading(false);
     });
   }, []);
+
+  // Spotlight's "Add Bookmark" action navigates to /bookmarks?new=1 — when already on this page,
+  // that's a same-route navigation (query string only), so the component doesn't remount and the
+  // `showForm` useState initializer above (which only runs once, on first mount) never sees the
+  // param. This effect re-checks it on every searchParams change instead, and strips the param
+  // from the URL right after so it doesn't reopen the modal again on a later back/forward nav.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openNew();
+      router.replace("/bookmarks");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const categories = useMemo(() => {
     const set = new Set(links.map((l) => l.category).filter(Boolean));

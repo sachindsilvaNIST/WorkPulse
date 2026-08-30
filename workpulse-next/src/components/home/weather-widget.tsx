@@ -76,16 +76,11 @@ export function WeatherWidget() {
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -20px 40px -20px rgba(0,0,0,0.25), 0 12px 32px -12px rgba(0,0,0,0.4)",
       }}
     >
-      <div className="liquid-sheen pointer-events-none absolute inset-0" />
       <div className="flex items-start justify-between">
         <span className="flex items-center gap-1 text-xs font-medium text-white/90 drop-shadow-sm">
           <MapPin className="size-3" /> Your location
         </span>
-        {status === "ready" && (
-          <div className="widget-float">
-            <Icon className="size-7 drop-shadow-md" strokeWidth={1.75} />
-          </div>
-        )}
+        {status === "ready" && <Icon className="size-7 drop-shadow-md" strokeWidth={1.75} />}
       </div>
 
       {status === "loading" && (
