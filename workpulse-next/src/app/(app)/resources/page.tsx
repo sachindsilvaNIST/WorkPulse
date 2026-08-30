@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
+  CheckCircle2,
   Download,
   ExternalLink,
   FileText,
@@ -59,7 +61,41 @@ function formatSize(bytes: number): string {
 }
 
 function emptyForm() {
-  return { type: "Link" as ResourceType, title: "", notes: "", url: "", tags: [] as string[], keywords: "", file: null as File | null };
+  return { type: "Link" as ResourceType, title: "", notes: "", url: "", tags: [] as string[], keywords: "", files: [] as File[] };
+}
+
+// Executable/script types only — a personal knowledge library has no reason to run anything it
+// stores, and blocking these avoids accidentally hosting something that could execute if
+// downloaded and opened later. Documents, images, archives, media, and everything else typical
+// of "notes and reference material" are unrestricted.
+const BLOCKED_EXTENSIONS = new Set([
+  "exe", "bat", "cmd", "com", "msi", "msp", "scr", "vbs", "vbe", "js", "jse", "wsf", "wsh",
+  "ps1", "psm1", "sh", "bash", "app", "dmg", "pkg", "apk", "jar", "action", "command", "workflow",
+]);
+
+function fileExtension(name: string): string {
+  const idx = name.lastIndexOf(".");
+  return idx === -1 ? "" : name.slice(idx + 1).toLowerCase();
+}
+
+function isBlockedFile(file: File): boolean {
+  return BLOCKED_EXTENSIONS.has(fileExtension(file.name));
+}
+
+/** A file's own name, minus its extension, used as the per-resource title when several files are
+ * uploaded at once — each becomes its own Resource, identified by its filename rather than one
+ * shared title none of them individually matches. */
+function titleFromFileName(name: string): string {
+  const idx = name.lastIndexOf(".");
+  return idx > 0 ? name.slice(0, idx) : name;
+}
+
+type UploadStatus = "queued" | "uploading" | "done" | "error";
+interface UploadEntry {
+  id: string;
+  file: File;
+  status: UploadStatus;
+  error?: string;
 }
 
 export default function ResourcesPage() {
@@ -77,6 +113,11 @@ export default function ResourcesPage() {
 
   const [detail, setDetail] = useState<Resource | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Per-file upload tracking for the multi-file "New Resource" flow — each selected file becomes
+  // its own entry here (queued → uploading → done/error) so the modal can show a macOS-style
+  // per-item progress list instead of one opaque "saving…" spinner for the whole batch.
+  const [uploads, setUploads] = useState<UploadEntry[]>([]);
 
   useEffect(() => {
     resourcesApi.getAll().then((list) => {
@@ -107,18 +148,42 @@ export default function ResourcesPage() {
     setEditingId(null);
     setForm(emptyForm());
     setSaveError(null);
+    setUploads([]);
     setShowForm(true);
   }
 
   function openEdit(r: Resource) {
     setEditingId(r.id);
-    setForm({ type: r.type, title: r.title, notes: r.notes, url: r.url ?? "", tags: parseTags(r.tags), keywords: r.keywords, file: null });
+    setForm({ type: r.type, title: r.title, notes: r.notes, url: r.url ?? "", tags: parseTags(r.tags), keywords: r.keywords, files: [] });
     setSaveError(null);
+    setUploads([]);
     setShowForm(true);
     setDetail(null);
   }
 
-  const canSubmit = form.title.trim().length > 0 && (form.type !== "Link" || form.url.trim().length > 0) && (editingId || form.type !== "File" || !!form.file);
+  function addFiles(newFiles: File[]) {
+    const accepted = newFiles.filter((f) => !isBlockedFile(f));
+    const rejected = newFiles.length - accepted.length;
+    setForm((prev) => ({ ...prev, files: [...prev.files, ...accepted] }));
+    setUploads((prev) => [
+      ...prev,
+      ...accepted.map((file, i) => ({ id: `${file.name}-${file.size}-${prev.length + i}`, file, status: "queued" as UploadStatus })),
+    ]);
+    setSaveError(rejected > 0 ? `${rejected} file${rejected === 1 ? "" : "s"} skipped — that file type isn't allowed.` : null);
+  }
+
+  function removeUpload(id: string) {
+    setUploads((prev) => {
+      const target = prev.find((u) => u.id === id);
+      if (target) setForm((f) => ({ ...f, files: f.files.filter((file) => file !== target.file) }));
+      return prev.filter((u) => u.id !== id);
+    });
+  }
+
+  const canSubmit =
+    form.type === "File"
+      ? editingId !== null || form.files.length > 0
+      : form.title.trim().length > 0 && (form.type !== "Link" || form.url.trim().length > 0);
 
   async function handleSave() {
     setSaveError(null);
@@ -133,6 +198,39 @@ export default function ResourcesPage() {
           keywords: form.keywords,
         });
         setResources((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
+        setShowForm(false);
+      } else if (form.type === "File") {
+        // Sequential, not parallel — keeps the per-file "queued → uploading → done" progression
+        // honest (an accurate reflection of what's actually happening right now) rather than
+        // firing every request at once and guessing at individual completion order.
+        const created: Resource[] = [];
+        let anyFailed = false;
+        for (const entry of uploads) {
+          if (entry.status === "done") continue;
+          setUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "uploading" } : u)));
+          try {
+            const resource = await resourcesApi.create({
+              type: "File",
+              title: uploads.length > 1 || !form.title.trim() ? titleFromFileName(entry.file.name) : form.title,
+              notes: form.notes,
+              tags: form.tags.join(", "),
+              keywords: form.keywords,
+              file: entry.file,
+            });
+            created.push(resource);
+            setUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "done" } : u)));
+          } catch (err) {
+            anyFailed = true;
+            const message = err instanceof ApiError ? err.message : "Upload failed.";
+            setUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "error", error: message } : u)));
+          }
+        }
+        if (created.length > 0) setResources((prev) => [...created, ...prev]);
+        if (!anyFailed) {
+          setShowForm(false);
+        } else {
+          setSaveError("Some files failed to upload — remove them or try again.");
+        }
       } else {
         const created = await resourcesApi.create({
           type: form.type,
@@ -141,11 +239,10 @@ export default function ResourcesPage() {
           url: form.type === "Link" ? form.url : undefined,
           tags: form.tags.join(", "),
           keywords: form.keywords,
-          file: form.file,
         });
         setResources((prev) => [created, ...prev]);
+        setShowForm(false);
       }
-      setShowForm(false);
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Failed to save resource.");
     } finally {
@@ -199,7 +296,12 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <FormModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Edit Resource" : "New Resource"}>
+      <FormModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editingId ? "Edit Resource" : "New Resource"}
+        maxWidthClassName={form.type === "File" && !editingId ? "max-w-2xl" : "max-w-lg"}
+      >
           <div className="mb-3 flex gap-1.5">
             {(Object.keys(TYPE_META) as ResourceType[]).map((t) => {
               const meta = TYPE_META[t];
@@ -223,12 +325,14 @@ export default function ResourcesPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input
-              placeholder="Title (e.g. Taiwan Visa Guide)"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="sm:col-span-2"
-            />
+            {!(form.type === "File" && !editingId) && (
+              <Input
+                placeholder="Title (e.g. Taiwan Visa Guide)"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="sm:col-span-2"
+              />
+            )}
             {form.type === "Link" && (
               <Input
                 placeholder="https://example.com"
@@ -238,13 +342,60 @@ export default function ResourcesPage() {
               />
             )}
             {form.type === "File" && !editingId && (
-              <FileDropZone
-                onFile={(file) => setForm({ ...form, file })}
-                className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-input bg-background/50 px-4 text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5 sm:col-span-2"
-              >
-                <Upload className="size-4 shrink-0" />
-                <span className="truncate">{form.file ? form.file.name : "PDF, Word, Excel, image, or drop it here…"}</span>
-              </FileDropZone>
+              <div className="sm:col-span-2">
+                {/* Optional — only matters when exactly one file is queued (a shared title across
+                    several files wouldn't uniquely identify any of them, so multi-file mode always
+                    titles each resource from its own filename instead). */}
+                {uploads.length <= 1 && (
+                  <Input
+                    placeholder="Title (defaults to the file name)"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="mb-3"
+                  />
+                )}
+                <FileDropZone
+                  multiple
+                  onFiles={addFiles}
+                  className="flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-input bg-background/50 px-4 text-center text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5"
+                >
+                  <Upload className="size-5 shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Click to upload</span> or drag and drop — any number of files
+                  </span>
+                  <span className="text-xs">PDF, Word, Excel, image, archive, or anything except an executable</span>
+                </FileDropZone>
+
+                {uploads.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-1.5">
+                    {uploads.map((u) => (
+                      <div key={u.id} className="flex items-center gap-3 rounded-xl border border-border bg-foreground/[0.03] px-3 py-2">
+                        <FileText className="size-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{u.file.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {formatSize(u.file.size)}
+                            {u.status === "error" && u.error ? ` — ${u.error}` : ""}
+                          </p>
+                        </div>
+                        {u.status === "uploading" && <Spinner size={16} className="shrink-0 text-primary" />}
+                        {u.status === "done" && <CheckCircle2 className="size-4 shrink-0 text-[#34C759]" />}
+                        {u.status === "error" && <AlertCircle className="size-4 shrink-0 text-destructive" />}
+                        {(u.status === "queued" || u.status === "error") && (
+                          <button
+                            type="button"
+                            onClick={() => removeUpload(u.id)}
+                            className="cursor-pointer rounded-full p-1 text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
+                            title="Remove"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             <textarea
               placeholder="Notes — what this is, what worked, anything future-you should know"
