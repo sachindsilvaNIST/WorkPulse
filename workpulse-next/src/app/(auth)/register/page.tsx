@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api/client";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
@@ -17,7 +18,7 @@ import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/li
 import { EmailConfirmationStep } from "@/components/auth/email-confirmation-step";
 
 export default function RegisterPage() {
-  const { register, pendingEmailConfirmationEmail } = useAuth();
+  const { register, googleSignIn, pendingEmailConfirmationEmail } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +47,18 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await run(() => register({ email, password, displayName }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleCredential(credential: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      await run(() => googleSignIn(credential));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -150,6 +163,13 @@ export default function RegisterPage() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="h-px flex-1 bg-border" />
+        or
+        <div className="h-px flex-1 bg-border" />
+      </div>
+      <GoogleSignInButton onCredential={handleGoogleCredential} />
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}

@@ -16,6 +16,7 @@ interface AuthContextValue {
    * yet — the login page shows a code-entry step while this is non-null. */
   pendingTwoFactorEmail: string | null;
   login: (req: LoginRequest) => Promise<{ requiresTwoFactor: boolean }>;
+  googleSignIn: (credential: string) => Promise<{ requiresTwoFactor: boolean }>;
   verifyTwoFactor: (code: string) => Promise<void>;
   cancelTwoFactor: () => void;
   /** Set right after registering — the register page shows a code-entry step while this is
@@ -78,6 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (req: LoginRequest) => {
       const result = await authApi.login(req);
+      if (result.requiresTwoFactor) {
+        setPendingTwoFactorEmail(result.email);
+        return { requiresTwoFactor: true };
+      }
+      if (result.auth) await completeSession(result.auth.token, result.auth.displayName);
+      return { requiresTwoFactor: false };
+    },
+    [completeSession]
+  );
+
+  const googleSignIn = useCallback(
+    async (credential: string) => {
+      const result = await authApi.googleSignIn(credential);
       if (result.requiresTwoFactor) {
         setPendingTwoFactorEmail(result.email);
         return { requiresTwoFactor: true };
@@ -154,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         pendingTwoFactorEmail,
         login,
+        googleSignIn,
         verifyTwoFactor,
         cancelTwoFactor,
         pendingEmailConfirmationEmail,
