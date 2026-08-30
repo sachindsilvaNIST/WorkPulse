@@ -241,7 +241,12 @@ export default function ContactsPage() {
         </div>
       )}
 
-      <FormModal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Edit Contact" : "Add Contact"}>
+      <FormModal
+        open={showForm}
+        onClose={() => { setShowForm(false); setEditingId(null); }}
+        title={editingId ? "Edit Contact" : "Add Contact"}
+        onSubmit={attemptSave}
+      >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <AutocompleteInput
               placeholder="Affiliation"
@@ -310,8 +315,9 @@ export default function ContactsPage() {
               suggestions={notesHistory}
             />
             <div className="flex gap-2 sm:col-span-3">
-              <Button onClick={attemptSave}>{editingId ? "Update" : "Save"}</Button>
+              <Button type="submit">{editingId ? "Update" : "Save"}</Button>
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => {
                   setShowForm(false);

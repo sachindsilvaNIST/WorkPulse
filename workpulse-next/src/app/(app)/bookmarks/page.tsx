@@ -394,7 +394,12 @@ export default function BookmarksPage() {
         </div>
       )}
 
-      <FormModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Edit Bookmark" : "Add Bookmark"}>
+      <FormModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editingId ? "Edit Bookmark" : "Add Bookmark"}
+        onSubmit={handleSave}
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <AutocompleteInput
             placeholder="Label (e.g. My Drive)"
@@ -427,20 +432,25 @@ export default function BookmarksPage() {
           </p>
         )}
         <div className="mt-4 flex gap-2">
-          <Button onClick={handleSave}>{editingId ? "Update" : "Add"}</Button>
-          <Button variant="outline" onClick={() => setShowForm(false)}>
+          <Button type="submit">{editingId ? "Update" : "Add"}</Button>
+          <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
             Cancel
           </Button>
         </div>
       </FormModal>
 
-      <FormModal open={recategorizeOpen} onClose={() => setRecategorizeOpen(false)} title={`Recategorize ${selectedIds.size} Bookmark${selectedIds.size === 1 ? "" : "s"}`}>
+      <FormModal
+        open={recategorizeOpen}
+        onClose={() => setRecategorizeOpen(false)}
+        title={`Recategorize ${selectedIds.size} Bookmark${selectedIds.size === 1 ? "" : "s"}`}
+        onSubmit={handleRecategorizeSelected}
+      >
         <CategoryPicker value={recategorizeValue} onChange={setRecategorizeValue} placeholder="New category" />
         <div className="mt-4 flex gap-2">
-          <Button onClick={handleRecategorizeSelected} disabled={!recategorizeValue.trim()}>
+          <Button type="submit" disabled={!recategorizeValue.trim()}>
             Apply
           </Button>
-          <Button variant="outline" onClick={() => setRecategorizeOpen(false)}>
+          <Button type="button" variant="outline" onClick={() => setRecategorizeOpen(false)}>
             Cancel
           </Button>
         </div>

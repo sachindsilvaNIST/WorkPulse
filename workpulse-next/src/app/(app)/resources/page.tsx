@@ -123,8 +123,16 @@ export default function ResourcesPage() {
     resourcesApi.getAll().then((list) => {
       setResources(list);
       setLoading(false);
+      // Lets Spotlight jump straight to a specific resource's detail view (`?open=<id>`), same
+      // idea as `?new=1` opening the add form — needs the list loaded first since detail is
+      // looked up by id.
+      const openId = searchParams.get("open");
+      if (openId) {
+        const match = list.find((r) => r.id === openId);
+        if (match) setDetail(match);
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -186,6 +194,7 @@ export default function ResourcesPage() {
       : form.title.trim().length > 0 && (form.type !== "Link" || form.url.trim().length > 0);
 
   async function handleSave() {
+    if (!canSubmit || saving) return;
     setSaveError(null);
     setSaving(true);
     try {
@@ -301,6 +310,7 @@ export default function ResourcesPage() {
         onClose={() => setShowForm(false)}
         title={editingId ? "Edit Resource" : "New Resource"}
         maxWidthClassName={form.type === "File" && !editingId ? "max-w-2xl" : "max-w-lg"}
+        onSubmit={handleSave}
       >
           <div className="mb-3 flex gap-1.5">
             {(Object.keys(TYPE_META) as ResourceType[]).map((t) => {
@@ -415,10 +425,10 @@ export default function ResourcesPage() {
           {saveError && <p className="mt-2 text-sm text-destructive">{saveError}</p>}
 
           <div className="mt-4 flex gap-2">
-            <Button onClick={handleSave} disabled={!canSubmit || saving}>
+            <Button type="submit" disabled={!canSubmit || saving}>
               {saving ? <Spinner size={16} /> : editingId ? "Update" : "Add"}
             </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
               Cancel
             </Button>
           </div>

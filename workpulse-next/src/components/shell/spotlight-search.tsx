@@ -7,7 +7,7 @@ import type { ElementType } from "react";
 import { Bookmark, ExternalLink, Library, Search, Users } from "lucide-react";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
-import { resourcesApi, quickLinksApi } from "@/lib/api/client";
+import { resourcesApi, quickLinksApi, downloadBlob } from "@/lib/api/client";
 import type { Resource, QuickLink } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
@@ -80,6 +80,12 @@ export function SpotlightSearch() {
 
   const results = useMemo<SpotlightResult[]>(() => {
     const q = query.trim().toLowerCase();
+    // "open <name>" is a command, not free text to search for literally — match everything
+    // openable (web shortcuts, bookmarks, link resources) against just the part after "open ",
+    // so "open github" finds a bookmark titled "GitHub" instead of nothing (the word "open"
+    // itself was polluting the substring match against every item's label).
+    const openMatch = /^open\s+(.*)$/.exec(q);
+    const matchText = openMatch ? openMatch[1].trim() : q;
 
     const quickActionResults: SpotlightResult[] = QUICK_ACTIONS.filter(
       (a) => !q || `${a.label} ${a.description}`.toLowerCase().includes(q)
@@ -94,7 +100,7 @@ export function SpotlightSearch() {
     }));
 
     const webShortcutResults: SpotlightResult[] = WEB_SHORTCUTS.filter(
-      (s) => !q || `${s.label} ${s.description}`.toLowerCase().includes(q)
+      (s) => !matchText || `${s.label} ${s.description}`.toLowerCase().includes(matchText)
     ).map((s) => ({
       id: `web-${s.url}`,
       group: "Open Website",
@@ -117,9 +123,9 @@ export function SpotlightSearch() {
         action: () => router.push(item.href),
       }));
 
-    const resourceResults: SpotlightResult[] = q
+    const resourceResults: SpotlightResult[] = matchText
       ? (resources ?? [])
-          .filter((r) => `${r.title} ${r.notes} ${r.tags} ${r.keywords}`.toLowerCase().includes(q))
+          .filter((r) => `${r.title} ${r.notes} ${r.tags} ${r.keywords}`.toLowerCase().includes(matchText))
           .slice(0, 5)
           .map((r) => ({
             id: `resource-${r.id}`,
@@ -128,13 +134,23 @@ export function SpotlightSearch() {
             description: r.tags || r.notes,
             icon: Library,
             color: "#5AC8FA",
-            action: () => router.push(`/resources?q=${encodeURIComponent(r.title)}`),
+            // Mirrors how each type is actually opened on the Resources page itself: a Link goes
+            // straight to its URL, a File downloads, and a Note has no external target — the
+            // closest equivalent is jumping to its own detail view rather than a filtered list.
+            action:
+              r.type === "Link" && r.url
+                ? () => window.open(r.url!, "_blank", "noopener,noreferrer")
+                : r.type === "File"
+                  ? () => {
+                      void resourcesApi.download(r.id).then(({ blob, fileName }) => downloadBlob(blob, fileName || r.fileName));
+                    }
+                  : () => router.push(`/resources?open=${r.id}`),
           }))
       : [];
 
-    const bookmarkResults: SpotlightResult[] = q
+    const bookmarkResults: SpotlightResult[] = matchText
       ? (bookmarks ?? [])
-          .filter((b) => `${b.label} ${b.category} ${b.keywords}`.toLowerCase().includes(q))
+          .filter((b) => `${b.label} ${b.category} ${b.keywords}`.toLowerCase().includes(matchText))
           .slice(0, 5)
           .map((b) => ({
             id: `bookmark-${b.id}`,
@@ -143,7 +159,7 @@ export function SpotlightSearch() {
             description: b.category || b.url,
             icon: Bookmark,
             color: "#00C7BE",
-            action: () => router.push(`/bookmarks?q=${encodeURIComponent(b.label)}`),
+            action: () => window.open(b.url, "_blank", "noopener,noreferrer"),
           }))
       : [];
 

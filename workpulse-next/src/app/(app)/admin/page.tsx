@@ -223,7 +223,14 @@ export default function AdminPage() {
 
       {showForm && (
         <Card className="mb-6">
-          <CardContent className="flex flex-col gap-3">
+          <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+            className="flex flex-col gap-3"
+          >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input
                 placeholder="Display Name"
@@ -259,11 +266,12 @@ export default function AdminPage() {
             </div>
             {formError && <p className="text-sm text-destructive">{formError}</p>}
             <div className="flex gap-2">
-              <Button onClick={handleSubmit}>{editingId ? "Update" : "Create User"}</Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>
+              <Button type="submit">{editingId ? "Update" : "Create User"}</Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
             </div>
+          </form>
           </CardContent>
         </Card>
       )}
