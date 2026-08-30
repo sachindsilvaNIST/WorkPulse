@@ -75,6 +75,42 @@ public class ExcelController : ApiControllerBase
         return Ok(months);
     }
 
+    [HttpPost("daily-reports/export")]
+    public async Task<ActionResult> ExportDailyReports([FromBody] List<string> ids, [FromQuery] string format = "xlsx")
+    {
+        if (ids.Count == 0)
+            return BadRequest(new { error = "Select at least one report." });
+
+        var reports = await _db.DailyReports.Where(r => r.UserId == UserId && ids.Contains(r.Id)).ToListAsync();
+        var items = reports.Select(r => new NoteExportItem(r.ReportDate, r.Title, r.Body)).ToList();
+
+        if (format == "html")
+        {
+            var html = NoteExportService.ExportToHtml("Daily Reports", items);
+            return File(Encoding.UTF8.GetBytes(html), "text/html", "daily-reports.html");
+        }
+        var stream = NoteExportService.ExportToXlsx("Daily Reports", items);
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "daily-reports.xlsx");
+    }
+
+    [HttpPost("weekly-reports/export")]
+    public async Task<ActionResult> ExportWeeklyReports([FromBody] List<string> ids, [FromQuery] string format = "xlsx")
+    {
+        if (ids.Count == 0)
+            return BadRequest(new { error = "Select at least one report." });
+
+        var reports = await _db.WeeklyReports.Where(r => r.UserId == UserId && ids.Contains(r.Id)).ToListAsync();
+        var items = reports.Select(r => new NoteExportItem(r.WeekStartDate, r.Title, r.Body)).ToList();
+
+        if (format == "html")
+        {
+            var html = NoteExportService.ExportToHtml("Weekly Reports", items);
+            return File(Encoding.UTF8.GetBytes(html), "text/html", "weekly-reports.html");
+        }
+        var stream = NoteExportService.ExportToXlsx("Weekly Reports", items);
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "weekly-reports.xlsx");
+    }
+
     [HttpPost("contacts/export")]
     public ActionResult ExportContacts([FromBody] List<ContactRecord> contacts)
     {

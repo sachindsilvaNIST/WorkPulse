@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ElementType } from "react";
-import { Bookmark, Library, Search, Users } from "lucide-react";
+import { Bookmark, ExternalLink, Library, Search, Users } from "lucide-react";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { resourcesApi, quickLinksApi } from "@/lib/api/client";
@@ -31,6 +31,12 @@ const QUICK_ACTIONS: { label: string; description: string; icon: ElementType; co
   { label: "Add Bookmark", description: "Save a new link", icon: Bookmark, color: "#FFD60A", href: "/bookmarks?new=1" },
   { label: "New Resource", description: "Save a link, file, or note", icon: Library, color: "#40C8E0", href: "/resources?new=1" },
   { label: "Add Contact", description: "Save a new contact", icon: Users, color: "#30D158", href: "/contacts?new=1" },
+];
+
+// "open <site>" shortcuts — launch an external site in a new tab, distinct from Quick Actions
+// (which jump inside the app) and Go To (which navigates the current tab to a WorkPulse page).
+const WEB_SHORTCUTS: { label: string; description: string; icon: ElementType; color: string; url: string }[] = [
+  { label: "Open Claude", description: "claude.ai", icon: ExternalLink, color: "#DA7756", url: "https://claude.ai" },
 ];
 
 /** App-wide quick search — Cmd/Ctrl+K from anywhere, or the search bar on Home. Searches nav
@@ -87,6 +93,18 @@ export function SpotlightSearch() {
       action: () => router.push(a.href),
     }));
 
+    const webShortcutResults: SpotlightResult[] = WEB_SHORTCUTS.filter(
+      (s) => !q || `${s.label} ${s.description}`.toLowerCase().includes(q)
+    ).map((s) => ({
+      id: `web-${s.url}`,
+      group: "Open Website",
+      label: s.label,
+      description: s.description,
+      icon: s.icon,
+      color: s.color,
+      action: () => window.open(s.url, "_blank", "noopener,noreferrer"),
+    }));
+
     const navResults: SpotlightResult[] = NAV_ITEMS.filter((item) => !item.disabled)
       .filter((item) => !q || `${item.label} ${item.description}`.toLowerCase().includes(q))
       .map((item) => ({
@@ -129,7 +147,7 @@ export function SpotlightSearch() {
           }))
       : [];
 
-    return [...quickActionResults, ...navResults, ...resourceResults, ...bookmarkResults];
+    return [...quickActionResults, ...webShortcutResults, ...navResults, ...resourceResults, ...bookmarkResults];
   }, [query, resources, bookmarks, router]);
 
   const groups = Array.from(new Set(results.map((r) => r.group)));

@@ -35,6 +35,7 @@ export default function WeeklyReportsPage() {
       api={weeklyReportsApi}
       basePath="/api/weeklyreports"
       makeNew={() => ({ weekStartDate: startOfWeek(weekStartDay) })}
+      onExport={weeklyReportsApi.exportReports}
     />
   );
 }

@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Trash2, type LucideIcon } from "lucide-react";
+import { CheckSquare, Download, Plus, Search, Trash2, X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/reports/rich-text-editor";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+import { downloadBlob } from "@/lib/api/client";
 
 export interface NoteRecord {
   id: string;
@@ -60,6 +61,7 @@ export function NoteEditor<T extends NoteRecord>({
   api,
   basePath,
   makeNew,
+  onExport,
 }: {
   icon: LucideIcon;
   heading: string;
@@ -70,11 +72,50 @@ export function NoteEditor<T extends NoteRecord>({
   /** e.g. "/api/dailyreports" — needed for the beforeunload beacon, which can't go through `api` generically. */
   basePath: string;
   makeNew: () => Partial<T>;
+  /** Exports the given ids as an XLSX or HTML file — same shape as dailyReportsApi/weeklyReportsApi's
+   * exportReports, kept optional so any future NoteEditor consumer without a backend export
+   * endpoint doesn't have to fake one. */
+  onExport?: (ids: string[], format: "xlsx" | "html") => Promise<{ blob: Blob; fileName: string }>;
 }) {
   const [records, setRecords] = useState<T[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Bulk-select mode for exporting one or more entries — separate from the single-selection
+  // "open this entry in the editor" state above, since you can multi-select for export without
+  // ever opening anything in the editor pane.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "html">("xlsx");
+  const [exporting, setExporting] = useState(false);
+
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleExportSelected() {
+    if (!onExport || selectedIds.size === 0) return;
+    setExporting(true);
+    try {
+      const { blob, fileName } = await onExport(Array.from(selectedIds), exportFormat);
+      downloadBlob(blob, fileName);
+      setSelectMode(false);
+      setSelectedIds(new Set());
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -251,9 +292,21 @@ export function NoteEditor<T extends NoteRecord>({
             <h1 className="text-lg font-semibold tracking-tight">{heading}</h1>
             <p className="text-xs text-muted-foreground">{subheading}</p>
           </div>
-          <Button size="icon" variant="glass" onClick={handleNew} title={`New ${heading.slice(0, -1)}`}>
-            <Plus className="size-4" />
-          </Button>
+          <div className="flex items-center gap-1.5">
+            {onExport && (
+              <Button
+                size="icon"
+                variant={selectMode ? "default" : "glass"}
+                onClick={toggleSelectMode}
+                title={selectMode ? "Cancel selection" : "Select entries to export"}
+              >
+                {selectMode ? <X className="size-4" /> : <CheckSquare className="size-4" />}
+              </Button>
+            )}
+            <Button size="icon" variant="glass" onClick={handleNew} title={`New ${heading.slice(0, -1)}`}>
+              <Plus className="size-4" />
+            </Button>
+          </div>
         </div>
         <div className="border-b border-white/10 p-3">
           <div className="relative">
@@ -274,27 +327,70 @@ export function NoteEditor<T extends NoteRecord>({
           {filtered.map((r) => (
             <button
               key={r.id}
-              onClick={() => selectRecord(r.id)}
+              onClick={() => (selectMode ? toggleSelected(r.id) : selectRecord(r.id))}
               className={cn(
-                "group mb-1 flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors",
-                r.id === selectedId ? "bg-primary/15" : "hover:bg-foreground/5"
+                "group mb-1 flex w-full items-start gap-2 rounded-xl px-3 py-2.5 text-left transition-colors",
+                !selectMode && r.id === selectedId ? "bg-primary/15" : "hover:bg-foreground/5"
               )}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-medium">{r.title || "Untitled"}</span>
-                <Trash2
-                  className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(r.id);
-                  }}
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(r.id)}
+                  onChange={() => toggleSelected(r.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1 size-3.5 shrink-0 cursor-pointer"
                 />
+              )}
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-medium">{r.title || "Untitled"}</span>
+                  {!selectMode && (
+                    <Trash2
+                      className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(r.id);
+                      }}
+                    />
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">{String(r[dateField])}</span>
+                <span className="truncate text-xs text-muted-foreground/70">{stripHtml(r.body) || "No content"}</span>
               </div>
-              <span className="text-xs text-muted-foreground">{String(r[dateField])}</span>
-              <span className="truncate text-xs text-muted-foreground/70">{stripHtml(r.body) || "No content"}</span>
             </button>
           ))}
         </div>
+        {selectMode && (
+          <div className="flex flex-col gap-2 border-t border-white/10 p-3">
+            <div className="flex gap-1">
+              <Button
+                variant={exportFormat === "xlsx" ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setExportFormat("xlsx")}
+              >
+                XLSX
+              </Button>
+              <Button
+                variant={exportFormat === "html" ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setExportFormat("html")}
+              >
+                HTML
+              </Button>
+            </div>
+            <Button size="sm" onClick={handleExportSelected} disabled={selectedIds.size === 0 || exporting}>
+              <Download className="size-3.5" />
+              {exporting
+                ? "Exporting…"
+                : selectedIds.size > 0
+                  ? `Export ${selectedIds.size} ${selectedIds.size === 1 ? "entry" : "entries"}`
+                  : "Select entries to export"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Editor */}
