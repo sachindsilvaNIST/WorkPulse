@@ -3,26 +3,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Library, Search, Users, type LucideIcon } from "lucide-react";
+import type { ElementType } from "react";
+import { Bookmark, Library, Search, Users } from "lucide-react";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { resourcesApi, quickLinksApi } from "@/lib/api/client";
 import type { Resource, QuickLink } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
 
 interface SpotlightResult {
   id: string;
   group: string;
   label: string;
   description?: string;
-  icon: LucideIcon;
+  // Nav results now carry Phosphor icons (see nav-items.ts) while Quick Actions/Resources/
+  // Bookmarks results still use lucide-react — this list is genuinely mixed, so the type has to
+  // be loose enough for both rather than committing to one icon library's component type.
+  icon: ElementType;
   color: string;
   action: () => void;
 }
 
 // Fixed shortcuts to each "add new" flow — each target page reads `?new=1` on mount and opens its
 // add form immediately, so selecting one of these is a single jump straight into data entry.
-const QUICK_ACTIONS: { label: string; description: string; icon: LucideIcon; color: string; href: string }[] = [
+const QUICK_ACTIONS: { label: string; description: string; icon: ElementType; color: string; href: string }[] = [
   { label: "Add Bookmark", description: "Save a new link", icon: Bookmark, color: "#FFD60A", href: "/bookmarks?new=1" },
   { label: "New Resource", description: "Save a link, file, or note", icon: Library, color: "#40C8E0", href: "/resources?new=1" },
   { label: "Add Contact", description: "Save a new contact", icon: Users, color: "#30D158", href: "/contacts?new=1" },
@@ -201,11 +206,16 @@ export function SpotlightSearch() {
                             index === highlighted && "bg-foreground/8"
                           )}
                         >
+                          {/* Mixed icon sources here — nav results use the original outline glyphs
+                              (nav-items.ts), Quick Actions/Resources/Bookmarks still use lucide —
+                              so no fill/stroke override applied uniformly; each renders with its
+                              own component defaults. */}
                           <span
-                            className="flex size-7 shrink-0 items-center justify-center rounded-md"
-                            style={{ backgroundColor: `color-mix(in srgb, ${r.color} 15%, transparent)`, color: r.color }}
+                            className="relative flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-[22%] text-white"
+                            style={liquidGlassIconStyle(r.color)}
                           >
-                            <Icon className="size-4" />
+                            <div className="liquid-sheen pointer-events-none absolute inset-0" />
+                            <Icon className="relative size-4.5" style={APPLE_ICON_GLYPH_STYLE} />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium">{r.label}</span>

@@ -3,18 +3,26 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, Activity } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { PulseGlyph } from "@/components/ui/nav-glyphs";
 import { Sidebar } from "@/components/shell/sidebar";
 import { SpotlightSearch } from "@/components/shell/spotlight-search";
 import { NotificationBell } from "@/components/shell/notification-bell";
+import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
 import { Spinner } from "@/components/ui/spinner";
+import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/auth-context";
 import { useIdleLogout } from "@/hooks/use-idle-logout";
 import { SpotlightProvider } from "@/lib/spotlight-context";
+import { SidebarDensityProvider } from "@/lib/sidebar-density-context";
 import { settingsApi } from "@/lib/api/client";
+import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
+import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const { setTheme } = useTheme();
+  const { setAccent } = useAccent();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
@@ -23,8 +31,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isLoading, isAuthenticated, router]);
 
+  // Single global sync point for every backend-persisted display preference (font size, theme,
+  // accent color), run once per login rather than wherever a page happens to fetch AppSettings
+  // itself — previously only the Settings page applied font size on its own mount, so opening it
+  // could visibly resize the whole app if the backend's stored value differed from whatever
+  // localStorage had already painted on load. Syncing here, in the layout every authenticated
+  // page shares, means it's already correct by the time any page (including Settings) mounts.
   useEffect(() => {
-    if (isAuthenticated) settingsApi.get().then((s) => setIdleTimeoutMinutes(s.idleTimeoutMinutes)).catch(() => {});
+    if (!isAuthenticated) return;
+    settingsApi
+      .get()
+      .then((s) => {
+        setIdleTimeoutMinutes(s.idleTimeoutMinutes);
+        applyFontSize(s.fontSizePreset);
+        try {
+          localStorage.setItem(FONT_SIZE_STORAGE_KEY, s.fontSizePreset);
+        } catch {
+          /* best-effort cache only */
+        }
+        const savedTheme = s.themeVariant?.toLowerCase();
+        if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") setTheme(savedTheme);
+        if (s.accentColor && s.accentColor in ACCENT_PRESETS) setAccent(s.accentColor as AccentId);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   useIdleLogout(idleTimeoutMinutes, logout);
@@ -38,6 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <SidebarDensityProvider>
     <SpotlightProvider>
     <div className="flex h-screen w-full overflow-hidden">
       {/* Desktop sidebar */}
@@ -51,8 +82,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Menu className="size-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-[#0078D4] to-[#004f9e]">
-            <Activity className="size-3.5 text-white" strokeWidth={2.5} />
+          <div className="relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-[22%]" style={liquidGlassIconStyle("#8E8E93", "#636366")}>
+            <div className="liquid-sheen pointer-events-none absolute inset-0" />
+            <PulseGlyph className="relative size-4 text-white" style={APPLE_ICON_GLYPH_STYLE} />
           </div>
           <span className="text-sm font-semibold">WorkPulse</span>
         </div>
@@ -93,10 +125,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8">{children}</main>
+      <main className="flex-1 overflow-y-auto overscroll-contain p-4 pt-20 [-webkit-overflow-scrolling:touch] md:p-8 md:pt-8">{children}</main>
 
       <SpotlightSearch />
     </div>
     </SpotlightProvider>
+    </SidebarDensityProvider>
   );
 }

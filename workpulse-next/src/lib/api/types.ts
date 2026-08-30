@@ -214,6 +214,7 @@ export interface AppSettings {
   idleTimeoutMinutes: number; // 0 = disabled
   notificationsEnabled: boolean;
   notificationChannel: string; // "Email" | "In-app"
+  accentColor: string; // AccentId — "blue" | "purple" | "teal" | "orange" | "rose" | "green"
 }
 
 export interface AdminUser {

@@ -8,25 +8,32 @@ import {
   Bell,
   Check,
   ChevronDown,
-  Clock3,
-  CloudCog,
+  ChevronLeft,
+  ChevronRight,
   Download,
-  Info,
-  Keyboard,
   Laptop,
   LogOut,
-  Mail,
+  Monitor,
   Moon,
-  Palette,
   Search,
-  ShieldCheck,
-  SlidersHorizontal,
   Smartphone,
   Sparkles,
-  UserCog,
+  Sun,
   X,
-  type LucideIcon,
 } from "lucide-react";
+import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
+import { ShieldGlyph, EnvelopeGlyph, PeopleGlyph } from "@/components/ui/nav-glyphs";
+import {
+  PaletteGlyph,
+  WorkHoursGlyph,
+  SlidersGlyph,
+  KeyboardGlyph,
+  CloudSyncGlyph,
+  DownloadTrayGlyph,
+  WarningGlyph,
+  InfoGlyph,
+  SparkleGlyph,
+} from "@/components/ui/settings-glyphs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +45,10 @@ import type { AppSettings, CurrentUser, GoogleDriveStatus, GmailStatus, UserSess
 import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
 import { exportUserData } from "@/lib/data-export";
-import { NAV_ITEMS } from "@/lib/nav-items";
+import { NAV_ITEMS, type Icon } from "@/lib/nav-items";
 import { cn } from "@/lib/utils";
+import { IconBadge } from "@/components/ui/icon-badge";
+import { useSidebarDensity, SIDEBAR_DENSITY_PRESETS, type SidebarDensity } from "@/lib/sidebar-density-context";
 import { Spinner } from "@/components/ui/spinner";
 import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
 import { CHANGELOG } from "@/lib/changelog";
@@ -59,33 +68,57 @@ interface SettingsNavEntry {
   id: string;
   label: string;
   description: string;
-  icon: LucideIcon;
+  icon: Icon;
   color: string;
+  color2: string;
   group: string;
 }
 
 const SETTINGS_NAV: SettingsNavEntry[] = [
-  { id: "appearance", label: "Appearance", description: "Theme, font size, date format", icon: Palette, color: "#8B5CF6", group: "General" },
-  { id: "work-hours", label: "Work Hours", description: "Standard hours for overtime calculation", icon: Clock3, color: "#0078D4", group: "General" },
-  { id: "preferences", label: "Preferences", description: "Week start, landing page, idle sign-out", icon: SlidersHorizontal, color: "#FF9500", group: "General" },
-  { id: "shortcuts", label: "Keyboard Shortcuts", description: "Quick reference for this app", icon: Keyboard, color: "#5AC8FA", group: "General" },
-  { id: "security", label: "Security", description: "Two-factor authentication, active sessions", icon: ShieldCheck, color: "#FF3B30", group: "Security & Access" },
-  { id: "google-drive", label: "Google Drive", description: "Reimbursement document backup", icon: CloudCog, color: "#4285F4", group: "Connections" },
-  { id: "gmail", label: "Gmail", description: "Label manager sync account", icon: Mail, color: "#EA4335", group: "Connections" },
-  { id: "data", label: "Your Data", description: "Export a backup of everything", icon: Download, color: "#00C7BE", group: "Account" },
-  { id: "account", label: "Account", description: "Profile, password, log out", icon: UserCog, color: "#34C759", group: "Account" },
-  { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: AlertTriangle, color: "#FF3B30", group: "Account" },
-  { id: "about", label: "About", description: "App info", icon: Info, color: "#6E6E73", group: "Account" },
-  { id: "whats-new", label: "What's New", description: "Recent changes and improvements", icon: Sparkles, color: "#FF9500", group: "Account" },
+  { id: "appearance", label: "Appearance", description: "Theme, font size, date format", icon: PaletteGlyph, color: "#BF5AF2", color2: "#8B5CF6", group: "General" },
+  { id: "work-hours", label: "Work Hours", description: "Standard hours for overtime calculation", icon: WorkHoursGlyph, color: "#64D2FF", color2: "#0078D4", group: "General" },
+  { id: "preferences", label: "Preferences", description: "Week start, landing page, idle sign-out", icon: SlidersGlyph, color: "#FFB340", color2: "#FF9500", group: "General" },
+  { id: "shortcuts", label: "Keyboard Shortcuts", description: "Quick reference for this app", icon: KeyboardGlyph, color: "#7DE3F4", color2: "#5AC8FA", group: "General" },
+  { id: "security", label: "Security", description: "Two-factor authentication, active sessions", icon: ShieldGlyph, color: "#FF6459", color2: "#D70015", group: "Security & Access" },
+  { id: "google-drive", label: "Google Drive", description: "Reimbursement document backup", icon: CloudSyncGlyph, color: "#6FA8FF", color2: "#4285F4", group: "Connections" },
+  { id: "gmail", label: "Gmail", description: "Label manager sync account", icon: EnvelopeGlyph, color: "#FF6459", color2: "#D93025", group: "Connections" },
+  { id: "data", label: "Your Data", description: "Export a backup of everything", icon: DownloadTrayGlyph, color: "#5CE0D8", color2: "#00C7BE", group: "Account" },
+  { id: "account", label: "Account", description: "Profile, password, log out", icon: PeopleGlyph, color: "#7ED957", color2: "#34C759", group: "Account" },
+  { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: WarningGlyph, color: "#FF6459", color2: "#D70015", group: "Account" },
+  { id: "about", label: "About", description: "App info", icon: InfoGlyph, color: "#AEAEB2", color2: "#6E6E73", group: "Account" },
+  { id: "whats-new", label: "What's New", description: "Recent changes and improvements", icon: SparkleGlyph, color: "#FFB340", color2: "#FF9500", group: "Account" },
 ];
 
-function SectionIcon({ children, color }: { children: React.ReactNode; color: string }) {
+function SectionIcon({ icon, color, color2 }: { icon: Icon; color: string; color2: string }) {
+  return <IconBadge icon={icon} color={color} color2={color2} flat size="size-9" iconSize="size-5" />;
+}
+
+/** A row in a section's top-level list — label, description, and a chevron, matching Apple's own
+ * General page. Clicking opens the row's dedicated sub-page (see SubPageBack below). */
+function RowLink({ label, description, onClick }: { label: string; description: string; onClick: () => void }) {
   return (
-    <div
-      className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-      style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
-    >
-      {children}
+    <button type="button" onClick={onClick} className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left">
+      <div>
+        <p className="text-sm">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
+/** Back button + row title shown at the top of a drilled-into sub-page. */
+function SubPageBack({ label, onBack }: { label: string; onBack: () => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex cursor-pointer items-center gap-1 rounded-md py-1 pl-0.5 pr-2 text-sm font-medium text-primary hover:underline"
+      >
+        <ChevronLeft className="size-4" /> Back
+      </button>
+      <span className="text-sm text-muted-foreground">/ {label}</span>
     </div>
   );
 }
@@ -103,7 +136,9 @@ function timeAgo(iso: string): string {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { accent, setAccent } = useAccent();
   const { displayName, logout, updateDisplayName } = useAuth();
+  const { density: sidebarDensity, setDensity: setSidebarDensity } = useSidebarDensity();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -111,6 +146,14 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const [activeSection, setActiveSection] = useState("appearance");
   const [navQuery, setNavQuery] = useState("");
+
+  // Drill-down state for sections with multiple rows (Appearance, Preferences, Security,
+  // Account) — matches Apple's own General page: a list of rows with chevrons, each opening a
+  // dedicated sub-page for just that setting, instead of every control showing inline at once.
+  // One shared key (not per-section) since only one section is ever visible at a time; reset
+  // whenever the active section changes so switching sections never leaves a stale sub-page open.
+  const [openRow, setOpenRow] = useState<string | null>(null);
+  useEffect(() => setOpenRow(null), [activeSection]);
 
   // Recently viewed sections, most-recent-first, persisted so the quick-access widgets below
   // survive a reload. Read lazily (not in an effect) so it's ready on the very first paint —
@@ -212,11 +255,11 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [saved, setSaved] = useState(false);
 
+  // Font size, theme, and accent color are already applied app-wide by the (app) layout's own
+  // sync effect (runs once per login, before any page including this one mounts) — this fetch is
+  // just to populate the controls below with the current values, not to re-apply them.
   useEffect(() => {
-    settingsApi.get().then((fetched) => {
-      setSettings(fetched);
-      applyFontSize(fetched.fontSizePreset);
-    });
+    settingsApi.get().then(setSettings);
   }, []);
 
   async function handleSaveSettings() {
@@ -245,6 +288,28 @@ export default function SettingsPage() {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     void settingsApi.save(updated);
+  }
+
+  // Theme and accent color apply instantly (via next-themes/AccentProvider, for zero-flash local
+  // effect) and also persist to the backend like every other preference, so the choice follows
+  // the user to another device instead of only living in this browser's localStorage.
+  function handleThemeChange(next: "light" | "dark" | "system") {
+    setTheme(next);
+    updatePreference("themeVariant", next[0].toUpperCase() + next.slice(1));
+  }
+  function handleAccentChange(next: AccentId) {
+    setAccent(next);
+    updatePreference("accentColor", next);
+  }
+
+  // Reset to Defaults — Appearance only (theme, accent, font size, sidebar size, date format),
+  // not the whole Settings page. Matches each field's own documented default.
+  function handleResetAppearance() {
+    handleThemeChange("system");
+    handleAccentChange("blue");
+    handleFontSizeChange("Medium");
+    setSidebarDensity("regular");
+    if (settings) updatePreference("dateFormat", "MM/dd/yyyy");
   }
 
   // ===== Two-factor authentication =====
@@ -434,26 +499,18 @@ export default function SettingsPage() {
         <div className="mb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recently Viewed</p>
           <div className="flex gap-3 overflow-x-auto pb-1">
-            {recentEntries.map((entry) => {
-              const Icon = entry.icon;
-              return (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => selectSection(entry.id)}
-                  className="flex w-40 shrink-0 cursor-pointer flex-col gap-2 rounded-2xl border border-border p-3 text-left transition-colors hover:bg-foreground/5"
-                  style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 6%, var(--card))` }}
-                >
-                  <span
-                    className="flex size-8 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 15%, transparent)`, color: entry.color }}
-                  >
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="truncate text-sm font-medium">{entry.label}</span>
-                </button>
-              );
-            })}
+            {recentEntries.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => selectSection(entry.id)}
+                className="flex w-40 shrink-0 cursor-pointer flex-col gap-2 rounded-2xl border border-border p-3 text-left transition-colors hover:bg-foreground/5"
+                style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 6%, var(--card))` }}
+              >
+                <IconBadge icon={entry.icon} color={entry.color} color2={entry.color2} flat size="size-8" iconSize="size-4.5" />
+                <span className="truncate text-sm font-medium">{entry.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -491,7 +548,6 @@ export default function SettingsPage() {
                   {filteredNav
                     .filter((n) => n.group === group)
                     .map((entry) => {
-                      const Icon = entry.icon;
                       const active = entry.id === activeSection;
                       return (
                         <button
@@ -499,19 +555,19 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => selectSection(entry.id)}
                           className={cn(
-                            "flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors",
-                            active ? "bg-foreground/10" : "hover:bg-foreground/5"
+                            "flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors",
+                            active ? "text-white" : "hover:bg-foreground/5"
                           )}
+                          style={active ? { backgroundColor: "var(--primary)" } : undefined}
                         >
-                          <span
-                            className="flex size-7 shrink-0 items-center justify-center rounded-md"
-                            style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 18%, transparent)`, color: entry.color }}
-                          >
-                            <Icon className="size-3.5" />
-                          </span>
+                          <IconBadge icon={entry.icon} color={entry.color} color2={entry.color2} flat size="size-6" iconSize="size-3.5" />
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium">{entry.label}</span>
-                            {trimmedNavQuery && <span className="block truncate text-[11px] text-muted-foreground">{entry.description}</span>}
+                            <span className="block truncate text-[13px] font-medium">{entry.label}</span>
+                            {trimmedNavQuery && (
+                              <span className={cn("block truncate text-[11px]", active ? "text-white/80" : "text-muted-foreground")}>
+                                {entry.description}
+                              </span>
+                            )}
                           </span>
                         </button>
                       );
@@ -530,30 +586,75 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #8B5CF6 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#8B5CF6">
-                <Palette className="size-4" />
-              </SectionIcon>
-              <h2 className="font-semibold">Appearance</h2>
-            </div>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm">Dark Theme</p>
-                <p className="text-xs text-muted-foreground">Switch between light and dark appearance</p>
-              </div>
-              {mounted && (
-                <Button variant="outline" size="sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                  <Moon className="size-3.5" />
-                  {theme === "dark" ? "Dark" : "Light"}
+              <SectionIcon icon={PaletteGlyph} color="#BF5AF2" color2="#8B5CF6" />
+              <h2 className="flex-1 font-semibold">Appearance</h2>
+              {!openRow && (
+                <Button variant="outline" size="sm" onClick={handleResetAppearance}>
+                  Reset to Defaults
                 </Button>
               )}
             </div>
-            {settings && (
-              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                <div>
-                  <p className="text-sm">Font Size</p>
-                  <p className="text-xs text-muted-foreground">Adjust text size across the app</p>
+
+            {!openRow && (
+              <div className="flex flex-col divide-y divide-border">
+                <RowLink label="Theme" description="Light, dark, or match your system setting" onClick={() => setOpenRow("theme")} />
+                <RowLink label="Accent Color" description="Applies to selected rows, buttons, and links across the app" onClick={() => setOpenRow("accent")} />
+                {settings && <RowLink label="Font Size" description="Adjust text size across the app" onClick={() => setOpenRow("font-size")} />}
+                <RowLink label="Sidebar Size" description="How compact the nav sidebar and its icons are" onClick={() => setOpenRow("sidebar-size")} />
+                {settings && <RowLink label="Date Format" description="Applies to dates shown in Attendance" onClick={() => setOpenRow("date-format")} />}
+              </div>
+            )}
+
+            {openRow === "theme" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Theme" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Light, dark, or match your system setting</p>
+                {mounted && (
+                  <div className="flex flex-wrap gap-1">
+                    <Button variant={theme === "light" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("light")}>
+                      <Sun className="size-3.5" /> Light
+                    </Button>
+                    <Button variant={theme === "dark" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("dark")}>
+                      <Moon className="size-3.5" /> Dark
+                    </Button>
+                    <Button variant={theme === "system" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("system")}>
+                      <Monitor className="size-3.5" /> System
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {openRow === "accent" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Accent Color" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Applies to selected rows, buttons, and links across the app</p>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(ACCENT_PRESETS) as AccentId[]).map((id) => {
+                    const preset = ACCENT_PRESETS[id];
+                    const active = accent === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => handleAccentChange(id)}
+                        title={preset.label}
+                        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-[var(--card)] transition-transform hover:scale-110"
+                        style={{ backgroundColor: preset.light, ["--tw-ring-color" as string]: active ? preset.light : "transparent" }}
+                      >
+                        {active && <Check className="size-3.5 text-white" strokeWidth={3} />}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-wrap justify-end gap-1">
+              </div>
+            )}
+
+            {openRow === "font-size" && settings && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Font Size" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Adjust text size across the app</p>
+                <div className="flex flex-wrap gap-1">
                   {FONT_SIZES.map((size) => (
                     <Button
                       key={size}
@@ -567,13 +668,31 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
-            {settings && (
-              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                <div>
-                  <p className="text-sm">Date Format</p>
-                  <p className="text-xs text-muted-foreground">Applies to dates shown in Attendance</p>
+
+            {openRow === "sidebar-size" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Sidebar Size" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">How compact the nav sidebar and its icons are</p>
+                <div className="flex flex-wrap gap-1">
+                  {(Object.keys(SIDEBAR_DENSITY_PRESETS) as SidebarDensity[]).map((d) => (
+                    <Button
+                      key={d}
+                      size="sm"
+                      variant={sidebarDensity === d ? "default" : "outline"}
+                      onClick={() => setSidebarDensity(d)}
+                    >
+                      {SIDEBAR_DENSITY_PRESETS[d].label}
+                    </Button>
+                  ))}
                 </div>
-                <div className="flex flex-wrap justify-end gap-1">
+              </div>
+            )}
+
+            {openRow === "date-format" && settings && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Date Format" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Applies to dates shown in Attendance</p>
+                <div className="flex flex-wrap gap-1">
                   {DATE_FORMAT_OPTIONS.map((fmt) => (
                     <Button
                       key={fmt}
@@ -595,9 +714,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #0078D4 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#0078D4">
-                <Clock3 className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={WorkHoursGlyph} color="#64D2FF" color2="#0078D4" />
               <h2 className="font-semibold">Work Hours</h2>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -653,73 +770,15 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF9500 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#FF9500">
-                <SlidersHorizontal className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={SlidersGlyph} color="#FFB340" color2="#FF9500" />
               <h2 className="font-semibold">Preferences</h2>
             </div>
-            {settings && (
-              <>
-                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                  <div>
-                    <p className="text-sm">Week Starts On</p>
-                    <p className="text-xs text-muted-foreground">Used when starting a new Weekly Report</p>
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {["Sunday", "Monday"].map((day) => (
-                      <Button
-                        key={day}
-                        size="sm"
-                        variant={settings.weekStartDay === day ? "default" : "outline"}
-                        onClick={() => updatePreference("weekStartDay", day)}
-                      >
-                        {day}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm">Default Landing Page</p>
-                    <p className="text-xs text-muted-foreground">What loads right after you sign in</p>
-                  </div>
-                  <div className="relative">
-                    <select
-                      className="h-9 appearance-none rounded-full border border-input bg-background/50 py-1.5 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
-                      value={settings.defaultLandingPage}
-                      onChange={(e) => updatePreference("defaultLandingPage", e.target.value)}
-                    >
-                      {landingPageOptions.map((opt) => (
-                        <option key={opt.href} value={opt.href}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                  <div>
-                    <p className="text-sm">Auto Sign-out After Inactivity</p>
-                    <p className="text-xs text-muted-foreground">Signs you out locally if you step away</p>
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {IDLE_TIMEOUT_OPTIONS.map((opt) => (
-                      <Button
-                        key={opt.minutes}
-                        size="sm"
-                        variant={settings.idleTimeoutMinutes === opt.minutes ? "default" : "outline"}
-                        onClick={() => updatePreference("idleTimeoutMinutes", opt.minutes)}
-                      >
-                        {opt.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-start justify-between">
+            {settings && !openRow && (
+              <div className="flex flex-col divide-y divide-border">
+                <RowLink label="Week Starts On" description="Used when starting a new Weekly Report" onClick={() => setOpenRow("week-start")} />
+                <RowLink label="Default Landing Page" description="What loads right after you sign in" onClick={() => setOpenRow("landing-page")} />
+                <RowLink label="Auto Sign-out After Inactivity" description="Signs you out locally if you step away" onClick={() => setOpenRow("idle-timeout")} />
+                <div className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-2">
                     <Bell className="size-3.5 text-muted-foreground" />
                     <div>
@@ -732,28 +791,92 @@ export default function SettingsPage() {
                     onCheckedChange={(checked) => updatePreference("notificationsEnabled", checked)}
                   />
                 </div>
-
                 {settings.notificationsEnabled && (
-                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                    <div>
-                      <p className="text-sm">Notification Channel</p>
-                      <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {["Email", "In-app"].map((channel) => (
-                        <Button
-                          key={channel}
-                          size="sm"
-                          variant={settings.notificationChannel === channel ? "default" : "outline"}
-                          onClick={() => updatePreference("notificationChannel", channel)}
-                        >
-                          {channel}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
+                  <RowLink
+                    label="Notification Channel"
+                    description="In-app always shows in the bell icon; Email also sends a copy"
+                    onClick={() => setOpenRow("notification-channel")}
+                  />
                 )}
-              </>
+              </div>
+            )}
+
+            {settings && openRow === "week-start" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Week Starts On" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Used when starting a new Weekly Report</p>
+                <div className="flex flex-wrap gap-1">
+                  {["Sunday", "Monday"].map((day) => (
+                    <Button
+                      key={day}
+                      size="sm"
+                      variant={settings.weekStartDay === day ? "default" : "outline"}
+                      onClick={() => updatePreference("weekStartDay", day)}
+                    >
+                      {day}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {settings && openRow === "landing-page" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Default Landing Page" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">What loads right after you sign in</p>
+                <div className="relative w-fit">
+                  <select
+                    className="h-9 appearance-none rounded-full border border-input bg-background/50 py-1.5 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
+                    value={settings.defaultLandingPage}
+                    onChange={(e) => updatePreference("defaultLandingPage", e.target.value)}
+                  >
+                    {landingPageOptions.map((opt) => (
+                      <option key={opt.href} value={opt.href}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              </div>
+            )}
+
+            {settings && openRow === "idle-timeout" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Auto Sign-out After Inactivity" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">Signs you out locally if you step away</p>
+                <div className="flex flex-wrap gap-1">
+                  {IDLE_TIMEOUT_OPTIONS.map((opt) => (
+                    <Button
+                      key={opt.minutes}
+                      size="sm"
+                      variant={settings.idleTimeoutMinutes === opt.minutes ? "default" : "outline"}
+                      onClick={() => updatePreference("idleTimeoutMinutes", opt.minutes)}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {settings && openRow === "notification-channel" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Notification Channel" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
+                <div className="flex flex-wrap gap-1">
+                  {["Email", "In-app"].map((channel) => (
+                    <Button
+                      key={channel}
+                      size="sm"
+                      variant={settings.notificationChannel === channel ? "default" : "outline"}
+                      onClick={() => updatePreference("notificationChannel", channel)}
+                    >
+                      {channel}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -763,103 +886,122 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF3B30 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#FF3B30">
-                <ShieldCheck className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={ShieldGlyph} color="#FF6459" color2="#D70015" />
               <h2 className="font-semibold">Security</h2>
             </div>
 
-            {/* Two-factor authentication */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm">Two-Factor Authentication</p>
+            {!openRow && (
+              <div className="flex flex-col divide-y divide-border">
+                <RowLink
+                  label="Two-Factor Authentication"
+                  description={
+                    currentUser?.twoFactorEnabled
+                      ? "Enabled — a code is emailed to you at login"
+                      : "Require an emailed code in addition to your password"
+                  }
+                  onClick={() => setOpenRow("2fa")}
+                />
+                <RowLink
+                  label="Active Sessions"
+                  description={sessionsLoading ? "Loading…" : `${sessions.length} other device${sessions.length === 1 ? "" : "s"} signed in`}
+                  onClick={() => setOpenRow("sessions")}
+                />
+              </div>
+            )}
+
+            {openRow === "2fa" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Two-Factor Authentication" onBack={() => setOpenRow(null)} />
+                <div className="flex items-start justify-between">
                   <p className="text-xs text-muted-foreground">
                     {currentUser?.twoFactorEnabled
                       ? "Enabled — a code is emailed to you at login"
                       : "Require an emailed code in addition to your password"}
                   </p>
-                </div>
-                {currentUser && twoFactorStep === "idle" && (
-                  <Button
-                    size="sm"
-                    variant={currentUser.twoFactorEnabled ? "outline" : "default"}
-                    onClick={() => (currentUser.twoFactorEnabled ? setConfirmDisable2fa(true) : startEnableTwoFactor())}
-                    disabled={twoFactorBusy}
-                  >
-                    {currentUser.twoFactorEnabled ? "Disable" : "Enable"}
-                  </Button>
-                )}
-              </div>
-
-              {twoFactorStep === "enabling" && (
-                <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Enter the code we emailed you to confirm.</p>
-                  <div className="flex gap-2">
-                    <Input
-                      inputMode="numeric"
-                      placeholder="123456"
-                      value={twoFactorCode}
-                      onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      className="w-32"
-                    />
-                    <Button size="sm" onClick={confirmEnableTwoFactor} disabled={twoFactorBusy || twoFactorCode.length < 6}>
-                      Confirm
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setTwoFactorStep("idle")}>
-                      Cancel
-                    </Button>
-                  </div>
-                  {twoFactorError && <p className="text-xs text-destructive">{twoFactorError}</p>}
-                </div>
-              )}
-              {twoFactorStep === "idle" && twoFactorError && <p className="text-xs text-destructive">{twoFactorError}</p>}
-            </div>
-
-            {/* Active sessions */}
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm">Active Sessions</p>
-                {sessions.length > 1 && (
-                  <button
-                    onClick={() => setConfirmRevokeAll(true)}
-                    className="cursor-pointer text-xs font-medium text-destructive hover:underline"
-                  >
-                    Log out everywhere
-                  </button>
-                )}
-              </div>
-              {sessionsLoading && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner size={14} /> Loading…</div>}
-              {!sessionsLoading && sessions.length === 0 && (
-                <p className="text-xs text-muted-foreground">No other active sessions.</p>
-              )}
-              <div className="flex flex-col gap-1.5">
-                {sessions.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between rounded-lg bg-foreground/5 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      {s.deviceLabel.includes("iPhone") || s.deviceLabel.includes("Android") ? (
-                        <Smartphone className="size-3.5 text-muted-foreground" />
-                      ) : (
-                        <Laptop className="size-3.5 text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="text-xs font-medium">{s.deviceLabel}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {s.ipAddress ?? "Unknown IP"} · Last active {timeAgo(s.lastUsedUtc)}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => revokeSession(s.id)}
-                      className="cursor-pointer rounded-full p-1 text-muted-foreground hover:text-destructive"
-                      title="Revoke this session"
+                  {currentUser && twoFactorStep === "idle" && (
+                    <Button
+                      size="sm"
+                      variant={currentUser.twoFactorEnabled ? "outline" : "default"}
+                      onClick={() => (currentUser.twoFactorEnabled ? setConfirmDisable2fa(true) : startEnableTwoFactor())}
+                      disabled={twoFactorBusy}
+                      className="shrink-0"
                     >
-                      <X className="size-3.5" />
-                    </button>
+                      {currentUser.twoFactorEnabled ? "Disable" : "Enable"}
+                    </Button>
+                  )}
+                </div>
+
+                {twoFactorStep === "enabling" && (
+                  <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
+                    <p className="text-xs text-muted-foreground">Enter the code we emailed you to confirm.</p>
+                    <div className="flex gap-2">
+                      <Input
+                        inputMode="numeric"
+                        placeholder="123456"
+                        value={twoFactorCode}
+                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        className="w-32"
+                      />
+                      <Button size="sm" onClick={confirmEnableTwoFactor} disabled={twoFactorBusy || twoFactorCode.length < 6}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setTwoFactorStep("idle")}>
+                        Cancel
+                      </Button>
+                    </div>
+                    {twoFactorError && <p className="text-xs text-destructive">{twoFactorError}</p>}
                   </div>
-                ))}
+                )}
+                {twoFactorStep === "idle" && twoFactorError && <p className="text-xs text-destructive">{twoFactorError}</p>}
               </div>
-            </div>
+            )}
+
+            {openRow === "sessions" && (
+              <div className="flex flex-col gap-2">
+                <SubPageBack label="Active Sessions" onBack={() => setOpenRow(null)} />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Devices and browsers currently signed in to your account</p>
+                  {sessions.length > 1 && (
+                    <button
+                      onClick={() => setConfirmRevokeAll(true)}
+                      className="cursor-pointer text-xs font-medium text-destructive hover:underline"
+                    >
+                      Log out everywhere
+                    </button>
+                  )}
+                </div>
+                {sessionsLoading && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner size={14} /> Loading…</div>}
+                {!sessionsLoading && sessions.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No other active sessions.</p>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  {sessions.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between rounded-lg bg-foreground/5 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {s.deviceLabel.includes("iPhone") || s.deviceLabel.includes("Android") ? (
+                          <Smartphone className="size-3.5 text-muted-foreground" />
+                        ) : (
+                          <Laptop className="size-3.5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <p className="text-xs font-medium">{s.deviceLabel}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {s.ipAddress ?? "Unknown IP"} · Last active {timeAgo(s.lastUsedUtc)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => revokeSession(s.id)}
+                        className="cursor-pointer rounded-full p-1 text-muted-foreground hover:text-destructive"
+                        title="Revoke this session"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         )}
@@ -868,9 +1010,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #4285F4 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#4285F4">
-                <CloudCog className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={CloudSyncGlyph} color="#6FA8FF" color2="#4285F4" />
               <h2 className="font-semibold">Google Drive</h2>
             </div>
             {driveStatus === null ? (
@@ -906,9 +1046,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #EA4335 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#EA4335">
-                <Mail className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={EnvelopeGlyph} color="#FF6459" color2="#D93025" />
               <h2 className="font-semibold">Gmail</h2>
             </div>
             {gmailStatus === null ? (
@@ -944,9 +1082,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #00C7BE 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#00C7BE">
-                <Download className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={DownloadTrayGlyph} color="#5CE0D8" color2="#00C7BE" />
               <h2 className="font-semibold">Your Data</h2>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -963,67 +1099,76 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #34C759 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#34C759">
-                <UserCog className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={PeopleGlyph} color="#7ED957" color2="#34C759" />
               <h2 className="font-semibold">Account</h2>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Signed in as <span className="font-medium text-foreground">{displayName}</span>
-            </p>
+            {!openRow && (
+              <div className="flex flex-col divide-y divide-border">
+                <p className="py-3 text-sm text-muted-foreground first:pt-0">
+                  Signed in as <span className="font-medium text-foreground">{displayName}</span>
+                </p>
+                <RowLink label="Display Name" description="Change how your name appears across the app" onClick={() => setOpenRow("display-name")} />
+                <RowLink label="Change Password" description="Update your account password" onClick={() => setOpenRow("password")} />
+                <div className="py-3">
+                  <Button variant="outline" className="w-fit" onClick={logout}>
+                    <LogOut className="size-4" /> Log out
+                  </Button>
+                </div>
+              </div>
+            )}
 
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <label className="text-sm">Display Name</label>
-              <div className="flex gap-2">
-                <Input value={displayNameInput} onChange={(e) => setDisplayNameInput(e.target.value)} className="max-w-64" />
-                <Button size="sm" onClick={handleSaveDisplayName} disabled={savingDisplayName || !displayNameInput.trim()}>
-                  {displayNameSaved ? <Check className="size-3.5" /> : null}
-                  {displayNameSaved ? "Saved" : "Save"}
+            {openRow === "display-name" && (
+              <div className="flex flex-col gap-2">
+                <SubPageBack label="Display Name" onBack={() => setOpenRow(null)} />
+                <div className="flex gap-2">
+                  <Input value={displayNameInput} onChange={(e) => setDisplayNameInput(e.target.value)} className="max-w-64" />
+                  <Button size="sm" onClick={handleSaveDisplayName} disabled={savingDisplayName || !displayNameInput.trim()}>
+                    {displayNameSaved ? <Check className="size-3.5" /> : null}
+                    {displayNameSaved ? "Saved" : "Save"}
+                  </Button>
+                </div>
+                {displayNameError && <p className="text-xs text-destructive">{displayNameError}</p>}
+              </div>
+            )}
+
+            {openRow === "password" && (
+              <div className="flex flex-col gap-2">
+                <SubPageBack label="Change Password" onBack={() => setOpenRow(null)} />
+                <div className="grid max-w-64 grid-cols-1 gap-2">
+                  <Input
+                    type="password"
+                    placeholder="Current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  className="w-fit"
+                  onClick={handleChangePassword}
+                  disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {passwordSaved ? <Check className="size-3.5" /> : null}
+                  {passwordSaved ? "Password updated" : changingPassword ? "Updating…" : "Update Password"}
                 </Button>
+                {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
               </div>
-              {displayNameError && <p className="text-xs text-destructive">{displayNameError}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2 border-t border-border pt-4">
-              <p className="text-sm">Change Password</p>
-              <div className="grid max-w-64 grid-cols-1 gap-2">
-                <Input
-                  type="password"
-                  placeholder="Current password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-                <Input
-                  type="password"
-                  placeholder="New password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  autoComplete="new-password"
-                />
-                <Input
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  autoComplete="new-password"
-                />
-              </div>
-              <Button
-                size="sm"
-                className="w-fit"
-                onClick={handleChangePassword}
-                disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
-              >
-                {passwordSaved ? <Check className="size-3.5" /> : null}
-                {passwordSaved ? "Password updated" : changingPassword ? "Updating…" : "Update Password"}
-              </Button>
-              {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
-            </div>
-
-            <Button variant="outline" className="w-fit" onClick={logout}>
-              <LogOut className="size-4" /> Log out
-            </Button>
+            )}
           </CardContent>
         </Card>
         )}
@@ -1032,9 +1177,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF3B30 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#FF3B30">
-                <AlertTriangle className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={WarningGlyph} color="#FF6459" color2="#D70015" />
               <h2 className="font-semibold">Danger Zone</h2>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -1084,12 +1227,10 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #5AC8FA 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#5AC8FA">
-                <Keyboard className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={KeyboardGlyph} color="#7DE3F4" color2="#5AC8FA" />
               <h2 className="font-semibold">Keyboard Shortcuts</h2>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col divide-y divide-border">
               {[
                 { keys: ["⌘/Ctrl", "K"], description: "Open quick search — jump to any section, resource, or bookmark" },
                 { keys: ["⌘/Ctrl", "Z"], description: "Undo — Daily Reports editor" },
@@ -1097,7 +1238,7 @@ export default function SettingsPage() {
                 { keys: ["⌘/Ctrl", "Click"], description: "View details instead of opening the link — Bookmarks" },
                 { keys: ["Esc"], description: "Close the open dropdown, dialog, or inline edit box" },
               ].map((shortcut, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 rounded-lg px-1 py-2">
+                <div key={i} className="flex items-center justify-between gap-3 py-3">
                   <span className="text-sm text-muted-foreground">{shortcut.description}</span>
                   <div className="flex shrink-0 gap-1">
                     {shortcut.keys.map((k, j) => (
@@ -1117,9 +1258,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #6E6E73 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#6E6E73">
-                <Info className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" />
               <h2 className="font-semibold">About</h2>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
@@ -1150,9 +1289,7 @@ export default function SettingsPage() {
         <Card style={{ backgroundColor: "color-mix(in srgb, #FF9500 6%, var(--card))" }}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <SectionIcon color="#FF9500">
-                <Sparkles className="size-4" />
-              </SectionIcon>
+              <SectionIcon icon={SparkleGlyph} color="#FFB340" color2="#FF9500" />
               <h2 className="font-semibold">What&apos;s New</h2>
             </div>
             {CHANGELOG.map((entry) => (

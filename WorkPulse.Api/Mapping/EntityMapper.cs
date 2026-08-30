@@ -275,7 +275,8 @@ public static class EntityMapper
             DefaultLandingPage = entity.DefaultLandingPage,
             IdleTimeoutMinutes = entity.IdleTimeoutMinutes,
             NotificationsEnabled = entity.NotificationsEnabled,
-            NotificationChannel = entity.NotificationChannel
+            NotificationChannel = entity.NotificationChannel,
+            AccentColor = entity.AccentColor
         };
     }
 
@@ -296,7 +297,8 @@ public static class EntityMapper
             DefaultLandingPage = settings.DefaultLandingPage,
             IdleTimeoutMinutes = settings.IdleTimeoutMinutes,
             NotificationsEnabled = settings.NotificationsEnabled,
-            NotificationChannel = settings.NotificationChannel
+            NotificationChannel = settings.NotificationChannel,
+            AccentColor = settings.AccentColor
         };
     }
 

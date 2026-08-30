@@ -103,6 +103,16 @@
     height: 100%;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
   body {
     background:
       radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--brand-blue) 10%, transparent), transparent 60%),
@@ -190,7 +200,8 @@
   }
 }
 
-/* Frosted glass surface, for sidebars / floating panels over the aurora background */
+/* Frosted glass surface, for floating panels (dropdowns, modals, popovers) over the aurora
+   background */
 .glass-panel {
   background-color: color-mix(in srgb, var(--card) 70%, transparent);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
@@ -198,6 +209,15 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Flat, opaque surface for the main app sidebar — deliberately NOT translucent/blurred like
+   .glass-panel. macOS System Settings' own sidebar is a solid flat panel, not frosted glass; this
+   mirrors that instead of the Liquid Glass treatment used elsewhere in this app. */
+.sidebar-panel {
+  background-color: var(--card);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Apple Notes-style checklist inside the rich text note editor. Purely CSS-driven (the checkbox
