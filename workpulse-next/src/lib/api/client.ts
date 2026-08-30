@@ -162,13 +162,19 @@ export const attendanceApi = {
     request<MonthlyData>(`/api/attendance/${year}/${month}`),
   saveMonth: (year: number, month: number, data: MonthlyData) =>
     request<MonthlyData>(`/api/attendance/${year}/${month}`, { method: "PUT", body: JSON.stringify(data) }),
+  exportMonths: (months: { year: number; month: number }[], format: "xlsx" | "html") =>
+    requestBlob(`/api/excel/attendance/export-by-month?format=${format}`, {
+      method: "POST",
+      body: JSON.stringify(months),
+    }),
 };
 
-async function requestBlob(path: string): Promise<{ blob: Blob; fileName: string }> {
+async function requestBlob(path: string, init?: RequestInit): Promise<{ blob: Blob; fileName: string }> {
   const token = getToken();
-  const headers = new Headers();
+  const headers = new Headers(init?.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (init?.body) headers.set("Content-Type", "application/json");
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   if (!res.ok) throw new ApiError(res.status, res.statusText);
   const disposition = res.headers.get("content-disposition") ?? "";
   const match = /filename="?([^";]+)"?/.exec(disposition);

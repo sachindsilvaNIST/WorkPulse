@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Bar,
   BarChart,
@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarClock, ChevronDown, Clock, Pencil, Plus, Trash2, TrendingUp, Umbrella } from "lucide-react";
+import { CalendarClock, ChevronDown, Clock, Download, Pencil, Plus, Trash2, TrendingUp, Umbrella } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +23,11 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
-import { attendanceApi, settingsApi } from "@/lib/api/client";
+import { attendanceApi, settingsApi, downloadBlob } from "@/lib/api/client";
 import { formatDate } from "@/lib/date-format";
 import type { AppSettings, AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
 import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
-import { getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
+import { currentSettlementPeriodKey, getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
 import { Spinner } from "@/components/ui/spinner";
 
 function emptyMonth(year: number, month: number): MonthlyData {
@@ -89,6 +89,51 @@ export default function DashboardPage() {
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
 
+  // Export picker — any 1+ of the raw calendar months that have saved data (not settlement
+  // periods; the export endpoint queries AttendanceMonths by real (year, month), same as the
+  // backend always has, so offering settlement periods here would be a mismatch with what's
+  // actually stored).
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportSelected, setExportSelected] = useState<Set<string>>(new Set());
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "html">("xlsx");
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (!exportRef.current?.contains(e.target as Node)) setExportOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [exportOpen]);
+
+  function toggleExportMonth(key: string) {
+    setExportSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function handleExport() {
+    if (exportSelected.size === 0) return;
+    setExporting(true);
+    try {
+      const selectedMonths = Array.from(exportSelected).map((key) => {
+        const [year, month] = key.split("-").map(Number);
+        return { year, month };
+      });
+      const { blob, fileName } = await attendanceApi.exportMonths(selectedMonths, exportFormat);
+      downloadBlob(blob, fileName);
+      setExportOpen(false);
+      setExportSelected(new Set());
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // Standard hours + overtime threshold come from Settings, not a hardcoded default, so changing
   // them there takes effect here immediately (next time the entry dialog is opened) — the whole
   // point of making this a "control panel" setting rather than a code constant.
@@ -97,21 +142,20 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Default to whichever settlement period *today's date* actually falls in — not the
+    // most-recently-saved month. Those diverge for every day between a period's cutoff (the
+    // 20th, weekend-adjusted) and the end of that calendar month: e.g. on Aug 25, today belongs
+    // to the September period (Aug 21-Sep 20) even though nobody's saved anything for September
+    // yet and August is still the "latest saved" month — landing on August there was the bug.
+    const defaultPeriod = currentSettlementPeriodKey();
     attendanceApi
       .getMonths()
       .then((list) => {
         setMonths(list);
-        if (list.length > 0) {
-          const latest = list[0];
-          setSelected({ year: latest.year, month: latest.month });
-        } else {
-          const now = new Date();
-          setSelected({ year: now.getFullYear(), month: now.getMonth() + 1 });
-        }
+        setSelected(defaultPeriod);
       })
       .catch(() => {
-        const now = new Date();
-        setSelected({ year: now.getFullYear(), month: now.getMonth() + 1 });
+        setSelected(defaultPeriod);
       });
   }, []);
 
@@ -301,6 +345,65 @@ export default function DashboardPage() {
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             </div>
           )}
+          <div className="relative" ref={exportRef}>
+            <Button variant="outline" size="sm" onClick={() => setExportOpen((v) => !v)}>
+              <Download className="size-3.5" /> Export
+            </Button>
+            <AnimatePresence>
+              {exportOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="glass-panel absolute right-0 top-full z-20 mt-2 w-72 p-3"
+                >
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select months</p>
+                  <div className="mb-3 flex max-h-52 flex-col gap-0.5 overflow-y-auto">
+                    {months.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">No saved months yet.</p>}
+                    {months.map((m) => {
+                      const key = `${m.year}-${m.month}`;
+                      return (
+                        <label
+                          key={key}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-foreground/5"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={exportSelected.has(key)}
+                            onChange={() => toggleExportMonth(key)}
+                            className="size-3.5 cursor-pointer"
+                          />
+                          {m.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="mb-3 flex gap-1">
+                    <Button
+                      variant={exportFormat === "xlsx" ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setExportFormat("xlsx")}
+                    >
+                      XLSX
+                    </Button>
+                    <Button
+                      variant={exportFormat === "html" ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setExportFormat("html")}
+                    >
+                      HTML
+                    </Button>
+                  </div>
+                  <Button size="sm" className="w-full" onClick={handleExport} disabled={exportSelected.size === 0 || exporting}>
+                    {exporting ? "Exporting…" : exportSelected.size > 0 ? `Export ${exportSelected.size} month${exportSelected.size === 1 ? "" : "s"}` : "Export"}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <Button
             variant={editMode ? "default" : "outline"}
             size="sm"
