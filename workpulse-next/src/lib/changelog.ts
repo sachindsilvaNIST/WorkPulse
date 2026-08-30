@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.0",
+    date: "2026-08-30",
+    highlights: [
+      "Resources: \"New Resource\" now accepts any number of files at once (drag-and-drop or multi-select), each becoming its own resource",
+      "A bigger upload window with a per-file progress list — queued, uploading, done, or failed, macOS-style",
+      "Executable/script file types are blocked from upload; everything else (documents, images, archives, media) is unrestricted",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-08-30",
     highlights: [
