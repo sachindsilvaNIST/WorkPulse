@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-30",
+    highlights: [
+      "Moved About (version info + this changelog) out of Settings and into its own sidebar item, for a quicker check on what's new",
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-08-30",
     highlights: [
