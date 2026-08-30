@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.0",
+    date: "2026-08-30",
+    highlights: [
+      "Bookmarks: added bulk select (export/delete/recategorize several at once), a duplicate-URL warning when adding a bookmark that already exists, and a Verify Links check that flags broken URLs",
+      "Contacts: now grouped by department when viewing all contacts",
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-08-30",
     highlights: [

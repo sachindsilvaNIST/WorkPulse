@@ -309,7 +309,13 @@ export const contactsApi = {
   delete: (id: string) => request<void>(`/api/contacts/${id}`, { method: "DELETE" }),
 };
 
+export interface LinkCheckResult {
+  url: string;
+  ok: boolean;
+}
+
 export const quickLinksApi = {
+  checkLinks: (urls: string[]) => request<LinkCheckResult[]>("/api/quicklinks/check", { method: "POST", body: JSON.stringify(urls) }),
   getAll: () => request<QuickLink[]>("/api/quicklinks"),
   create: (record: Partial<QuickLink>) =>
     request<QuickLink>("/api/quicklinks", { method: "POST", body: JSON.stringify(record) }),

@@ -86,6 +86,25 @@ export default function ContactsPage() {
     return [...list].sort((a, b) => a.affiliation.localeCompare(b.affiliation) || a.familyName.localeCompare(b.familyName));
   }, [contacts, search, department]);
 
+  // Grouped by department when viewing "All" — a single department-filter chip already narrows
+  // to one department, so a repeated heading there would be redundant. "No Department" sorts
+  // last rather than alphabetically, since it's the absence of a value, not a real group name.
+  const grouped = useMemo(() => {
+    if (department !== "All") return [{ department: null as string | null, contacts: filtered }];
+    const map = new Map<string, ContactRecord[]>();
+    for (const c of filtered) {
+      const key = c.department || "No Department";
+      if (!map.get(key)) map.set(key, []);
+      map.get(key)!.push(c);
+    }
+    const keys = Array.from(map.keys()).sort((a, b) => {
+      if (a === "No Department") return 1;
+      if (b === "No Department") return -1;
+      return a.localeCompare(b);
+    });
+    return keys.map((key) => ({ department: key, contacts: map.get(key)! }));
+  }, [filtered, department]);
+
   function openNew() {
     setEditingId(null);
     setForm(emptyContact());
@@ -313,58 +332,68 @@ export default function ContactsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((c) => {
-          const accent = categoryColor(c.department);
-          return (
-            <motion.div key={c.id} layoutId={`contact-${c.id}`} whileHover={{ y: -2 }}>
-              <Card
-                className="cursor-pointer p-4"
-                style={accentCardStyle(accent)}
-                onClick={() => {
-                  setDetail(c);
-                  recordView({ type: "contact", id: c.id, label: `${c.familyName} ${c.givenName}`.trim(), description: c.affiliation, href: "/contacts" });
-                }}
-                onContextMenu={(e) => handleCardContextMenu(e, c)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">
-                      {c.familyName} {c.givenName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{c.affiliation}</p>
-                  </div>
-                  <DeleteIconButton
-                    onDelete={() => handleDelete(c.id)}
-                    title="Delete this contact?"
-                    description={`${c.familyName} ${c.givenName} will be permanently removed.`}
-                  />
-                </div>
-                {c.department && (
-                  <span
-                    className="mt-2 w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}
+      {grouped.map(({ department: groupName, contacts: groupContacts }) => (
+        <div key={groupName ?? "flat"} className="mb-6 last:mb-0">
+          {groupName && (
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Building2 className="size-3" /> {groupName}
+              <span className="font-normal normal-case text-muted-foreground/70">({groupContacts.length})</span>
+            </h2>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {groupContacts.map((c) => {
+              const accent = categoryColor(c.department);
+              return (
+                <motion.div key={c.id} layoutId={`contact-${c.id}`} whileHover={{ y: -2 }}>
+                  <Card
+                    className="cursor-pointer p-4"
+                    style={accentCardStyle(accent)}
+                    onClick={() => {
+                      setDetail(c);
+                      recordView({ type: "contact", id: c.id, label: `${c.familyName} ${c.givenName}`.trim(), description: c.affiliation, href: "/contacts" });
+                    }}
+                    onContextMenu={(e) => handleCardContextMenu(e, c)}
                   >
-                    {c.department}
-                  </span>
-                )}
-                {c.email && (
-                  <p className="mt-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                    <Mail className="size-3 shrink-0" /> <span className="truncate">{c.email}</span>
-                    <CopyButton value={c.email} className="ml-auto" />
-                  </p>
-                )}
-                {c.contactNumber && (
-                  <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                    <Phone className="size-3 shrink-0" /> <span className="truncate">{c.contactNumber}</span>
-                    <CopyButton value={c.contactNumber} className="ml-auto" />
-                  </p>
-                )}
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">
+                          {c.familyName} {c.givenName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{c.affiliation}</p>
+                      </div>
+                      <DeleteIconButton
+                        onDelete={() => handleDelete(c.id)}
+                        title="Delete this contact?"
+                        description={`${c.familyName} ${c.givenName} will be permanently removed.`}
+                      />
+                    </div>
+                    {c.department && (
+                      <span
+                        className="mt-2 w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}
+                      >
+                        {c.department}
+                      </span>
+                    )}
+                    {c.email && (
+                      <p className="mt-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <Mail className="size-3 shrink-0" /> <span className="truncate">{c.email}</span>
+                        <CopyButton value={c.email} className="ml-auto" />
+                      </p>
+                    )}
+                    {c.contactNumber && (
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <Phone className="size-3 shrink-0" /> <span className="truncate">{c.contactNumber}</span>
+                        <CopyButton value={c.contactNumber} className="ml-auto" />
+                      </p>
+                    )}
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
       {contextMenu &&
         createPortal(

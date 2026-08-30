@@ -4,7 +4,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Download, ExternalLink, Link2, Pencil, Plus, Tag, Text, Trash2, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Bookmark,
+  CheckSquare,
+  Download,
+  ExternalLink,
+  Link2,
+  Pencil,
+  Plus,
+  Tag,
+  Text,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
@@ -12,6 +26,7 @@ import { Card } from "@/components/ui/card";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
+import { CategoryPicker } from "@/components/ui/category-picker";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
 import { accentCardStyle, categoryColor } from "@/lib/category-color";
@@ -38,6 +53,10 @@ function normalizeUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 }
 
+function normalizeForCompare(url: string) {
+  return url.trim().replace(/\/$/, "").toLowerCase();
+}
+
 export default function BookmarksPage() {
   const [links, setLinks] = useState<QuickLink[]>([]);
   const router = useRouter();
@@ -50,6 +69,19 @@ export default function BookmarksPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<QuickLink>>(emptyLink());
   const [detail, setDetail] = useState<QuickLink | null>(null);
+
+  // Bulk-select mode — a "Select" toggle switches the card grid into checkbox mode for
+  // export/delete/recategorize on several bookmarks at once, same Set<string> pattern used
+  // elsewhere in the app (admin's feature toggles, the Settings export pickers).
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [recategorizeOpen, setRecategorizeOpen] = useState(false);
+  const [recategorizeValue, setRecategorizeValue] = useState("");
+
+  // Broken-link check — ephemeral (not persisted), just a session-local map of the last check's
+  // results, shown as a warning badge on affected cards until the next check or page reload.
+  const [brokenUrls, setBrokenUrls] = useState<Set<string>>(new Set());
+  const [checkingLinks, setCheckingLinks] = useState(false);
 
   useEffect(() => {
     quickLinksApi.getAll().then((list) => {
@@ -101,6 +133,78 @@ export default function BookmarksPage() {
     setEditingId(link.id);
     setForm(link);
     setShowForm(true);
+  }
+
+  // Live duplicate warning while adding — same normalized-URL check already used for import
+  // dedup, just surfaced inline instead of silently skipping. Non-blocking: Add still works, this
+  // only informs. Doesn't apply while editing an existing bookmark (it'll always "duplicate"
+  // itself).
+  const duplicateOf = useMemo(() => {
+    if (editingId || !form.url) return null;
+    const key = normalizeForCompare(form.url);
+    return links.find((l) => normalizeForCompare(l.url) === key) ?? null;
+  }, [form.url, editingId, links]);
+
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleExportSelected() {
+    const selected = links.filter((l) => selectedIds.has(l.id));
+    const html = exportNetscapeBookmarks(selected);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "workpulse-bookmarks-selected.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDeleteSelected() {
+    const ids = Array.from(selectedIds);
+    await Promise.all(ids.map((id) => quickLinksApi.delete(id)));
+    setLinks((prev) => prev.filter((l) => !selectedIds.has(l.id)));
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleRecategorizeSelected() {
+    if (!recategorizeValue.trim()) return;
+    const ids = Array.from(selectedIds);
+    const updated = await Promise.all(
+      ids.map((id) => {
+        const link = links.find((l) => l.id === id)!;
+        return quickLinksApi.update(id, { ...link, category: recategorizeValue.trim() });
+      })
+    );
+    setLinks((prev) => prev.map((l) => updated.find((u) => u.id === l.id) ?? l));
+    setRecategorizeOpen(false);
+    setRecategorizeValue("");
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleVerifyLinks() {
+    const targets = selectMode && selectedIds.size > 0 ? links.filter((l) => selectedIds.has(l.id)) : links;
+    if (targets.length === 0) return;
+    setCheckingLinks(true);
+    try {
+      const results = await quickLinksApi.checkLinks(targets.map((l) => l.url));
+      setBrokenUrls(new Set(results.filter((r) => !r.ok).map((r) => r.url)));
+    } finally {
+      setCheckingLinks(false);
+    }
   }
 
   const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -210,6 +314,12 @@ export default function BookmarksPage() {
           <p className="mt-1 text-muted-foreground">Find any saved link by name, synonym, or category</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant={selectMode ? "default" : "outline"} onClick={toggleSelectMode}>
+            <CheckSquare className="size-4" /> {selectMode ? "Cancel" : "Select"}
+          </Button>
+          <Button variant="outline" onClick={handleVerifyLinks} disabled={checkingLinks || links.length === 0}>
+            {checkingLinks ? <Spinner size={16} /> : <AlertTriangle className="size-4" />} {checkingLinks ? "Checking…" : "Verify Links"}
+          </Button>
           <Button asChild variant="outline" disabled={importing}>
             <label
               className={cn("cursor-pointer", importing && "pointer-events-none opacity-60")}
@@ -236,6 +346,25 @@ export default function BookmarksPage() {
       </div>
 
       {importMessage && <p className="mb-4 text-sm text-muted-foreground">{importMessage}</p>}
+
+      {selectMode && (
+        <div className="glass-panel mb-4 flex flex-wrap items-center gap-2 p-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportSelected} disabled={selectedIds.size === 0}>
+              <Download className="size-3.5" /> Export Selected
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setRecategorizeOpen(true)} disabled={selectedIds.size === 0}>
+              <Tag className="size-3.5" /> Recategorize
+            </Button>
+            <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={selectedIds.size === 0}>
+              <Trash2 className="size-3.5" /> Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
 
       <SearchInput placeholder='Search — try "drive", "wiki", a category…' value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 
@@ -292,9 +421,26 @@ export default function BookmarksPage() {
             suggestions={keywordsHistory}
           />
         </div>
+        {duplicateOf && (
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-[#FF9500]">
+            <AlertTriangle className="size-3.5 shrink-0" /> You already have a bookmark for this URL: “{duplicateOf.label}”. Adding anyway is fine if that&apos;s intentional.
+          </p>
+        )}
         <div className="mt-4 flex gap-2">
           <Button onClick={handleSave}>{editingId ? "Update" : "Add"}</Button>
           <Button variant="outline" onClick={() => setShowForm(false)}>
+            Cancel
+          </Button>
+        </div>
+      </FormModal>
+
+      <FormModal open={recategorizeOpen} onClose={() => setRecategorizeOpen(false)} title={`Recategorize ${selectedIds.size} Bookmark${selectedIds.size === 1 ? "" : "s"}`}>
+        <CategoryPicker value={recategorizeValue} onChange={setRecategorizeValue} placeholder="New category" />
+        <div className="mt-4 flex gap-2">
+          <Button onClick={handleRecategorizeSelected} disabled={!recategorizeValue.trim()}>
+            Apply
+          </Button>
+          <Button variant="outline" onClick={() => setRecategorizeOpen(false)}>
             Cancel
           </Button>
         </div>
@@ -311,60 +457,87 @@ export default function BookmarksPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {filtered.map((link) => {
           const accent = categoryColor(link.category);
+          const broken = brokenUrls.has(link.url);
           return (
             <Card
               key={link.id}
               className="group relative flex min-h-28 flex-col p-3 pb-3.5"
               style={accentCardStyle(accent)}
-              onContextMenu={(e) => handleCardContextMenu(e, link)}
+              onContextMenu={(e) => (selectMode ? undefined : handleCardContextMenu(e, link))}
             >
-              <a
-                href={normalizeUrl(link.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute inset-0"
-                onClick={(e) => {
-                  // Cmd-click (Mac) / Ctrl-click (Windows) shows details instead of opening the
-                  // link — a plain click still opens it exactly as before. Either way, this is the
-                  // bookmark being opened/viewed, so it's the one recordView() call that covers
-                  // both branches rather than only the (much rarer) detail-view path.
-                  recordView({ type: "bookmark", id: link.id, label: link.label, description: link.category, href: "/bookmarks" });
-                  if (e.metaKey || e.ctrlKey) {
-                    e.preventDefault();
-                    setDetail(link);
-                  }
-                }}
-              />
-              {link.category && (
-                <span
-                  className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}
-                >
-                  {link.category}
-                </span>
+              {selectMode ? (
+                <button type="button" className="absolute inset-0" onClick={() => toggleSelected(link.id)} />
+              ) : (
+                <a
+                  href={normalizeUrl(link.url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0"
+                  onClick={(e) => {
+                    // Cmd-click (Mac) / Ctrl-click (Windows) shows details instead of opening the
+                    // link — a plain click still opens it exactly as before. Either way, this is the
+                    // bookmark being opened/viewed, so it's the one recordView() call that covers
+                    // both branches rather than only the (much rarer) detail-view path.
+                    recordView({ type: "bookmark", id: link.id, label: link.label, description: link.category, href: "/bookmarks" });
+                    if (e.metaKey || e.ctrlKey) {
+                      e.preventDefault();
+                      setDetail(link);
+                    }
+                  }}
+                />
               )}
+              <div className="flex items-center justify-between gap-1">
+                {link.category && (
+                  <span
+                    className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)` }}
+                  >
+                    {link.category}
+                  </span>
+                )}
+                {broken && (
+                  <span
+                    className="relative z-10 flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                    title="This link didn't respond to a health check"
+                  >
+                    <AlertTriangle className="size-3" /> Broken
+                  </span>
+                )}
+              </div>
               <span className="mt-2 line-clamp-2 text-sm font-semibold">{link.label}</span>
               <span className="mt-auto truncate text-xs text-muted-foreground">{link.url}</span>
-              <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
-                <button
-                  className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-primary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openEdit(link);
-                  }}
-                >
-                  <Pencil className="size-3" />
-                </button>
-                <button
-                  className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDelete(link.id);
-                  }}
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
+              {selectMode ? (
+                <div className="absolute right-2 top-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(link.id)}
+                    onChange={() => toggleSelected(link.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="relative z-10 size-4 cursor-pointer"
+                  />
+                </div>
+              ) : (
+                <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
+                  <button
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openEdit(link);
+                    }}
+                  >
+                    <Pencil className="size-3" />
+                  </button>
+                  <button
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDelete(link.id);
+                    }}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
             </Card>
           );
         })}
