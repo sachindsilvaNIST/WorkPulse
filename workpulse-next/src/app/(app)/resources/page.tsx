@@ -355,10 +355,10 @@ export default function ResourcesPage() {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.15 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md"
+              className={cn("flex w-full flex-col", detail.type === "Note" ? "max-h-[80vh] max-w-lg" : "max-w-md")}
             >
-              <Card className="p-6">
-                <div className="mb-4 flex items-start justify-between">
+              <Card className="flex min-h-0 flex-1 flex-col p-6">
+                <div className="mb-4 flex shrink-0 items-start justify-between">
                   <div>
                     <h2 className="text-xl font-semibold">{detail.title}</h2>
                     <span
@@ -372,12 +372,26 @@ export default function ResourcesPage() {
                     <X className="size-4" />
                   </button>
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
                   {detail.type === "Link" && detail.url && (
                     <DetailRow icon={Link2} label="URL" value={normalizeUrl(detail.url)} href={normalizeUrl(detail.url)} copyable />
                   )}
                   {detail.type === "File" && <DetailRow icon={FileText} label="File" value={`${detail.fileName} (${formatSize(detail.sizeBytes)})`} />}
-                  <DetailRow icon={Text} label="Notes" value={detail.notes} />
+                  {/* Notes on a Note-type resource is the actual body, not a caption — render it
+                      like Apple Notes (full text, wrapped, scrollable) instead of the single-line
+                      truncated DetailRow every other field uses. */}
+                  {detail.type === "Note" ? (
+                    detail.notes && (
+                      <div className="flex min-h-0 flex-1 flex-col gap-1">
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Text className="size-3.5" /> Notes
+                        </p>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{detail.notes}</p>
+                      </div>
+                    )
+                  ) : (
+                    <DetailRow icon={Text} label="Notes" value={detail.notes} />
+                  )}
                   <DetailRow icon={Tag} label="Tags" value={detail.tags} />
                   <DetailRow icon={Search} label="Keywords" value={detail.keywords} />
                 </div>

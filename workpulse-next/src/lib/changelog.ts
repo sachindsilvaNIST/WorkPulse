@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.0",
+    date: "2026-08-30",
+    highlights: [
+      "Added export for Daily and Weekly Reports — select one or more entries and download as a styled XLSX or HTML file (HTML keeps full rich-text formatting)",
+      "Resources: a Note's full content now shows properly in its detail view instead of being cut off to one line",
+      "Spotlight (Cmd/Ctrl+K): added \"Open Claude\" as a web shortcut, opening claude.ai in a new tab",
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-08-30",
     highlights: [

@@ -197,6 +197,8 @@ export const dailyReportsApi = {
   update: (id: string, record: Partial<DailyReport>) =>
     request<DailyReport>(`/api/dailyreports/${id}`, { method: "PUT", body: JSON.stringify(record) }),
   delete: (id: string) => request<void>(`/api/dailyreports/${id}`, { method: "DELETE" }),
+  exportReports: (ids: string[], format: "xlsx" | "html") =>
+    requestBlob(`/api/excel/daily-reports/export?format=${format}`, { method: "POST", body: JSON.stringify(ids) }),
 };
 
 export const weeklyReportsApi = {
@@ -206,6 +208,8 @@ export const weeklyReportsApi = {
   update: (id: string, record: Partial<WeeklyReport>) =>
     request<WeeklyReport>(`/api/weeklyreports/${id}`, { method: "PUT", body: JSON.stringify(record) }),
   delete: (id: string) => request<void>(`/api/weeklyreports/${id}`, { method: "DELETE" }),
+  exportReports: (ids: string[], format: "xlsx" | "html") =>
+    requestBlob(`/api/excel/weekly-reports/export?format=${format}`, { method: "POST", body: JSON.stringify(ids) }),
 };
 
 export const tripReportsApi = {

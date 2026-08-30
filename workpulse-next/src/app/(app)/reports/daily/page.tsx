@@ -16,6 +16,7 @@ export default function DailyReportsPage() {
       api={dailyReportsApi}
       basePath="/api/dailyreports"
       makeNew={() => ({ reportDate: new Date().toISOString().slice(0, 10) })}
+      onExport={dailyReportsApi.exportReports}
     />
   );
 }
