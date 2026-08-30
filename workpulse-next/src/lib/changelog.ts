@@ -8,6 +8,11 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.4",
+    date: "2026-08-30",
+    highlights: ["The app now pings the API the moment it loads, so Render's free-tier cold start happens in the background instead of stalling the first page you actually open"],
+  },
+  {
     version: "1.8.3",
     date: "2026-08-30",
     highlights: ["About now includes \"Where WorkPulse Started\" — a short history from the original desktop app through the API/Blazor era to this Next.js platform"],

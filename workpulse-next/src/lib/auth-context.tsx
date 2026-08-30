@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { authApi, settingsApi, getToken, getDisplayName, setDisplayName as persistDisplayName } from "@/lib/api/client";
+import { authApi, settingsApi, getToken, getDisplayName, setDisplayName as persistDisplayName, warmUpApi } from "@/lib/api/client";
 import type { LoginRequest, RegisterRequest } from "@/lib/api/types";
 import { decodeJwt, isAdminClaims, disabledFeaturesClaims, type JwtClaims } from "@/lib/jwt";
 
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    warmUpApi();
     const token = getToken();
     setIsAuthenticated(!!token);
     setDisplayName(getDisplayName());
