@@ -17,7 +17,6 @@ import {
   Moon,
   Search,
   Smartphone,
-  Sparkles,
   Sun,
   X,
 } from "lucide-react";
@@ -31,8 +30,6 @@ import {
   CloudSyncGlyph,
   DownloadTrayGlyph,
   WarningGlyph,
-  InfoGlyph,
-  SparkleGlyph,
 } from "@/components/ui/settings-glyphs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,8 +47,6 @@ import { cn } from "@/lib/utils";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { useSidebarDensity, SIDEBAR_DENSITY_PRESETS, type SidebarDensity } from "@/lib/sidebar-density-context";
 import { Spinner } from "@/components/ui/spinner";
-import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
-import { CHANGELOG } from "@/lib/changelog";
 
 const RECENT_SECTIONS_KEY = "workpulse.settings.recentSections";
 
@@ -85,8 +80,6 @@ const SETTINGS_NAV: SettingsNavEntry[] = [
   { id: "data", label: "Your Data", description: "Export a backup of everything", icon: DownloadTrayGlyph, color: "#5CE0D8", color2: "#00C7BE", group: "Account" },
   { id: "account", label: "Account", description: "Profile, password, log out", icon: PeopleGlyph, color: "#7ED957", color2: "#34C759", group: "Account" },
   { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: WarningGlyph, color: "#FF6459", color2: "#D70015", group: "Account" },
-  { id: "about", label: "About", description: "App info", icon: InfoGlyph, color: "#AEAEB2", color2: "#6E6E73", group: "Account" },
-  { id: "whats-new", label: "What's New", description: "Recent changes and improvements", icon: SparkleGlyph, color: "#FFB340", color2: "#FF9500", group: "Account" },
 ];
 
 function SectionIcon({ icon, color, color2 }: { icon: Icon; color: string; color2: string }) {
@@ -1254,60 +1247,6 @@ export default function SettingsPage() {
         </Card>
         )}
 
-        {activeSection === "about" && (
-        <Card style={{ backgroundColor: "color-mix(in srgb, #6E6E73 6%, var(--card))" }}>
-          <CardContent className="flex flex-col gap-1">
-            <div className="flex items-center gap-3">
-              <SectionIcon icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" />
-              <h2 className="font-semibold">About</h2>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
-            <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[11px] font-medium">v{APP_VERSION}</span>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  APP_ENV === "Production" ? "bg-[#34C759]/15 text-[#34C759]" : "bg-[#FF9500]/15 text-[#FF9500]"
-                )}
-              >
-                {APP_ENV}
-              </span>
-              <span className="font-mono text-[11px] text-muted-foreground">{GIT_SHA}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveSection("whats-new")}
-              className="mt-3 flex w-fit cursor-pointer items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-            >
-              <Sparkles className="size-3.5" /> See what&apos;s new
-            </button>
-          </CardContent>
-        </Card>
-        )}
-
-        {activeSection === "whats-new" && (
-        <Card style={{ backgroundColor: "color-mix(in srgb, #FF9500 6%, var(--card))" }}>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <SectionIcon icon={SparkleGlyph} color="#FFB340" color2="#FF9500" />
-              <h2 className="font-semibold">What&apos;s New</h2>
-            </div>
-            {CHANGELOG.map((entry) => (
-              <div key={entry.version} className="border-t border-border pt-3 first:border-t-0 first:pt-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">v{entry.version}</span>
-                  <span className="text-xs text-muted-foreground">{entry.date}</span>
-                </div>
-                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  {entry.highlights.map((h) => (
-                    <li key={h}>{h}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        )}
         </div>
       </div>
 

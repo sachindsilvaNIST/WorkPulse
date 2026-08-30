@@ -11,6 +11,7 @@ import {
   BooksGlyph,
   GearGlyph,
 } from "@/components/ui/nav-glyphs";
+import { InfoGlyph } from "@/components/ui/settings-glyphs";
 
 export type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -149,5 +150,14 @@ export const NAV_ITEMS: NavItem[] = [
     color2: "#98989D",
     flat: true,
     description: "Sync, directories, theme and preferences",
+  },
+  {
+    href: "/about",
+    label: "About",
+    icon: InfoGlyph,
+    color: "#AEAEB2",
+    color2: "#6E6E73",
+    flat: true,
+    description: "Version info and what's changed recently",
   },
 ];

@@ -38,6 +38,7 @@ const GRID_POSITION: Record<string, string> = {
   "/contacts": "sm:col-start-1 sm:row-start-6",
   "/gmail-labels": "sm:col-start-2 sm:row-start-6",
   "/settings": "sm:col-start-3 sm:row-start-6",
+  "/about": "sm:col-start-1 sm:row-start-7 sm:col-span-3",
 };
 
 function daysUntil(dateStr: string): number {
