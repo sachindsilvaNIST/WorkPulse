@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.0",
+    date: "2026-08-30",
+    highlights: [
+      "Spotlight: \"open <name>\" now actually opens the matching bookmark or resource in a new tab (previously only \"Open Claude\" worked) — matches by name, category/tags, and keywords/aliases",
+      "Spotlight: clicking a Bookmark or Link/File Resource result opens or downloads it directly instead of just navigating to a filtered list; a Note resource jumps straight to its detail view",
+      "Pressing Enter now submits every Add/Edit form app-wide (Bookmarks, Resources, Contacts, Business Trips, Reimbursement upload, Admin) — no need to click the button",
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-08-30",
     highlights: [

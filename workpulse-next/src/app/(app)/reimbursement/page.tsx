@@ -141,7 +141,14 @@ export default function ReimbursementPage() {
 
       {showUpload && (
         <Card className="mb-6">
-          <CardContent className="flex flex-col gap-3">
+          <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmitUpload();
+            }}
+            className="flex flex-col gap-3"
+          >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -207,13 +214,14 @@ export default function ReimbursementPage() {
             {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
 
             <div className="flex gap-2">
-              <Button onClick={handleSubmitUpload} disabled={!canSubmit}>
+              <Button type="submit" disabled={!canSubmit}>
                 {uploading ? <Spinner size={16} /> : <Upload className="size-4" />} {uploading ? "Uploading…" : "Upload"}
               </Button>
-              <Button variant="outline" onClick={() => setShowUpload(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowUpload(false)}>
                 <X className="size-4" /> Cancel
               </Button>
             </div>
+          </form>
           </CardContent>
         </Card>
       )}

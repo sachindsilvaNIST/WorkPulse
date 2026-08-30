@@ -14,6 +14,7 @@ export function FormModal({
   title,
   children,
   maxWidthClassName = "max-w-lg",
+  onSubmit,
 }: {
   open: boolean;
   onClose: () => void;
@@ -22,6 +23,12 @@ export function FormModal({
   /** Override the modal's width (default "max-w-lg") — e.g. Resources' File upload form needs
    * more room for a multi-file list than a simple two-field form does. */
   maxWidthClassName?: string;
+  /** Wraps the content in a real <form>, so pressing Enter in any single-line field submits it —
+   * standard browser behavior once fields live inside a <form>, no per-page key handling needed.
+   * Omit for modals with no single primary action (e.g. a search-and-pick list). The primary
+   * button still needs type="submit" (and every other button inside type="button") for this to
+   * work correctly. */
+  onSubmit?: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -51,7 +58,19 @@ export function FormModal({
                 <X className="size-4" />
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto p-5">{children}</div>
+            {onSubmit ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSubmit();
+                }}
+                className="max-h-[70vh] overflow-y-auto p-5"
+              >
+                {children}
+              </form>
+            ) : (
+              <div className="max-h-[70vh] overflow-y-auto p-5">{children}</div>
+            )}
           </motion.div>
         </motion.div>
       )}

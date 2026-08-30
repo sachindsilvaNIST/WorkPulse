@@ -149,7 +149,14 @@ export default function TripsPage() {
 
       {showForm && (
         <Card className="mb-6">
-          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSaveTrip();
+            }}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          >
             <select
               className="h-10 rounded-full border border-input bg-background/50 px-4 text-sm backdrop-blur-md outline-none"
               value={form.category}
@@ -190,11 +197,12 @@ export default function TripsPage() {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
             <div className="flex gap-2 sm:col-span-2">
-              <Button onClick={handleSaveTrip}>Save Trip</Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>
+              <Button type="submit">Save Trip</Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
             </div>
+          </form>
           </CardContent>
         </Card>
       )}
