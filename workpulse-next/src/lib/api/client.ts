@@ -113,6 +113,14 @@ export const authApi = {
     if (result.auth) setSession(result.auth);
     return result;
   },
+  async googleSignIn(credential: string): Promise<LoginResult> {
+    const result = await request<LoginResult>("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    });
+    if (result.auth) setSession(result.auth);
+    return result;
+  },
   async verifyTwoFactor(email: string, code: string): Promise<AuthResponse> {
     const auth = await request<AuthResponse>("/api/auth/login/verify-2fa", {
       method: "POST",

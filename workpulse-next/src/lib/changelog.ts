@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.0",
+    date: "2026-08-30",
+    highlights: [
+      "Added \"Sign in with Google\" on the Login and Register pages — a second, additive way to get in without waiting on an email code",
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-08-30",
     highlights: [

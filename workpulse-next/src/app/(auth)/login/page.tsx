@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api/client";
 import { useShakeAnimation } from "@/hooks/use-shake-animation";
@@ -16,7 +17,7 @@ import { useSlowRequest } from "@/hooks/use-slow-request";
 import { EMAIL_PATTERN, isControlKeystroke, isEmailKeystrokeAllowed } from "@/lib/validation";
 
 export default function LoginPage() {
-  const { login, verifyTwoFactor, cancelTwoFactor, pendingTwoFactorEmail } = useAuth();
+  const { login, googleSignIn, verifyTwoFactor, cancelTwoFactor, pendingTwoFactorEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -45,6 +46,18 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await run(() => login({ email, password }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleCredential(credential: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      await run(() => googleSignIn(credential));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -211,6 +224,13 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="h-px flex-1 bg-border" />
+        or
+        <div className="h-px flex-1 bg-border" />
+      </div>
+      <GoogleSignInButton onCredential={handleGoogleCredential} />
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

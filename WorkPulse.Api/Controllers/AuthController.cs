@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -90,6 +91,66 @@ public class AuthController : ControllerBase
 
         // No EmailConfirmed check needed here — every AspNetUsers row is confirmed by
         // construction now (see ConfirmRegistration), so this can never be false.
+
+        if (await _userManager.GetTwoFactorEnabledAsync(user))
+        {
+            await SendTwoFactorCodeAsync(user);
+            return Ok(new LoginResult { RequiresTwoFactor = true, Email = user.Email! });
+        }
+
+        return Ok(new LoginResult { Auth = await IssueTokensAsync(user) });
+    }
+
+    [HttpPost("google")]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<LoginResult>> GoogleSignIn(GoogleSignInRequest request)
+    {
+        var clientId = _config["GoogleSignIn:ClientId"];
+        if (string.IsNullOrWhiteSpace(clientId))
+            clientId = _config["Google:ClientId"];
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.Credential, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { clientId }
+            });
+        }
+        catch (InvalidJwtException)
+        {
+            return Unauthorized(new { error = "Invalid Google credential." });
+        }
+
+        if (!payload.EmailVerified)
+            return Unauthorized(new { error = "Your Google email address isn't verified." });
+
+        var user = await _userManager.FindByEmailAsync(payload.Email);
+        if (user != null)
+        {
+            // A matching password-based account is a different sign-in path from a different
+            // person's perspective (this app doesn't auto-link on a verified email match) — the
+            // owner needs to prove they know the password, not just that they control the inbox.
+            if (await _userManager.HasPasswordAsync(user))
+                return Conflict(new { error = "An account with this email already exists. Please log in with your password instead." });
+        }
+        else
+        {
+            // No password set — created (or previously signed in) via Google only, so this is a
+            // pre-confirmed account exactly like ConfirmRegistration's, minus the password hash.
+            user = new AppUser
+            {
+                UserName = payload.Email,
+                Email = payload.Email,
+                DisplayName = string.IsNullOrWhiteSpace(payload.Name) ? payload.Email : payload.Name,
+                EmailConfirmed = true
+            };
+            var result = await _userManager.CreateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        }
+
+        if (await _userManager.IsLockedOutAsync(user))
+            return Unauthorized(new { error = "This account has been disabled." });
 
         if (await _userManager.GetTwoFactorEnabledAsync(user))
         {
@@ -466,6 +527,11 @@ public class RefreshTokenRequest
 {
     public string Token { get; set; } = "";
     public string RefreshToken { get; set; } = "";
+}
+
+public class GoogleSignInRequest
+{
+    public string Credential { get; set; } = "";
 }
 
 public class LoginResult
