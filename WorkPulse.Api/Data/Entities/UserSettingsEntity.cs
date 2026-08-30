@@ -17,6 +17,7 @@ public class UserSettingsEntity
     public int IdleTimeoutMinutes { get; set; } = 0;
     public bool NotificationsEnabled { get; set; } = true;
     public string NotificationChannel { get; set; } = "Email";
+    public string AccentColor { get; set; } = "blue";
 
     public AppUser User { get; set; } = null!;
 }

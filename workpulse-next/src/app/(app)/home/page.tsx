@@ -203,8 +203,8 @@ export default function HomePage() {
               >
                 <div className="liquid-sheen pointer-events-none absolute inset-0" />
                 <div className="flex items-start justify-between">
-                  <div className="widget-float flex size-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-                    <Icon className="size-5.5" strokeWidth={2} />
+                  <div className="widget-float flex size-11 items-center justify-center rounded-[22%] bg-white/15 backdrop-blur-sm">
+                    <Icon className="size-5.5" />
                   </div>
                   <ArrowUpRight className="size-5 opacity-0 transition-opacity duration-200 group-hover:opacity-80" />
                 </div>

@@ -43,6 +43,7 @@ public class SettingsController : ApiControllerBase
             entity.IdleTimeoutMinutes = settings.IdleTimeoutMinutes;
             entity.NotificationsEnabled = settings.NotificationsEnabled;
             entity.NotificationChannel = settings.NotificationChannel;
+            entity.AccentColor = settings.AccentColor;
         }
         else
         {

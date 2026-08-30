@@ -27,6 +27,10 @@ public class AppSettings
     public bool NotificationsEnabled { get; set; } = true;
     public string NotificationChannel { get; set; } = "Email";
 
+    /// <summary>Accent color preset id ("blue"/"purple"/"teal"/"orange"/"rose"/"green") — the
+    /// web app's ACCENT_PRESETS keys; other clients can ignore this field.</summary>
+    public string AccentColor { get; set; } = "blue";
+
     // Sync settings (desktop only, not synced to server)
     public bool SyncEnabled { get; set; }
     public string SyncServerUrl { get; set; } = "";

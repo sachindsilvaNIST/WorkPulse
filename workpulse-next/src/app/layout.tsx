@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/auth-context";
+import { AccentProvider } from "@/lib/accent-context";
 import { FONT_SIZE_SCALE, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import "./globals.css";
 
@@ -49,7 +50,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>{children}</AuthProvider>
+          <AccentProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </AccentProvider>
         </ThemeProvider>
       </body>
     </html>
