@@ -95,9 +95,33 @@ export default function DashboardPage() {
   // actually stored).
   const [exportOpen, setExportOpen] = useState(false);
   const [exportSelected, setExportSelected] = useState<Set<string>>(new Set());
+  // Months added via the "Add a month" picker below that aren't in `months` (i.e. nothing's ever
+  // been saved for them) — kept separate from `months` since that list drives the settlement
+  // dropdown and shouldn't imply data exists just because it was picked here. The backend now
+  // exports these as an empty, labeled section rather than silently dropping them.
+  const [extraExportMonths, setExtraExportMonths] = useState<YearMonthDto[]>([]);
+  const [addMonthValue, setAddMonthValue] = useState("");
   const [exportFormat, setExportFormat] = useState<"xlsx" | "html">("xlsx");
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  const exportableMonths = useMemo(() => {
+    const seen = new Set(months.map((m) => `${m.year}-${m.month}`));
+    const extras = extraExportMonths.filter((m) => !seen.has(`${m.year}-${m.month}`));
+    return [...months, ...extras].sort((a, b) => b.year - a.year || b.month - a.month);
+  }, [months, extraExportMonths]);
+
+  function handleAddExportMonth() {
+    if (!addMonthValue) return;
+    const [year, month] = addMonthValue.split("-").map(Number);
+    const key = `${year}-${month}`;
+    if (!exportableMonths.some((m) => `${m.year}-${m.month}` === key)) {
+      const label = new Date(year, month - 1, 1).toLocaleString("default", { month: "long", year: "numeric" });
+      setExtraExportMonths((prev) => [...prev, { year, month, label }]);
+    }
+    setExportSelected((prev) => new Set(prev).add(key));
+    setAddMonthValue("");
+  }
 
   useEffect(() => {
     if (!exportOpen) return;
@@ -360,8 +384,8 @@ export default function DashboardPage() {
                 >
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select months</p>
                   <div className="mb-3 flex max-h-52 flex-col gap-0.5 overflow-y-auto">
-                    {months.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">No saved months yet.</p>}
-                    {months.map((m) => {
+                    {exportableMonths.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">No months yet — add one below.</p>}
+                    {exportableMonths.map((m) => {
                       const key = `${m.year}-${m.month}`;
                       return (
                         <label
@@ -378,6 +402,17 @@ export default function DashboardPage() {
                         </label>
                       );
                     })}
+                  </div>
+                  <div className="mb-3 flex gap-1.5">
+                    <Input
+                      type="month"
+                      value={addMonthValue}
+                      onChange={(e) => setAddMonthValue(e.target.value)}
+                      className="h-8 flex-1 text-xs"
+                    />
+                    <Button size="sm" variant="outline" onClick={handleAddExportMonth} disabled={!addMonthValue}>
+                      Add
+                    </Button>
                   </div>
                   <div className="mb-3 flex gap-1">
                     <Button
@@ -424,48 +459,6 @@ export default function DashboardPage() {
             <StatCard label="Overtime Days" value={String(stats.overtimeCount)} icon={Clock} color="var(--brand-orange)" />
             <StatCard label="Overtime Total" value={stats.overtimeDisplay} icon={TrendingUp} color="var(--brand-purple)" />
             <StatCard label="Leave Days" value={String(stats.leaveDays)} icon={Umbrella} color="var(--brand-green)" />
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Daily hours worked</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={dailyHoursChart}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                    <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" width={30} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
-                    <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
-                      {dailyHoursChart.map((entry) => (
-                        <Cell key={entry.day} fill={DAY_TYPE_COLORS[entry.dayType] ?? "var(--brand-blue)"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Day type breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie data={dayTypeChart} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
-                      {dayTypeChart.map((entry) => (
-                        <Cell key={entry.key} fill={DAY_TYPE_COLORS[entry.key] ?? "#999"} />
-                      ))}
-                    </Pie>
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Records table */}
@@ -570,6 +563,48 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Daily hours worked</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={dailyHoursChart}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" width={30} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
+                    <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
+                      {dailyHoursChart.map((entry) => (
+                        <Cell key={entry.day} fill={DAY_TYPE_COLORS[entry.dayType] ?? "var(--brand-blue)"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Day type breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie data={dayTypeChart} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                      {dayTypeChart.map((entry) => (
+                        <Cell key={entry.key} fill={DAY_TYPE_COLORS[entry.key] ?? "#999"} />
+                      ))}
+                    </Pie>
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
 

@@ -367,9 +367,9 @@ export default function ResourcesPage() {
                 <FileDropZone
                   multiple
                   onFiles={addFiles}
-                  className="flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-input bg-background/50 px-4 text-center text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5"
+                  className="flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-input bg-background/50 px-4 text-center text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5"
                 >
-                  <Upload className="size-5 shrink-0" />
+                  <Upload className="size-8 shrink-0" />
                   <span>
                     <span className="font-medium text-foreground">Click to upload</span> or drag and drop — any number of files
                   </span>

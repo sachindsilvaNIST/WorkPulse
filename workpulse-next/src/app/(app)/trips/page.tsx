@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { ResourcePickerDialog, ResourceLinkChip } from "@/components/ui/resource-picker-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { tripReportsApi, resourcesApi, downloadBlob } from "@/lib/api/client";
 import type { Resource, TripCategory, TripDocumentMeta, TripReport, TripStatus } from "@/lib/api/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,6 +42,8 @@ export default function TripsPage() {
   const [uploading, setUploading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [linkingDocId, setLinkingDocId] = useState<string | null>(null);
+  const [confirmDeleteTripId, setConfirmDeleteTripId] = useState<string | null>(null);
+  const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<string | null>(null);
   const [resourceTitles, setResourceTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -241,7 +244,7 @@ export default function TripsPage() {
                     className="size-4 shrink-0 text-muted-foreground hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteTrip(t.id);
+                      setConfirmDeleteTripId(t.id);
                     }}
                   />
                 </div>
@@ -366,7 +369,7 @@ export default function TripsPage() {
                       <Button size="icon" variant="ghost" onClick={() => handleDownload(d)}>
                         <Download className="size-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDeleteDoc(d.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteDocId(d.id)}>
                         <X className="size-4" />
                       </Button>
                     </div>
@@ -385,6 +388,46 @@ export default function TripsPage() {
           if (linkingDocId) handleLinkResource(linkingDocId, resource);
         }}
       />
+
+      {confirmDeleteTripId &&
+        (() => {
+          const target = trips.find((t) => t.id === confirmDeleteTripId);
+          return (
+            <ConfirmDialog
+              title="Delete this trip?"
+              description={
+                target
+                  ? `${target.destination} and its ${target.documentCount} document${target.documentCount === 1 ? "" : "s"} will be permanently removed.`
+                  : "This trip will be permanently removed."
+              }
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+              onConfirm={() => {
+                handleDeleteTrip(confirmDeleteTripId);
+                setConfirmDeleteTripId(null);
+              }}
+              onCancel={() => setConfirmDeleteTripId(null)}
+            />
+          );
+        })()}
+
+      {confirmDeleteDocId &&
+        (() => {
+          const target = docs.find((d) => d.id === confirmDeleteDocId);
+          return (
+            <ConfirmDialog
+              title="Delete this document?"
+              description={target?.label ? `“${target.label}” will be permanently removed.` : "This document will be permanently removed."}
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+              onConfirm={() => {
+                handleDeleteDoc(confirmDeleteDocId);
+                setConfirmDeleteDocId(null);
+              }}
+              onCancel={() => setConfirmDeleteDocId(null)}
+            />
+          );
+        })()}
     </div>
   );
 }

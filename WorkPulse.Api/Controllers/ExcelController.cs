@@ -48,8 +48,9 @@ public class ExcelController : ApiControllerBase
             var entity = await _db.AttendanceMonths
                 .Include(m => m.Records)
                 .FirstOrDefaultAsync(m => m.UserId == UserId && m.Year == ym.Year && m.Month == ym.Month);
-            if (entity != null)
-                data.Add(entity.ToMonthlyData());
+            // A month with nothing saved yet is still a valid thing to export — it just comes out
+            // as a labeled section with no rows, rather than silently vanishing from the file.
+            data.Add(entity != null ? entity.ToMonthlyData() : EmptyMonth(ym.Year, ym.Month));
         }
 
         if (format == "html")
@@ -59,6 +60,19 @@ public class ExcelController : ApiControllerBase
         }
         var stream = StreamExcelExportService.ExportAttendanceToStream(data);
         return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "attendance.xlsx");
+    }
+
+    private static MonthlyData EmptyMonth(int year, int month)
+    {
+        var first = new DateTime(year, month, 1);
+        return new MonthlyData
+        {
+            Year = year,
+            Month = month,
+            MonthLabel = first.ToString("MMM").ToUpperInvariant(),
+            Title = $"{first.ToString("MMMM").ToUpperInvariant()} - MSW SETTLEMENT",
+            Records = new List<AttendanceRecord>()
+        };
     }
 
     [HttpPost("attendance/import")]

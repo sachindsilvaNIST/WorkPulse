@@ -23,6 +23,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { sanitizePastedHtml } from "@/lib/paste-sanitize";
+
+// Above this, a pasted image is more likely a mistake (a whole screenshot of a monitor, a huge
+// unresized photo) than useful content — base64-inlining it into the note's stored HTML would
+// bloat that record for everyone who ever loads it. Kept generous: a real product screenshot or
+// a pasted Excel range with a couple of images comfortably fits well under this.
+const MAX_PASTED_IMAGE_BYTES = 5 * 1024 * 1024;
 
 const TEXT_STYLES = [
   { tag: "P", label: "Body" },
@@ -203,7 +210,42 @@ export function RichTextEditor({
     onChange(html);
   }
 
+  // Enter inside an ordinary cell still behaves normally (a line break within that cell) — this
+  // only fires at the true last cell of a table's last row, where there's otherwise no way out:
+  // Tab would move focus off the page entirely, and Enter alone just adds another line inside
+  // that same cell forever. Escaping there to a fresh paragraph is what Word/Docs do too.
+  function escapeTrailingTableOnEnter(): boolean {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+    const node = sel.anchorNode;
+    const el = node?.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement | null);
+    const cell = el?.closest("td, th") as HTMLElement | null;
+    if (!cell) return false;
+    const table = cell.closest("table");
+    if (!table || !ref.current?.contains(table) || table.nextElementSibling) return false;
+
+    const row = cell.closest("tr");
+    const lastRow = table.querySelector("tr:last-of-type");
+    if (row !== lastRow || cell !== row?.lastElementChild) return false;
+
+    commit(() => {
+      const p = document.createElement("p");
+      p.innerHTML = "<br>";
+      table.after(p);
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+    return true;
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "Enter" && !e.shiftKey && escapeTrailingTableOnEnter()) {
+      e.preventDefault();
+      return;
+    }
     const mod = e.metaKey || e.ctrlKey;
     if (!mod || e.key.toLowerCase() !== "z") return;
     e.preventDefault();
@@ -218,6 +260,75 @@ export function RichTextEditor({
       typingTimerRef.current = null;
       checkpoint();
     }, TYPING_CHECKPOINT_DELAY_MS);
+  }
+
+  function readImageAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Mirrors how Gmail's compose box behaves: paste a range from Excel and the table/colors/bold
+  // come along as-is; paste a screenshot and it just appears inline. `text/html` wins when present
+  // (a copied Excel range's images already reference stable URLs, so re-embedding them as base64
+  // would only bloat storage for no benefit) — actual image clipboard items are the fallback,
+  // for the case where there's no HTML at all (a straight screenshot copy).
+  // A pasted table landing as the very last thing in the editor leaves no ordinary paragraph
+  // after it — contentEditable then has nowhere else to put the caret, so clicking "below" the
+  // table or pressing Enter at its last cell both just land back inside that last cell instead of
+  // starting a new line, exactly like being trapped in Excel's own cell-to-cell Enter behavior.
+  // Guarantees an escape hatch: an empty paragraph right after, with the caret already moved into
+  // it, so continued typing goes there rather than back into the table.
+  function ensureLineAfterTrailingTable() {
+    const root = ref.current;
+    if (!root || root.lastElementChild?.tagName !== "TABLE") return;
+    const p = document.createElement("p");
+    p.innerHTML = "<br>";
+    root.appendChild(p);
+    const range = document.createRange();
+    range.selectNodeContents(p);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  async function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+    const html = e.clipboardData.getData("text/html");
+    if (html.trim()) {
+      e.preventDefault();
+      commit(() => {
+        document.execCommand("insertHTML", false, sanitizePastedHtml(html));
+        ensureLineAfterTrailingTable();
+      });
+      return;
+    }
+
+    const imageFiles = Array.from(e.clipboardData.items)
+      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .filter((f): f is File => f !== null);
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      const dataUrls = await Promise.all(
+        imageFiles
+          .filter((f) => f.size <= MAX_PASTED_IMAGE_BYTES)
+          .map(readImageAsDataUrl)
+      );
+      if (dataUrls.length === 0) return;
+      commit(() => {
+        for (const url of dataUrls) {
+          document.execCommand("insertHTML", false, `<img src="${url}" style="max-width: 100%;" />`);
+        }
+      });
+      return;
+    }
+
+    // No HTML, no image — plain text (e.g. from a code editor or terminal). Let the browser's own
+    // default plain-text paste happen rather than reimplementing it.
   }
 
   // Toolbar-driven actions all go through this: flush any pending typing checkpoint first (so
@@ -653,6 +764,7 @@ export function RichTextEditor({
         suppressContentEditableWarning
         data-placeholder={placeholder}
         onInput={handleInput}
+        onPaste={handlePaste}
         onMouseDown={handleContentMouseDown}
         onClick={handleContentClick}
         onKeyDown={handleKeyDown}

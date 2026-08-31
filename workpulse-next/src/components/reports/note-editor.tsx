@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { CheckSquare, Download, Plus, Search, Trash2, X, type LucideIcon } from "lucide-react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckSquare, Download, Maximize2, Minimize2, Plus, Search, Trash2, X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/reports/rich-text-editor";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { downloadBlob } from "@/lib/api/client";
@@ -79,6 +81,7 @@ export function NoteEditor<T extends NoteRecord>({
 }) {
   const [records, setRecords] = useState<T[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -120,6 +123,9 @@ export function NoteEditor<T extends NoteRecord>({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [dateValue, setDateValue] = useState("");
+  // Gmail-compose-style expand — same content, just given the whole viewport instead of the
+  // editor panel's own bounds, for writing a long entry without fighting a cramped column.
+  const [fullscreen, setFullscreen] = useState(false);
 
   const pendingRef = useRef<PendingEdit | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,6 +137,10 @@ export function NoteEditor<T extends NoteRecord>({
 
   function persistSelection(id: string | null) {
     setSelectedId(id);
+    // The sidebar (the only way to change selection) isn't visible while fullscreen, so this
+    // only ever fires for the null case in practice — closing the note. Reset here regardless,
+    // rather than in an effect, since this is the actual point selection changes.
+    setFullscreen(false);
     if (typeof window === "undefined") return;
     if (id) localStorage.setItem(storageKey, id);
     else localStorage.removeItem(storageKey);
@@ -217,15 +227,22 @@ export function NoteEditor<T extends NoteRecord>({
   }, []);
 
   // Escape closes the open note, Apple Notes-style — autosave still flushes first via selectRecord.
+  // While fullscreen, Escape backs out of fullscreen first (matching Gmail's expanded compose),
+  // and only closes the note on a second press.
   useEffect(() => {
     if (!selectedId) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") void selectRecord(null);
+      if (e.key !== "Escape") return;
+      if (fullscreen) {
+        setFullscreen(false);
+        return;
+      }
+      void selectRecord(null);
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }, [selectedId, fullscreen]);
 
   const selected = useMemo(() => records.find((r) => r.id === selectedId) ?? null, [records, selectedId]);
 
@@ -350,7 +367,7 @@ export function NoteEditor<T extends NoteRecord>({
                       className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(r.id);
+                        setConfirmDeleteId(r.id);
                       }}
                     />
                   )}
@@ -407,46 +424,153 @@ export function NoteEditor<T extends NoteRecord>({
             <p>Select an entry, or create a new one.</p>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col gap-4 overflow-hidden">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <Input
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  scheduleSave(e.target.value, body, dateValue);
-                }}
-                onBlur={() => flush.current()}
-                placeholder="Title"
-                className="h-auto flex-1 border-none bg-transparent p-0 text-xl font-semibold leading-tight shadow-none focus-visible:ring-0"
-              />
-              <div className="flex items-center gap-2 pt-0.5">
-                <span className="text-xs text-muted-foreground">{dateLabel}</span>
-                <Input
-                  type="date"
-                  value={dateValue}
-                  onChange={(e) => {
-                    setDateValue(e.target.value);
-                    scheduleSave(title, body, e.target.value);
-                  }}
-                  onBlur={() => flush.current()}
-                  className="w-40"
-                />
-              </div>
-            </div>
-            <RichTextEditor
-              key={selectedId}
-              initialValue={body}
-              onChange={(html) => {
-                setBody(html);
-                scheduleSave(title, html, dateValue);
-              }}
-              onBlur={() => flush.current()}
-              placeholder="Start writing…"
-              className="p-0"
+          !fullscreen && (
+            <EditorFields
+              title={title}
+              body={body}
+              dateValue={dateValue}
+              dateLabel={dateLabel}
+              selectedId={selectedId}
+              fullscreen={fullscreen}
+              setTitle={setTitle}
+              setBody={setBody}
+              setDateValue={setDateValue}
+              setFullscreen={setFullscreen}
+              scheduleSave={scheduleSave}
+              flush={flush}
             />
-          </div>
+          )
         )}
       </motion.div>
+
+      {selected &&
+        createPortal(
+          <AnimatePresence>
+            {fullscreen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-50 flex flex-col bg-background p-6 md:p-10"
+              >
+                <EditorFields
+                  title={title}
+                  body={body}
+                  dateValue={dateValue}
+                  dateLabel={dateLabel}
+                  selectedId={selectedId}
+                  fullscreen={fullscreen}
+                  setTitle={setTitle}
+                  setBody={setBody}
+                  setDateValue={setDateValue}
+                  setFullscreen={setFullscreen}
+                  scheduleSave={scheduleSave}
+                  flush={flush}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+      {confirmDeleteId &&
+        (() => {
+          const target = records.find((r) => r.id === confirmDeleteId);
+          return (
+            <ConfirmDialog
+              title={`Delete this ${heading.slice(0, -1).toLowerCase()}?`}
+              description={target?.title ? `“${target.title}” will be permanently removed.` : "This will be permanently removed."}
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+              onConfirm={() => {
+                handleDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+              onCancel={() => setConfirmDeleteId(null)}
+            />
+          );
+        })()}
+    </div>
+  );
+}
+
+/** The title/date/fullscreen-toggle row plus the editor itself — rendered either inline in the
+ * editor panel or, while `fullscreen`, inside a full-viewport portal. Kept as one component
+ * (rather than duplicated JSX) so both places share the exact same fields/handlers. */
+function EditorFields({
+  title,
+  body,
+  dateValue,
+  dateLabel,
+  selectedId,
+  fullscreen,
+  setTitle,
+  setBody,
+  setDateValue,
+  setFullscreen,
+  scheduleSave,
+  flush,
+}: {
+  title: string;
+  body: string;
+  dateValue: string;
+  dateLabel: string;
+  selectedId: string | null;
+  fullscreen: boolean;
+  setTitle: (v: string) => void;
+  setBody: (v: string) => void;
+  setDateValue: (v: string) => void;
+  setFullscreen: (v: boolean) => void;
+  scheduleSave: (title: string, body: string, date: string) => void;
+  flush: React.RefObject<() => Promise<void>>;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <Input
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            scheduleSave(e.target.value, body, dateValue);
+          }}
+          onBlur={() => flush.current()}
+          placeholder="Title"
+          className="h-auto flex-1 rounded-none border-none bg-transparent p-0 text-xl font-semibold leading-tight shadow-none focus-visible:rounded-none focus-visible:border-none focus-visible:bg-transparent focus-visible:ring-0"
+        />
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="text-xs text-muted-foreground">{dateLabel}</span>
+          <Input
+            type="date"
+            value={dateValue}
+            onChange={(e) => {
+              setDateValue(e.target.value);
+              scheduleSave(title, body, e.target.value);
+            }}
+            onBlur={() => flush.current()}
+            className="w-40"
+          />
+          <Button
+            size="icon"
+            variant="glass"
+            onClick={() => setFullscreen(!fullscreen)}
+            title={fullscreen ? "Exit full screen" : "Full screen"}
+          >
+            {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </Button>
+        </div>
+      </div>
+      <RichTextEditor
+        key={selectedId}
+        initialValue={body}
+        onChange={(html) => {
+          setBody(html);
+          scheduleSave(title, html, dateValue);
+        }}
+        onBlur={() => flush.current()}
+        placeholder="Start writing…"
+        className="p-0"
+      />
     </div>
   );
 }

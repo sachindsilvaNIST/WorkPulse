@@ -10,12 +10,10 @@ namespace WorkPulse.Api.Controllers;
 public class QuickLinksController : ApiControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly IHttpClientFactory _httpClientFactory;
 
-    public QuickLinksController(AppDbContext db, IHttpClientFactory httpClientFactory)
+    public QuickLinksController(AppDbContext db)
     {
         _db = db;
-        _httpClientFactory = httpClientFactory;
     }
 
     [HttpGet]
@@ -64,52 +62,5 @@ public class QuickLinksController : ApiControllerBase
         _db.QuickLinks.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
-    }
-
-    public class LinkCheckResult
-    {
-        public string Url { get; set; } = "";
-        public bool Ok { get; set; }
-    }
-
-    /// <summary>Server-side link health check — must run here rather than as a browser `fetch`
-    /// from the frontend, since arbitrary third-party sites reject cross-origin requests via
-    /// CORS. Ephemeral: results aren't persisted, just returned for the current check.</summary>
-    [HttpPost("check")]
-    public async Task<ActionResult<List<LinkCheckResult>>> CheckLinks([FromBody] List<string> urls)
-    {
-        var client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(8);
-
-        async Task<LinkCheckResult> CheckOne(string url)
-        {
-            var target = url.StartsWith("http://") || url.StartsWith("https://") ? url : $"https://{url}";
-            try
-            {
-                using var headResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, target));
-                if (headResponse.IsSuccessStatusCode) return new LinkCheckResult { Url = url, Ok = true };
-
-                // Some servers reject HEAD but happily serve GET — one retry before calling it broken.
-                using var getResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, target));
-                return new LinkCheckResult { Url = url, Ok = getResponse.IsSuccessStatusCode };
-            }
-            catch
-            {
-                return new LinkCheckResult { Url = url, Ok = false };
-            }
-        }
-
-        // Bounded concurrency (8 at a time) rather than firing every request at once — a bookmark
-        // library can hold hundreds of links, and unbounded parallel outbound requests from the
-        // server is its own problem.
-        var results = new List<LinkCheckResult>();
-        const int batchSize = 8;
-        for (int i = 0; i < urls.Count; i += batchSize)
-        {
-            var batch = urls.Skip(i).Take(batchSize).Select(CheckOne);
-            results.AddRange(await Task.WhenAll(batch));
-        }
-
-        return Ok(results);
     }
 }
