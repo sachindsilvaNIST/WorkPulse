@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.9.0",
+    date: "2026-08-31",
+    highlights: [
+      "Attendance: Records now shows right below the summary cards, above the charts; Export can now include any month — even ones with nothing saved yet",
+      "Bookmarks: removed Verify Links",
+      "Resources: a much bigger drag-and-drop area on New Resource",
+      "Gmail Labels: temporarily hidden from the sidebar/Home while its scope gets finalized (nothing was deleted, your data and connection are untouched)",
+      "Daily/Weekly Reports: paste tables and images straight from Excel/the web and they keep their real formatting (like Gmail's compose box) — plus a full-screen editor toggle, and pressing Enter after a pasted table no longer traps you inside it",
+      "Delete buttons across Contacts, Bookmarks, Business Trips, Dictionary, and Daily/Weekly Reports now ask for confirmation first",
+    ],
+  },
+  {
     version: "1.8.4",
     date: "2026-08-30",
     highlights: ["The app now pings the API the moment it loads, so Render's free-tier cold start happens in the background instead of stalling the first page you actually open"],

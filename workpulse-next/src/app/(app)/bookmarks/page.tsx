@@ -27,6 +27,7 @@ import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { CategoryPicker } from "@/components/ui/category-picker";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
 import { accentCardStyle, categoryColor } from "@/lib/category-color";
@@ -69,6 +70,8 @@ export default function BookmarksPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<QuickLink>>(emptyLink());
   const [detail, setDetail] = useState<QuickLink | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteSelectedOpen, setConfirmDeleteSelectedOpen] = useState(false);
 
   // Bulk-select mode — a "Select" toggle switches the card grid into checkbox mode for
   // export/delete/recategorize on several bookmarks at once, same Set<string> pattern used
@@ -77,11 +80,6 @@ export default function BookmarksPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [recategorizeOpen, setRecategorizeOpen] = useState(false);
   const [recategorizeValue, setRecategorizeValue] = useState("");
-
-  // Broken-link check — ephemeral (not persisted), just a session-local map of the last check's
-  // results, shown as a warning badge on affected cards until the next check or page reload.
-  const [brokenUrls, setBrokenUrls] = useState<Set<string>>(new Set());
-  const [checkingLinks, setCheckingLinks] = useState(false);
 
   useEffect(() => {
     quickLinksApi.getAll().then((list) => {
@@ -195,18 +193,6 @@ export default function BookmarksPage() {
     setSelectedIds(new Set());
   }
 
-  async function handleVerifyLinks() {
-    const targets = selectMode && selectedIds.size > 0 ? links.filter((l) => selectedIds.has(l.id)) : links;
-    if (targets.length === 0) return;
-    setCheckingLinks(true);
-    try {
-      const results = await quickLinksApi.checkLinks(targets.map((l) => l.url));
-      setBrokenUrls(new Set(results.filter((r) => !r.ok).map((r) => r.url)));
-    } finally {
-      setCheckingLinks(false);
-    }
-  }
-
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: QuickLink } | null>(null);
 
@@ -317,9 +303,6 @@ export default function BookmarksPage() {
           <Button variant={selectMode ? "default" : "outline"} onClick={toggleSelectMode}>
             <CheckSquare className="size-4" /> {selectMode ? "Cancel" : "Select"}
           </Button>
-          <Button variant="outline" onClick={handleVerifyLinks} disabled={checkingLinks || links.length === 0}>
-            {checkingLinks ? <Spinner size={16} /> : <AlertTriangle className="size-4" />} {checkingLinks ? "Checking…" : "Verify Links"}
-          </Button>
           <Button asChild variant="outline" disabled={importing}>
             <label
               className={cn("cursor-pointer", importing && "pointer-events-none opacity-60")}
@@ -359,7 +342,7 @@ export default function BookmarksPage() {
             <Button size="sm" variant="outline" onClick={() => setRecategorizeOpen(true)} disabled={selectedIds.size === 0}>
               <Tag className="size-3.5" /> Recategorize
             </Button>
-            <Button size="sm" variant="destructive" onClick={handleDeleteSelected} disabled={selectedIds.size === 0}>
+            <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteSelectedOpen(true)} disabled={selectedIds.size === 0}>
               <Trash2 className="size-3.5" /> Delete Selected
             </Button>
           </div>
@@ -467,7 +450,6 @@ export default function BookmarksPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {filtered.map((link) => {
           const accent = categoryColor(link.category);
-          const broken = brokenUrls.has(link.url);
           return (
             <Card
               key={link.id}
@@ -505,14 +487,6 @@ export default function BookmarksPage() {
                     {link.category}
                   </span>
                 )}
-                {broken && (
-                  <span
-                    className="relative z-10 flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
-                    title="This link didn't respond to a health check"
-                  >
-                    <AlertTriangle className="size-3" /> Broken
-                  </span>
-                )}
               </div>
               <span className="mt-2 line-clamp-2 text-sm font-semibold">{link.label}</span>
               <span className="mt-auto truncate text-xs text-muted-foreground">{link.url}</span>
@@ -541,7 +515,7 @@ export default function BookmarksPage() {
                     className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
                     onClick={(e) => {
                       e.preventDefault();
-                      handleDelete(link.id);
+                      setConfirmDeleteId(link.id);
                     }}
                   >
                     <X className="size-3" />
@@ -628,13 +602,7 @@ export default function BookmarksPage() {
                   >
                     <Pencil className="size-4" /> Edit
                   </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      handleDelete(detail.id);
-                      setDetail(null);
-                    }}
-                  >
+                  <Button variant="destructive" onClick={() => setConfirmDeleteId(detail.id)}>
                     <Trash2 className="size-4" /> Delete
                   </Button>
                 </div>
@@ -643,6 +611,39 @@ export default function BookmarksPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {confirmDeleteId &&
+        (() => {
+          const target = links.find((l) => l.id === confirmDeleteId);
+          return (
+            <ConfirmDialog
+              title="Delete this bookmark?"
+              description={target ? `“${target.label}” will be permanently removed.` : "This bookmark will be permanently removed."}
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+              onConfirm={() => {
+                handleDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+                setDetail(null);
+              }}
+              onCancel={() => setConfirmDeleteId(null)}
+            />
+          );
+        })()}
+
+      {confirmDeleteSelectedOpen && (
+        <ConfirmDialog
+          title={`Delete ${selectedIds.size} bookmark${selectedIds.size === 1 ? "" : "s"}?`}
+          description="This can't be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setConfirmDeleteSelectedOpen(false);
+            handleDeleteSelected();
+          }}
+          onCancel={() => setConfirmDeleteSelectedOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DeleteIconButton } from "@/components/ui/delete-icon-button";
 import { dictionaryApi } from "@/lib/api/client";
 import type { DictEntryDto } from "@/lib/api/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -106,7 +107,11 @@ export default function DictionaryPage() {
                 {e.exampleJp && <p className="mt-2 text-xs text-muted-foreground">{e.exampleJp}</p>}
                 {e.exampleEn && <p className="text-xs text-muted-foreground/70">{e.exampleEn}</p>}
               </div>
-              <Trash2 className="size-4 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(e.id)} />
+              <DeleteIconButton
+                onDelete={() => handleDelete(e.id)}
+                title="Delete this entry?"
+                description={`“${e.japanese}” will be permanently removed.`}
+              />
             </div>
           </Card>
         ))}

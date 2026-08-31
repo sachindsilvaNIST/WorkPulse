@@ -132,6 +132,7 @@ export const NAV_ITEMS: NavItem[] = [
     color2: "#D93025",
     flat: true,
     description: "Pattern-search and manage your Gmail label tree",
+    disabled: true,
   },
   {
     href: "/resources",

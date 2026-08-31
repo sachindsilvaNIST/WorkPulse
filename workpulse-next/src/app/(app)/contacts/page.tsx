@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { contactsApi } from "@/lib/api/client";
@@ -50,6 +51,7 @@ export default function ContactsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<ContactRecord>>(emptyContact());
   const [detail, setDetail] = useState<ContactRecord | null>(null);
+  const [confirmDeleteDetail, setConfirmDeleteDetail] = useState(false);
 
   useEffect(() => {
     contactsApi.getAll().then((data) => {
@@ -459,7 +461,7 @@ export default function ContactsPage() {
                   <DetailRow icon={StickyNote} label="Notes" value={detail.notes} />
                 </div>
                 <div className="mt-6 flex gap-2">
-                  <Button variant="destructive" onClick={() => handleDelete(detail.id)}>
+                  <Button variant="destructive" onClick={() => setConfirmDeleteDetail(true)}>
                     <Trash2 className="size-4" /> Delete
                   </Button>
                 </div>
@@ -468,6 +470,20 @@ export default function ContactsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {confirmDeleteDetail && detail && (
+        <ConfirmDialog
+          title="Delete this contact?"
+          description={`${detail.familyName} ${detail.givenName} will be permanently removed.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setConfirmDeleteDetail(false);
+            handleDelete(detail.id);
+          }}
+          onCancel={() => setConfirmDeleteDetail(false)}
+        />
+      )}
     </div>
   );
 }
