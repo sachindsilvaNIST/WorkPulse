@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -18,6 +18,7 @@ import {
   Search,
   Smartphone,
   Sun,
+  Upload,
   X,
 } from "lucide-react";
 import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
@@ -37,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/lib/auth-context";
-import { authApi, settingsApi, sessionsApi, googleDriveApi, gmailApi, ApiError } from "@/lib/api/client";
+import { authApi, settingsApi, sessionsApi, googleDriveApi, gmailApi, exportApi, ApiError } from "@/lib/api/client";
 import type { AppSettings, CurrentUser, GoogleDriveStatus, GmailStatus, UserSession } from "@/lib/api/types";
 import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import { DATE_FORMAT_OPTIONS } from "@/lib/date-format";
@@ -450,8 +451,12 @@ export default function SettingsPage() {
     logout();
   }
 
-  // ===== Data export =====
+  // ===== Data export/restore =====
   const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreResult, setRestoreResult] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   async function handleExport() {
     setExporting(true);
@@ -459,6 +464,27 @@ export default function SettingsPage() {
       await exportUserData();
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleRestoreFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setRestoring(true);
+    setRestoreResult(null);
+    setRestoreError(null);
+    try {
+      const { restored, skipped } = await exportApi.restore(file);
+      setRestoreResult(
+        restored === 0 && skipped > 0
+          ? `Nothing new — everything in that backup already exists (${skipped} skipped).`
+          : `Restored ${restored} item${restored === 1 ? "" : "s"}${skipped > 0 ? `, skipped ${skipped} already-existing item${skipped === 1 ? "" : "s"}` : ""}.`
+      );
+    } catch (err) {
+      setRestoreError(err instanceof ApiError ? err.message : "Restore failed.");
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -1079,11 +1105,28 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Your Data</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Download a copy of your attendance, reports, trips, contacts, and bookmarks as a JSON backup.
+              Download a full backup — attendance, reports, trips and their documents, reimbursement, bookmarks, resources and their files, contacts, and settings — as one ZIP.
             </p>
             <Button variant="outline" className="w-fit" onClick={handleExport} disabled={exporting}>
-              <Download className="size-4" /> {exporting ? "Exporting…" : "Export My Data"}
+              <Download className="size-4" /> {exporting ? "Exporting…" : "Export All Data"}
             </Button>
+
+            <div className="mt-2 border-t border-border pt-3">
+              <p className="text-sm text-muted-foreground">
+                Restore from a backup ZIP — merges in anything not already here (matched by item), never overwrites or removes existing data.
+              </p>
+              <input ref={restoreInputRef} type="file" accept=".zip" className="hidden" onChange={handleRestoreFile} />
+              <Button
+                variant="outline"
+                className="mt-3 w-fit"
+                onClick={() => restoreInputRef.current?.click()}
+                disabled={restoring}
+              >
+                <Upload className="size-4" /> {restoring ? "Restoring…" : "Restore from Backup"}
+              </Button>
+              {restoreResult && <p className="mt-2 text-xs text-muted-foreground">{restoreResult}</p>}
+              {restoreError && <p className="mt-2 text-xs text-destructive">{restoreError}</p>}
+            </div>
           </CardContent>
         </Card>
         )}

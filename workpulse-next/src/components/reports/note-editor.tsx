@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckSquare, Download, Maximize2, Minimize2, Plus, Search, Trash2, X, type LucideIcon } from "lucide-react";
@@ -79,6 +80,9 @@ export function NoteEditor<T extends NoteRecord>({
    * endpoint doesn't have to fake one. */
   onExport?: (ids: string[], format: "xlsx" | "html") => Promise<{ blob: Blob; fileName: string }>;
 }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [records, setRecords] = useState<T[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -150,6 +154,19 @@ export function NoteEditor<T extends NoteRecord>({
     api.getAll().then((list) => {
       setRecords(list);
       setLoading(false);
+
+      // Spotlight's `?open=<id>` and `?new=1` both win over the page-load restore below and the
+      // "most recent" fallback — they're explicit jumps, not a passive default.
+      const openId = searchParams.get("open");
+      if (openId && list.some((r) => r.id === openId)) {
+        persistSelection(openId);
+        return;
+      }
+      if (searchParams.get("new") === "1") {
+        void handleNew();
+        router.replace(pathname);
+        return;
+      }
 
       if (restoredThisPageLoad.has(basePath)) return;
       restoredThisPageLoad.add(basePath);

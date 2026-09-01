@@ -410,4 +410,28 @@ export const resourcesApi = {
   download: (id: string) => requestBlob(`/api/resources/${id}/download`),
 };
 
+export const exportApi = {
+  all: () => requestBlob("/api/export/all"),
+  restore: async (file: File): Promise<{ restored: number; skipped: number }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/api/export/restore`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        message = (await res.json()).error ?? message;
+      } catch {
+        /* no JSON body */
+      }
+      throw new ApiError(res.status, message);
+    }
+    return (await res.json()) as { restored: number; skipped: number };
+  },
+};
+
 export { ApiError };
