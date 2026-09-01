@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.9.1",
+    date: "2026-08-31",
+    highlights: [
+      "Fixed every file download/export (Resources, Attendance, Reports, Trips) saving as a generic \"download\" file instead of its real name — a CORS setting was hiding the filename the server was already sending correctly",
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-08-31",
     highlights: [

@@ -118,7 +118,12 @@ builder.Services.AddCors(options =>
             ?? new[] { "http://localhost:5200" };
         policy.WithOrigins(origins)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            // Browsers hide every response header from JS on a cross-origin fetch except a
+            // small "simple" allowlist — Content-Disposition isn't in it, so without this the
+            // frontend's blob-download helper can never read the real filename the server sent
+            // and silently falls back to "download" for every file export/download in the app.
+            .WithExposedHeaders("Content-Disposition");
     });
 });
 
