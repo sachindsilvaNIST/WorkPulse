@@ -4,11 +4,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ElementType } from "react";
-import { Bookmark, ExternalLink, Library, Search, Users } from "lucide-react";
+import { Bookmark, Briefcase, ExternalLink, FileText, Library, Receipt, Search, Users } from "lucide-react";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
-import { resourcesApi, quickLinksApi, downloadBlob } from "@/lib/api/client";
-import type { Resource, QuickLink } from "@/lib/api/types";
+import {
+  resourcesApi,
+  quickLinksApi,
+  contactsApi,
+  tripReportsApi,
+  reimbursementApi,
+  dailyReportsApi,
+  weeklyReportsApi,
+  downloadBlob,
+} from "@/lib/api/client";
+import type { Resource, QuickLink, ContactRecord, TripReport, TripDocumentWithTrip, DailyReport, WeeklyReport } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
 
@@ -31,7 +40,15 @@ const QUICK_ACTIONS: { label: string; description: string; icon: ElementType; co
   { label: "Add Bookmark", description: "Save a new link", icon: Bookmark, color: "#FFD60A", href: "/bookmarks?new=1" },
   { label: "New Resource", description: "Save a link, file, or note", icon: Library, color: "#40C8E0", href: "/resources?new=1" },
   { label: "Add Contact", description: "Save a new contact", icon: Users, color: "#30D158", href: "/contacts?new=1" },
+  { label: "New Trip", description: "Start a new Business Trip", icon: Briefcase, color: "#5E5CE6", href: "/trips?new=1" },
+  { label: "New Daily Report", description: "Write today's Daily Report", icon: FileText, color: "#FF375F", href: "/reports/daily?new=1" },
+  { label: "New Weekly Report", description: "Write this week's report", icon: FileText, color: "#FF375F", href: "/reports/weekly?new=1" },
+  { label: "Upload Reimbursement", description: "Add a document for reimbursement", icon: Receipt, color: "#30D9C0", href: "/reimbursement?new=1" },
 ];
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ");
+}
 
 // "open <site>" shortcuts — launch an external site in a new tab, distinct from Quick Actions
 // (which jump inside the app) and Go To (which navigates the current tab to a WorkPulse page).
@@ -40,9 +57,11 @@ const WEB_SHORTCUTS: { label: string; description: string; icon: ElementType; co
 ];
 
 /** App-wide quick search — Cmd/Ctrl+K from anywhere, or the search bar on Home. Searches nav
- * sections plus your own saved Resources and Bookmarks by keyword, so "taiwan" jumps straight to
- * the visa guide instead of making you go find the right section first. Also surfaces a handful of
- * "add new" quick actions so starting an entry doesn't require navigating to the section first. */
+ * sections plus Resources, Bookmarks, Contacts, Business Trips, Reimbursement documents, and
+ * Daily/Weekly Reports by keyword, so "taiwan" jumps straight to whatever actually matches
+ * (a bookmark, a trip, a report, ...) instead of making you go find the right section first. Also
+ * surfaces a handful of "add new" quick actions so starting an entry doesn't require navigating to
+ * the section first. */
 export function SpotlightSearch() {
   const { open, setOpen } = useSpotlight();
   const router = useRouter();
@@ -50,6 +69,11 @@ export function SpotlightSearch() {
   const [highlighted, setHighlighted] = useState(0);
   const [resources, setResources] = useState<Resource[] | null>(null);
   const [bookmarks, setBookmarks] = useState<QuickLink[] | null>(null);
+  const [contacts, setContacts] = useState<ContactRecord[] | null>(null);
+  const [trips, setTrips] = useState<TripReport[] | null>(null);
+  const [reimbursementDocs, setReimbursementDocs] = useState<TripDocumentWithTrip[] | null>(null);
+  const [dailyReports, setDailyReports] = useState<DailyReport[] | null>(null);
+  const [weeklyReports, setWeeklyReports] = useState<WeeklyReport[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Cmd/Ctrl+K opens from anywhere; Escape closes. A second Cmd/Ctrl+K while open just refocuses
@@ -76,7 +100,12 @@ export function SpotlightSearch() {
     inputRef.current?.focus();
     if (resources === null) resourcesApi.getAll().then(setResources).catch(() => setResources([]));
     if (bookmarks === null) quickLinksApi.getAll().then(setBookmarks).catch(() => setBookmarks([]));
-  }, [open, resources, bookmarks]);
+    if (contacts === null) contactsApi.getAll().then((d) => setContacts(d.contacts)).catch(() => setContacts([]));
+    if (trips === null) tripReportsApi.getAll().then(setTrips).catch(() => setTrips([]));
+    if (reimbursementDocs === null) reimbursementApi.getAllDocuments().then(setReimbursementDocs).catch(() => setReimbursementDocs([]));
+    if (dailyReports === null) dailyReportsApi.getAll().then(setDailyReports).catch(() => setDailyReports([]));
+    if (weeklyReports === null) weeklyReportsApi.getAll().then(setWeeklyReports).catch(() => setWeeklyReports([]));
+  }, [open, resources, bookmarks, contacts, trips, reimbursementDocs, dailyReports, weeklyReports]);
 
   const results = useMemo<SpotlightResult[]>(() => {
     const q = query.trim().toLowerCase();
@@ -163,8 +192,94 @@ export function SpotlightSearch() {
           }))
       : [];
 
-    return [...quickActionResults, ...webShortcutResults, ...navResults, ...resourceResults, ...bookmarkResults];
-  }, [query, resources, bookmarks, router]);
+    const contactResults: SpotlightResult[] = matchText
+      ? (contacts ?? [])
+          .filter((c) => `${c.affiliation} ${c.familyName} ${c.givenName} ${c.department} ${c.email}`.toLowerCase().includes(matchText))
+          .slice(0, 5)
+          .map((c) => ({
+            id: `contact-${c.id}`,
+            group: "Contacts",
+            label: `${c.familyName} ${c.givenName}`.trim(),
+            description: c.department || c.affiliation,
+            icon: Users,
+            color: "#7ED957",
+            action: () => router.push(`/contacts?open=${c.id}`),
+          }))
+      : [];
+
+    const tripResults: SpotlightResult[] = matchText
+      ? (trips ?? [])
+          .filter((t) => `${t.destination} ${t.purpose} ${t.notes}`.toLowerCase().includes(matchText))
+          .slice(0, 5)
+          .map((t) => ({
+            id: `trip-${t.id}`,
+            group: "Business Trips",
+            label: t.destination,
+            description: `${t.startDate} → ${t.endDate}`,
+            icon: Briefcase,
+            color: "#5E5CE6",
+            action: () => router.push(`/trips?open=${t.id}`),
+          }))
+      : [];
+
+    const reimbursementResults: SpotlightResult[] = matchText
+      ? (reimbursementDocs ?? [])
+          .filter((d) => `${d.label} ${d.fileName} ${d.tripDestination} ${d.category}`.toLowerCase().includes(matchText))
+          .slice(0, 5)
+          .map((d) => ({
+            id: `reimbursement-${d.id}`,
+            group: "Reimbursement",
+            label: d.label || d.fileName,
+            description: `${d.tripDestination} · ${d.category}`,
+            icon: Receipt,
+            color: "#30D9C0",
+            action: () => router.push(`/reimbursement?q=${encodeURIComponent(d.label || d.fileName)}`),
+          }))
+      : [];
+
+    const dailyReportResults: SpotlightResult[] = matchText
+      ? (dailyReports ?? [])
+          .filter((r) => `${r.title} ${stripHtml(r.body)}`.toLowerCase().includes(matchText))
+          .slice(0, 5)
+          .map((r) => ({
+            id: `daily-report-${r.id}`,
+            group: "Daily Reports",
+            label: r.title || "Untitled",
+            description: r.reportDate,
+            icon: FileText,
+            color: "#FF375F",
+            action: () => router.push(`/reports/daily?open=${r.id}`),
+          }))
+      : [];
+
+    const weeklyReportResults: SpotlightResult[] = matchText
+      ? (weeklyReports ?? [])
+          .filter((r) => `${r.title} ${stripHtml(r.body)}`.toLowerCase().includes(matchText))
+          .slice(0, 5)
+          .map((r) => ({
+            id: `weekly-report-${r.id}`,
+            group: "Weekly Reports",
+            label: r.title || "Untitled",
+            description: r.weekStartDate,
+            icon: FileText,
+            color: "#FF375F",
+            action: () => router.push(`/reports/weekly?open=${r.id}`),
+          }))
+      : [];
+
+    return [
+      ...quickActionResults,
+      ...webShortcutResults,
+      ...navResults,
+      ...resourceResults,
+      ...bookmarkResults,
+      ...contactResults,
+      ...tripResults,
+      ...reimbursementResults,
+      ...dailyReportResults,
+      ...weeklyReportResults,
+    ];
+  }, [query, resources, bookmarks, contacts, trips, reimbursementDocs, dailyReports, weeklyReports, router]);
 
   const groups = Array.from(new Set(results.map((r) => r.group)));
 
@@ -213,7 +328,7 @@ export function SpotlightSearch() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search WorkPulse — sections, resources, bookmarks…"
+                placeholder="Search WorkPulse — anything, anywhere…"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               <kbd className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">Esc</kbd>

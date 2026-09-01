@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Briefcase, Download, FileText, Link2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,9 +28,10 @@ const STATUS_COLOR: Record<TripStatus, string> = { Planned: "#8E8E93", InProgres
 const CURRENCIES = ["USD", "JPY", "EUR", "GBP"];
 
 export default function TripsPage() {
+  const searchParams = useSearchParams();
   const [trips, setTrips] = useState<TripReport[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
   const [form, setForm] = useState<Partial<TripReport>>(emptyTrip());
   const [loading, setLoading] = useState(true);
 
@@ -50,11 +52,14 @@ export default function TripsPage() {
     tripReportsApi.getAll().then((list) => {
       setTrips(list);
       setLoading(false);
+      // Lets Spotlight jump straight to a specific trip (`?open=<id>`).
+      const openId = searchParams.get("open");
+      if (openId && list.some((t) => t.id === openId)) setSelectedId(openId);
     });
     resourcesApi.getAll().then((list) => {
       setResourceTitles(Object.fromEntries(list.map((r) => [r.id, r.title])));
     });
-  }, []);
+  }, [searchParams]);
 
   const selected = useMemo(() => trips.find((t) => t.id === selectedId) ?? null, [trips, selectedId]);
 

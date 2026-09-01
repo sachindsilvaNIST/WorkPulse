@@ -57,8 +57,16 @@ export default function ContactsPage() {
     contactsApi.getAll().then((data) => {
       setContacts(data.contacts);
       setLoading(false);
+      // Lets Spotlight jump straight to a specific contact's detail view (`?open=<id>`), same
+      // idea as `?new=1` opening the add form — needs the list loaded first since detail is
+      // looked up by id.
+      const openId = searchParams.get("open");
+      if (openId) {
+        const match = data.contacts.find((c) => c.id === openId);
+        if (match) setDetail(match);
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   const departments = useMemo(() => {
     const set = new Set(contacts.map((c) => c.department).filter(Boolean));

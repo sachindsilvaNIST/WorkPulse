@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.10.0",
+    date: "2026-09-01",
+    highlights: [
+      "Spotlight (Cmd/Ctrl+K) now searches everything — Contacts, Business Trips, Reimbursement documents, and Daily/Weekly Reports, not just nav/Bookmarks/Resources — and jumps straight to the matching item",
+      "Added Quick Actions for New Trip, New Daily/Weekly Report, and Upload Reimbursement",
+      "Settings → Your Data: Export All Data is now a real full backup (one ZIP with every section's data plus the actual trip-document and resource files, not just JSON metadata), and there's now a Restore from Backup to bring it back in — merges in whatever's missing without touching or duplicating what's already there",
+      "About: split \"Where WorkPulse Started\" into its own page, linked alongside Privacy Policy and Terms of Service",
+    ],
+  },
+  {
     version: "1.9.1",
     date: "2026-08-31",
     highlights: [

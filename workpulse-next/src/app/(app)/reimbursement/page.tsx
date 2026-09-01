@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, CloudUpload, Download, ExternalLink, Link2, Receipt, Upload, X } from "lucide-react";
 import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
@@ -32,14 +33,18 @@ function emptyUpload() {
 }
 
 export default function ReimbursementPage() {
+  const searchParams = useSearchParams();
   const [docs, setDocs] = useState<TripDocumentWithTrip[]>([]);
-  const [search, setSearch] = useState("");
+  // Lets Spotlight jump straight to a specific document (`?q=<label or filename>`) — reuses the
+  // existing search box rather than a separate detail view, since documents here are just a
+  // filterable list with no per-item modal.
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [loading, setLoading] = useState(true);
 
   const [trips, setTrips] = useState<TripReport[]>([]);
   const [categories, setCategories] = useState<ReimbursementCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [showUpload, setShowUpload] = useState(false);
+  const [showUpload, setShowUpload] = useState(() => searchParams.get("new") === "1");
   const [form, setForm] = useState(emptyUpload());
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
