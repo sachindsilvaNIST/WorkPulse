@@ -265,6 +265,38 @@ export interface DictEntryDto {
   labels: DictLabelDto[];
 }
 
+export type SharePermission = "Read" | "Edit";
+/** Matches the shared item's own entity name — SharesController/ShareAccessService dispatch on
+ * this exact string. */
+export type ShareableResourceType = "TripReport" | "TripDocument" | "DailyReport" | "WeeklyReport" | "Contact" | "QuickLink" | "Resource";
+
+export interface ShareGrant {
+  email: string;
+  permission: SharePermission;
+}
+
+export interface ShareConfig {
+  id?: string;
+  resourceType: ShareableResourceType;
+  resourceId: string;
+  isPublic: boolean;
+  publicPermission: SharePermission;
+  publicToken?: string | null;
+  grants: ShareGrant[];
+  /** Request-only — whether to email newly-added people, same as Drive's "Notify people"
+   * checkbox. Meaningless on a GET response. */
+  notify?: boolean;
+}
+
+export interface SharedWithMeItem {
+  shareId: string;
+  resourceType: ShareableResourceType;
+  resourceId: string;
+  title: string;
+  ownerDisplayName: string;
+  permission: SharePermission;
+}
+
 export type ResourceType = "Link" | "File" | "Note";
 
 export interface Resource {

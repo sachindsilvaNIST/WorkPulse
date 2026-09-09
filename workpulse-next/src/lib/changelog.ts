@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.11.0",
+    date: "2026-09-09",
+    highlights: [
+      "Added sharing, Drive-style — share any Trip, Reimbursement document, Report, Contact, Bookmark, or Resource with specific people by email (Read or Edit) or as a public \"anyone with the link\" URL that needs no sign-in; optionally notify people by email when you share, just like Drive's \"Notify people\"",
+      "New \"Shared with Me\" section in the sidebar for everything others have shared with you",
+      "Notifications: added a Clear button to wipe your notification history",
+      "Resources: drag and drop a file straight onto the page to upload it — no need to open New Resource first",
+      "Resources: File notes now use the same rich-text editor as Daily/Weekly Reports — bigger, with real formatting (headings, lists, highlights, links)",
+      "The app now keeps pinging the API every 10 minutes while a tab stays open, so it stays warm instead of only waking up once on load",
+    ],
+  },
+  {
     version: "1.10.0",
     date: "2026-09-01",
     highlights: [

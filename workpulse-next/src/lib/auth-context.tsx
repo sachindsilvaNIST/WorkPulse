@@ -57,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAdmin(isAdminClaims(claims));
     setDisabledFeatures(disabledFeaturesClaims(claims));
     setIsLoading(false);
+
+    // Keeps Render's free-tier API from ever going idle for as long as a tab stays open —
+    // 10 minutes comfortably beats its 15-minute spin-down window. Browsers still fire intervals
+    // on a backgrounded tab (just less precisely), so this keeps working while you're away in
+    // another app, not just while WorkPulse is the foreground tab — that's the actual point: the
+    // API should already be awake by the time you switch back, not just on the initial page load.
+    const keepAliveId = setInterval(warmUpApi, 10 * 60 * 1000);
+    return () => clearInterval(keepAliveId);
   }, []);
 
   const completeSession = useCallback(

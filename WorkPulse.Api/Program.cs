@@ -109,6 +109,10 @@ builder.Services.AddScoped<WorkPulse.Api.Services.GmailService>();
 builder.Services.AddScoped<WorkPulse.Api.Services.NotificationTriggerService>();
 builder.Services.AddHostedService<WorkPulse.Api.Services.NotificationSchedulerService>();
 
+// Sharing (Trips, Reimbursement, Reports, Contacts, Bookmarks, Resources) — one service every
+// entity controller's read/update endpoints fall back to once ownership fails.
+builder.Services.AddScoped<WorkPulse.Api.Services.ShareAccessService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {

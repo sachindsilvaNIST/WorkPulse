@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { ResourcePickerDialog, ResourceLinkChip } from "@/components/ui/resource-picker-dialog";
+import { ShareButton } from "@/components/ui/share-button";
 import { reimbursementApi, tripReportsApi, resourcesApi, downloadBlob } from "@/lib/api/client";
 import type { ReimbursementCategory, ReimbursementStatusValue, Resource, TripDocumentWithTrip, TripReport } from "@/lib/api/types";
 import { accentCardStyle, categoryColor } from "@/lib/category-color";
@@ -291,6 +292,7 @@ export default function ReimbursementPage() {
                   <Button size="icon" variant="ghost" onClick={() => handleDownload(d)} title="Download">
                     <Download className="size-4" />
                   </Button>
+                  <ShareButton resourceType="TripDocument" resourceId={d.id} title={d.label || d.fileName} variant="ghost" />
                 </div>
               </div>
               <p className="mt-2 truncate font-medium">{d.fileName}</p>

@@ -130,6 +130,22 @@ export function PeopleGlyph(props: GlyphProps) {
 /** Gmail Labels' finished design (locked): a glass envelope body panel with a filled triangular
  * flap, a top sheen band behind it, a translucent edge stroke on the flap, and a bright highlight
  * line tracing the fold crease — the classic envelope silhouette as solid layers, not a line icon. */
+/** Shared with Me's design: a glass panel with the classic three-node share pictogram — two
+ * outer circles connected to a center one by two plain lines, the same generic "share" pictogram
+ * convention used industry-wide, drawn from scratch as simple circles/lines like every other
+ * glyph here rather than copied from any specific icon set. */
+export function ShareGlyph(props: GlyphProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...props}>
+      <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="rgba(255,255,255,0.34)" stroke="rgba(255,255,255,0.7)" strokeWidth="0.6" />
+      <path d="M7.4 12L16.2 6.4M7.4 12L16.2 17.6" stroke="rgba(255,255,255,0.85)" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="17.4" cy="5.6" r="2.6" fill="#FFFFFF" />
+      <circle cx="17.4" cy="18.4" r="2.6" fill="#FFFFFF" />
+      <circle cx="6.2" cy="12" r="2.6" fill="rgba(255,255,255,0.9)" />
+    </svg>
+  );
+}
+
 export function EnvelopeGlyph(props: GlyphProps) {
   return (
     <svg viewBox="0 0 24 24" {...props}>

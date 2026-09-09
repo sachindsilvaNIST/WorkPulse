@@ -7,6 +7,7 @@ import {
   TicketGlyph,
   RibbonGlyph,
   PeopleGlyph,
+  ShareGlyph,
   EnvelopeGlyph,
   BooksGlyph,
   GearGlyph,
@@ -133,6 +134,15 @@ export const NAV_ITEMS: NavItem[] = [
     flat: true,
     description: "Pattern-search and manage your Gmail label tree",
     disabled: true,
+  },
+  {
+    href: "/shared",
+    label: "Shared with Me",
+    icon: ShareGlyph,
+    color: "#64D2FF",
+    color2: "#0A84FF",
+    flat: true,
+    description: "Items other people have shared with you",
   },
   {
     href: "/resources",

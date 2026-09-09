@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
@@ -21,13 +22,23 @@ public class ResourcesController : ApiControllerBase
 
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
+    private readonly ShareAccessService _shareAccess;
     private readonly ILogger<ResourcesController> _logger;
 
-    public ResourcesController(AppDbContext db, GoogleDriveService drive, ILogger<ResourcesController> logger)
+    public ResourcesController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, ILogger<ResourcesController> logger)
     {
         _db = db;
         _drive = drive;
+        _shareAccess = shareAccess;
         _logger = logger;
+    }
+
+    private async Task<bool> HasSharedAccessAsync(string resourceId, bool requireEdit = false)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        var permission = await _shareAccess.GetEffectivePermissionAsync("Resource", resourceId, email);
+        if (permission == null) return false;
+        return !requireEdit || permission == "Edit";
     }
 
     [HttpGet]
@@ -117,8 +128,9 @@ public class ResourcesController : ApiControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<ResourceMeta>> Update(string id, [FromBody] ResourceUpdateRequest request)
     {
-        var entity = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id && r.UserId == UserId);
+        var entity = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id);
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id, requireEdit: true)) return NotFound();
 
         var titleTrimmed = (request.Title ?? "").Trim();
         if (titleTrimmed.Length == 0)
@@ -140,8 +152,9 @@ public class ResourcesController : ApiControllerBase
     [HttpGet("{id}/download")]
     public async Task<ActionResult> Download(string id)
     {
-        var entity = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id && r.UserId == UserId && r.Type == "File");
+        var entity = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id && r.Type == "File");
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id)) return NotFound();
 
         return File(entity.Content, entity.ContentType, entity.FileName);
     }

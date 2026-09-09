@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/reports/rich-text-editor";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareButton } from "@/components/ui/share-button";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { downloadBlob } from "@/lib/api/client";
+import type { ShareableResourceType } from "@/lib/api/types";
 
 export interface NoteRecord {
   id: string;
@@ -65,6 +67,7 @@ export function NoteEditor<T extends NoteRecord>({
   basePath,
   makeNew,
   onExport,
+  resourceType,
 }: {
   icon: LucideIcon;
   heading: string;
@@ -79,6 +82,8 @@ export function NoteEditor<T extends NoteRecord>({
    * exportReports, kept optional so any future NoteEditor consumer without a backend export
    * endpoint doesn't have to fake one. */
   onExport?: (ids: string[], format: "xlsx" | "html") => Promise<{ blob: Blob; fileName: string }>;
+  /** "DailyReport" | "WeeklyReport" — which of the two this instance is, for the Share button. */
+  resourceType: ShareableResourceType;
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -455,6 +460,7 @@ export function NoteEditor<T extends NoteRecord>({
               setFullscreen={setFullscreen}
               scheduleSave={scheduleSave}
               flush={flush}
+              resourceType={resourceType}
             />
           )
         )}
@@ -484,6 +490,7 @@ export function NoteEditor<T extends NoteRecord>({
                   setFullscreen={setFullscreen}
                   scheduleSave={scheduleSave}
                   flush={flush}
+                  resourceType={resourceType}
                 />
               </motion.div>
             )}
@@ -528,6 +535,7 @@ function EditorFields({
   setFullscreen,
   scheduleSave,
   flush,
+  resourceType,
 }: {
   title: string;
   body: string;
@@ -541,6 +549,7 @@ function EditorFields({
   setFullscreen: (v: boolean) => void;
   scheduleSave: (title: string, body: string, date: string) => void;
   flush: React.RefObject<() => Promise<void>>;
+  resourceType: ShareableResourceType;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-hidden">
@@ -567,6 +576,7 @@ function EditorFields({
             onBlur={() => flush.current()}
             className="w-40"
           />
+          {selectedId && <ShareButton resourceType={resourceType} resourceId={selectedId} title={title || "Untitled"} variant="glass" />}
           <Button
             size="icon"
             variant="glass"

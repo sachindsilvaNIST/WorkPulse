@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { CategoryPicker } from "@/components/ui/category-picker";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareButton } from "@/components/ui/share-button";
 import { quickLinksApi } from "@/lib/api/client";
 import type { QuickLink } from "@/lib/api/types";
 import { accentCardStyle, categoryColor } from "@/lib/category-color";
@@ -605,6 +606,7 @@ export default function BookmarksPage() {
                   <Button variant="destructive" onClick={() => setConfirmDeleteId(detail.id)}>
                     <Trash2 className="size-4" /> Delete
                   </Button>
+                  <ShareButton resourceType="QuickLink" resourceId={detail.id} title={detail.label} />
                 </div>
               </Card>
             </motion.div>

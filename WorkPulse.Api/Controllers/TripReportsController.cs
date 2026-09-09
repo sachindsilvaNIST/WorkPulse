@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
@@ -15,13 +16,25 @@ public class TripReportsController : ApiControllerBase
 
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
+    private readonly ShareAccessService _shareAccess;
     private readonly ILogger<TripReportsController> _logger;
 
-    public TripReportsController(AppDbContext db, GoogleDriveService drive, ILogger<TripReportsController> logger)
+    public TripReportsController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, ILogger<TripReportsController> logger)
     {
         _db = db;
         _drive = drive;
+        _shareAccess = shareAccess;
         _logger = logger;
+    }
+
+    /// <summary>Read-side share fallback for a single GET/{id}-style endpoint — call once
+    /// ownership has already failed. Returns true (proceed) or false (caller should 404).</summary>
+    private async Task<bool> HasSharedAccessAsync(string resourceType, string resourceId, bool requireEdit = false)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        var permission = await _shareAccess.GetEffectivePermissionAsync(resourceType, resourceId, email);
+        if (permission == null) return false;
+        return !requireEdit || permission == "Edit";
     }
 
     // ===== TRIP REPORTS =====
@@ -55,8 +68,9 @@ public class TripReportsController : ApiControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<TripReport>> Get(string id)
     {
-        var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id && t.UserId == UserId);
+        var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id);
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync("TripReport", id)) return NotFound();
         return Ok(entity.ToTripReport());
     }
 
@@ -72,8 +86,9 @@ public class TripReportsController : ApiControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<TripReport>> Update(string id, [FromBody] TripReport record)
     {
-        var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id && t.UserId == UserId);
+        var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id);
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync("TripReport", id, requireEdit: true)) return NotFound();
 
         entity.Category = record.Category.ToString();
         entity.Destination = record.Destination;
@@ -202,9 +217,9 @@ public class TripReportsController : ApiControllerBase
     [HttpGet("{tripId}/documents/{docId}")]
     public async Task<ActionResult> DownloadDocument(string tripId, string docId)
     {
-        var doc = await _db.TripDocuments
-            .FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId && d.UserId == UserId);
+        var doc = await _db.TripDocuments.FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId);
         if (doc == null) return NotFound();
+        if (doc.UserId != UserId && !await HasSharedAccessAsync("TripDocument", docId)) return NotFound();
 
         return File(doc.Content, doc.ContentType, doc.FileName);
     }
@@ -225,9 +240,9 @@ public class TripReportsController : ApiControllerBase
     [HttpPut("{tripId}/documents/{docId}")]
     public async Task<ActionResult<TripDocumentMeta>> UpdateDocument(string tripId, string docId, [FromBody] UpdateDocumentRequest update)
     {
-        var doc = await _db.TripDocuments
-            .FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId && d.UserId == UserId);
+        var doc = await _db.TripDocuments.FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId);
         if (doc == null) return NotFound();
+        if (doc.UserId != UserId && !await HasSharedAccessAsync("TripDocument", docId, requireEdit: true)) return NotFound();
 
         if (update.Amount.HasValue) doc.Amount = update.Amount;
         if (!string.IsNullOrWhiteSpace(update.Currency)) doc.Currency = update.Currency;

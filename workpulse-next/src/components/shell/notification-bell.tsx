@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, Trash2 } from "lucide-react";
 import { notificationsApi } from "@/lib/api/client";
 import type { AppNotification } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -89,6 +89,11 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
     notificationsApi.markAllRead().catch(() => {});
   }
 
+  async function handleClearAll() {
+    setNotifications([]);
+    notificationsApi.clearAll().catch(() => {});
+  }
+
   return (
     <>
       <button
@@ -121,15 +126,26 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
               >
                 <div className="flex items-center justify-between px-2 py-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">Notifications</span>
-                  {unreadCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleMarkAllRead}
-                      className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      <CheckCheck className="size-3" /> Mark all read
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <CheckCheck className="size-3" /> Mark all read
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAll}
+                        className="flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3" /> Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 && (

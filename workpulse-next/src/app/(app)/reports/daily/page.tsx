@@ -15,6 +15,7 @@ export default function DailyReportsPage() {
       dateLabel="Date"
       api={dailyReportsApi}
       basePath="/api/dailyreports"
+      resourceType="DailyReport"
       makeNew={() => ({ reportDate: new Date().toISOString().slice(0, 10) })}
       onExport={dailyReportsApi.exportReports}
     />

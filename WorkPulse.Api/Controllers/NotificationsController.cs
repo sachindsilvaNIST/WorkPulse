@@ -53,4 +53,14 @@ public class NotificationsController : ApiControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    /// <summary>Clears the whole panel, not just marks it read — a condition that's still true
+    /// (e.g. today's report is still empty) will trigger a fresh notification next time the
+    /// scheduler runs, same as it would for a brand new occurrence; this only wipes history.</summary>
+    [HttpDelete]
+    public async Task<IActionResult> ClearAll()
+    {
+        await _db.Notifications.Where(n => n.UserId == UserId).ExecuteDeleteAsync();
+        return NoContent();
+    }
 }

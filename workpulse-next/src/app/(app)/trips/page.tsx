@@ -13,6 +13,7 @@ import { CategoryPicker } from "@/components/ui/category-picker";
 import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { ResourcePickerDialog, ResourceLinkChip } from "@/components/ui/resource-picker-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareButton } from "@/components/ui/share-button";
 import { tripReportsApi, resourcesApi, downloadBlob } from "@/lib/api/client";
 import type { Resource, TripCategory, TripDocumentMeta, TripReport, TripStatus } from "@/lib/api/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -289,6 +290,7 @@ export default function TripsPage() {
                   <Button size="sm" variant="outline" onClick={() => handleExport("html")} disabled={exporting}>
                     HTML
                   </Button>
+                  <ShareButton resourceType="TripReport" resourceId={selected.id} title={selected.destination} size="sm" />
                 </div>
               </div>
 

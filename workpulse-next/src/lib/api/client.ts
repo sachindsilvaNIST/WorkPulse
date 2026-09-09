@@ -29,6 +29,10 @@ import type {
   Resource,
   ResourceType,
   AppNotification,
+  ShareConfig,
+  ShareableResourceType,
+  SharePermission,
+  SharedWithMeItem,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -313,6 +317,7 @@ export const notificationsApi = {
   getAll: () => request<AppNotification[]>("/api/notifications"),
   markRead: (id: string) => request<AppNotification>(`/api/notifications/${id}/read`, { method: "POST" }),
   markAllRead: () => request<void>("/api/notifications/read-all", { method: "POST" }),
+  clearAll: () => request<void>("/api/notifications", { method: "DELETE" }),
 };
 
 export const contactsApi = {
@@ -408,6 +413,31 @@ export const resourcesApi = {
     request<Resource>(`/api/resources/${id}`, { method: "PUT", body: JSON.stringify(input) }),
   delete: (id: string) => request<void>(`/api/resources/${id}`, { method: "DELETE" }),
   download: (id: string) => requestBlob(`/api/resources/${id}/download`),
+};
+
+export const shareApi = {
+  get: (resourceType: ShareableResourceType, resourceId: string) =>
+    request<ShareConfig>(`/api/shares?resourceType=${resourceType}&resourceId=${resourceId}`),
+  save: (config: ShareConfig) => request<ShareConfig>("/api/shares", { method: "PUT", body: JSON.stringify(config) }),
+  revoke: (id: string) => request<void>(`/api/shares/${id}`, { method: "DELETE" }),
+  sharedWithMe: () => request<SharedWithMeItem[]>("/api/shares/shared-with-me"),
+  getSharedData: (shareId: string) => request<{ resourceType: ShareableResourceType; permission: SharePermission; data: unknown }>(`/api/shares/${shareId}/data`),
+  // No Authorization header — these two are the only calls in the app meant to work while
+  // completely logged out, hitting the API's one unauthenticated controller.
+  getPublic: async (token: string) => {
+    const res = await fetch(`${API_BASE}/api/public-shares/${token}`);
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return (await res.json()) as { resourceType: ShareableResourceType; permission: SharePermission; data: unknown };
+  },
+  updatePublic: async (token: string, fields: Record<string, unknown>) => {
+    const res = await fetch(`${API_BASE}/api/public-shares/${token}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fields),
+    });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return (await res.json()) as { resourceType: ShareableResourceType; permission: SharePermission; data: unknown };
+  },
 };
 
 export const exportApi = {

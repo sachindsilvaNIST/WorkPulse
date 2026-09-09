@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Mapping;
+using WorkPulse.Api.Services;
 using WorkPulse.Models;
 
 namespace WorkPulse.Api.Controllers;
@@ -10,8 +12,33 @@ namespace WorkPulse.Api.Controllers;
 public class ContactsController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ShareAccessService _shareAccess;
 
-    public ContactsController(AppDbContext db) => _db = db;
+    public ContactsController(AppDbContext db, ShareAccessService shareAccess)
+    {
+        _db = db;
+        _shareAccess = shareAccess;
+    }
+
+    private async Task<bool> HasSharedAccessAsync(string resourceId, bool requireEdit = false)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        var permission = await _shareAccess.GetEffectivePermissionAsync("Contact", resourceId, email);
+        if (permission == null) return false;
+        return !requireEdit || permission == "Edit";
+    }
+
+    /// <summary>New — Contacts previously had no single-item GET at all (the page always fetched
+    /// the whole list). Added specifically so a shared Contact has something to fetch; applies the
+    /// exact same ownership-or-share check as everywhere else from the start, not a bare lookup.</summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ContactRecord>> Get(string id)
+    {
+        var entity = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id);
+        if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id)) return NotFound();
+        return Ok(entity.ToContactRecord());
+    }
 
     [HttpGet]
     public async Task<ActionResult<ContactBookData>> GetAll()
@@ -54,8 +81,10 @@ public class ContactsController : ApiControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult> Update(string id, [FromBody] ContactRecord record)
     {
-        var entity = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id && c.UserId == UserId);
+        var entity = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == id);
         if (entity == null)
+            return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id, requireEdit: true))
             return NotFound();
 
         entity.Affiliation = record.Affiliation;

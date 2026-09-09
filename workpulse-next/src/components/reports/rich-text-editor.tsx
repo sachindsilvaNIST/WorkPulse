@@ -43,6 +43,22 @@ const TEXT_STYLES = [
 const TYPING_CHECKPOINT_DELAY_MS = 500;
 const MAX_HISTORY = 100;
 
+/** The formatting rules for this editor's stored HTML (headings, lists, highlights, etc.) —
+ * exported so a read-only view (e.g. a detail modal showing saved content via
+ * dangerouslySetInnerHTML) renders it identically without duplicating the class list. */
+export const RICH_TEXT_CONTENT_CLASSNAME = cn(
+  "note-rich-text text-sm leading-relaxed",
+  "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-2xl [&_h1]:font-bold",
+  "[&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold",
+  "[&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base [&_h3]:font-semibold",
+  "[&_p]:mb-1",
+  "[&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through",
+  "[&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline",
+  "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
+  "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
+  "[&_pre]:m-0 [&_pre]:mb-1 [&_pre]:whitespace-pre-wrap [&_pre]:font-mono [&_pre]:text-[13px]"
+);
+
 // Apple Notes' own highlighter palette. Kept translucent (mixed toward transparent) rather than
 // solid so the highlight reads as a soft glass tint over the dark theme instead of an opaque
 // pastel block — which is also what fixes the original bug: white text was unreadable against a
@@ -771,17 +787,9 @@ export function RichTextEditor({
         onContextMenu={handleContextMenu}
         onBlur={onBlur}
         className={cn(
-          "note-rich-text flex-1 overflow-y-auto text-sm leading-relaxed outline-none",
-          "empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground",
-          "[&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-2xl [&_h1]:font-bold",
-          "[&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold",
-          "[&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base [&_h3]:font-semibold",
-          "[&_p]:mb-1",
-          "[&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through",
-          "[&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline",
-          "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
-          "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
-          "[&_pre]:m-0 [&_pre]:mb-1 [&_pre]:whitespace-pre-wrap [&_pre]:font-mono [&_pre]:text-[13px]"
+          RICH_TEXT_CONTENT_CLASSNAME,
+          "flex-1 overflow-y-auto outline-none",
+          "empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground"
         )}
       />
 

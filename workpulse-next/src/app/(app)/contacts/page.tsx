@@ -13,6 +13,7 @@ import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareButton } from "@/components/ui/share-button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DetailRow } from "@/components/ui/detail-row";
 import { contactsApi } from "@/lib/api/client";
@@ -472,6 +473,7 @@ export default function ContactsPage() {
                   <Button variant="destructive" onClick={() => setConfirmDeleteDetail(true)}>
                     <Trash2 className="size-4" /> Delete
                   </Button>
+                  <ShareButton resourceType="Contact" resourceId={detail.id} title={`${detail.familyName} ${detail.givenName}`.trim()} />
                 </div>
               </Card>
             </motion.div>

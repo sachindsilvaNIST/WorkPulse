@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Mapping;
+using WorkPulse.Api.Services;
 using WorkPulse.Models;
 
 namespace WorkPulse.Api.Controllers;
@@ -10,8 +12,21 @@ namespace WorkPulse.Api.Controllers;
 public class WeeklyReportsController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ShareAccessService _shareAccess;
 
-    public WeeklyReportsController(AppDbContext db) => _db = db;
+    public WeeklyReportsController(AppDbContext db, ShareAccessService shareAccess)
+    {
+        _db = db;
+        _shareAccess = shareAccess;
+    }
+
+    private async Task<bool> HasSharedAccessAsync(string resourceId, bool requireEdit = false)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        var permission = await _shareAccess.GetEffectivePermissionAsync("WeeklyReport", resourceId, email);
+        if (permission == null) return false;
+        return !requireEdit || permission == "Edit";
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<WeeklyReport>>> GetAll([FromQuery] DateOnly? from, [FromQuery] DateOnly? to)
@@ -30,8 +45,9 @@ public class WeeklyReportsController : ApiControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<WeeklyReport>> Get(string id)
     {
-        var entity = await _db.WeeklyReports.FirstOrDefaultAsync(r => r.Id == id && r.UserId == UserId);
+        var entity = await _db.WeeklyReports.FirstOrDefaultAsync(r => r.Id == id);
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id)) return NotFound();
         return Ok(entity.ToWeeklyReport());
     }
 
@@ -47,8 +63,9 @@ public class WeeklyReportsController : ApiControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<WeeklyReport>> Update(string id, [FromBody] WeeklyReport record)
     {
-        var entity = await _db.WeeklyReports.FirstOrDefaultAsync(r => r.Id == id && r.UserId == UserId);
+        var entity = await _db.WeeklyReports.FirstOrDefaultAsync(r => r.Id == id);
         if (entity == null) return NotFound();
+        if (entity.UserId != UserId && !await HasSharedAccessAsync(id, requireEdit: true)) return NotFound();
 
         entity.WeekStartDate = record.WeekStartDate;
         entity.Title = record.Title;

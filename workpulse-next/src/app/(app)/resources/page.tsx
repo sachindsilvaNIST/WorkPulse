@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -31,6 +31,8 @@ import { FileDropZone } from "@/components/ui/file-drop-zone";
 import { DetailRow } from "@/components/ui/detail-row";
 import { Spinner } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareButton } from "@/components/ui/share-button";
+import { RichTextEditor, RICH_TEXT_CONTENT_CLASSNAME } from "@/components/reports/rich-text-editor";
 import { resourcesApi, downloadBlob, ApiError } from "@/lib/api/client";
 import type { Resource, ResourceType } from "@/lib/api/types";
 import { accentCardStyle } from "@/lib/category-color";
@@ -78,6 +80,10 @@ function fileExtension(name: string): string {
   return idx === -1 ? "" : name.slice(idx + 1).toLowerCase();
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function isBlockedFile(file: File): boolean {
   return BLOCKED_EXTENSIONS.has(fileExtension(file.name));
 }
@@ -118,6 +124,44 @@ export default function ResourcesPage() {
   // its own entry here (queued → uploading → done/error) so the modal can show a macOS-style
   // per-item progress list instead of one opaque "saving…" spinner for the whole batch.
   const [uploads, setUploads] = useState<UploadEntry[]>([]);
+
+  // Drive-style whole-page drop target — drop a file anywhere on this page and it uploads
+  // immediately as its own File resource, no modal/File-tab detour required. A counter (not a
+  // plain boolean) survives dragenter/dragleave firing on every child element as the pointer
+  // crosses card boundaries, which would otherwise flicker the overlay on and off mid-drag.
+  const dragDepthRef = useRef(0);
+  const [pageDragActive, setPageDragActive] = useState(false);
+  const [dropUploads, setDropUploads] = useState<UploadEntry[]>([]);
+
+  async function handlePageDrop(files: File[]) {
+    const accepted = files.filter((f) => !isBlockedFile(f));
+    if (accepted.length === 0) return;
+    const entries: UploadEntry[] = accepted.map((file, i) => ({
+      id: `drop-${Date.now()}-${i}`,
+      file,
+      status: "queued",
+    }));
+    setDropUploads(entries);
+
+    for (const entry of entries) {
+      setDropUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "uploading" } : u)));
+      try {
+        const resource = await resourcesApi.create({
+          type: "File",
+          title: titleFromFileName(entry.file.name),
+          notes: "",
+          tags: "",
+          keywords: "",
+          file: entry.file,
+        });
+        setResources((prev) => [resource, ...prev]);
+        setDropUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "done" } : u)));
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : "Upload failed.";
+        setDropUploads((prev) => prev.map((u) => (u.id === entry.id ? { ...u, status: "error", error: message } : u)));
+      }
+    }
+  }
 
   useEffect(() => {
     resourcesApi.getAll().then((list) => {
@@ -272,7 +316,71 @@ export default function ResourcesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div
+      className="relative mx-auto max-w-6xl"
+      onDragEnter={(e) => {
+        if (showForm || !e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        dragDepthRef.current++;
+        setPageDragActive(true);
+      }}
+      onDragOver={(e) => {
+        if (showForm || !e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+      }}
+      onDragLeave={(e) => {
+        if (showForm) return;
+        e.preventDefault();
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) setPageDragActive(false);
+      }}
+      onDrop={(e) => {
+        if (showForm) return;
+        e.preventDefault();
+        dragDepthRef.current = 0;
+        setPageDragActive(false);
+        void handlePageDrop(Array.from(e.dataTransfer.files));
+      }}
+    >
+      {pageDragActive && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-primary/10 backdrop-blur-[2px]">
+          <div className="glass-panel flex flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-primary px-10 py-8">
+            <Upload className="size-8 text-primary" />
+            <p className="text-sm font-semibold text-primary">Drop to upload to Resources</p>
+          </div>
+        </div>
+      )}
+
+      {dropUploads.length > 0 && (
+        <div className="fixed bottom-5 right-5 z-40 w-72 rounded-2xl border border-white/10 bg-popover/95 p-3 shadow-lg backdrop-blur-md">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold">
+              {dropUploads.every((u) => u.status === "done") ? "Upload complete" : "Uploading…"}
+            </p>
+            <button
+              onClick={() => setDropUploads([])}
+              className="cursor-pointer rounded-full p-0.5 text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+          <div className="flex max-h-48 flex-col gap-1.5 overflow-y-auto">
+            {dropUploads.map((u) => (
+              <div key={u.id} className="flex items-center gap-2">
+                {u.status === "uploading" || u.status === "queued" ? (
+                  <Spinner size={14} className="shrink-0 text-primary" />
+                ) : u.status === "done" ? (
+                  <CheckCircle2 className="size-3.5 shrink-0 text-[#34C759]" />
+                ) : (
+                  <AlertCircle className="size-3.5 shrink-0 text-destructive" />
+                )}
+                <span className="truncate text-xs">{u.file.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Resources</h1>
@@ -407,13 +515,26 @@ export default function ResourcesPage() {
                 )}
               </div>
             )}
-            <textarea
-              placeholder="Notes — what this is, what worked, anything future-you should know"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={3}
-              className="w-full resize-none rounded-2xl border border-input bg-background/50 px-4 py-2.5 text-sm outline-none backdrop-blur-md placeholder:text-muted-foreground sm:col-span-2"
-            />
+            {form.type === "File" ? (
+              // Files get the full rich-text editor (same one Daily/Weekly Reports use) — a file's
+              // notes tend to be the actual reference material (steps, a checklist, a pasted
+              // table), not a one-line caption, so it deserves real formatting and room to grow.
+              <div className="flex h-64 flex-col rounded-2xl border border-input bg-background/50 px-4 py-2.5 backdrop-blur-md sm:col-span-2">
+                <RichTextEditor
+                  initialValue={form.notes}
+                  onChange={(html) => setForm((f) => ({ ...f, notes: html }))}
+                  placeholder="Notes — what this is, what worked, anything future-you should know"
+                />
+              </div>
+            ) : (
+              <textarea
+                placeholder="Notes — what this is, what worked, anything future-you should know"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={3}
+                className="w-full resize-none rounded-2xl border border-input bg-background/50 px-4 py-2.5 text-sm outline-none backdrop-blur-md placeholder:text-muted-foreground sm:col-span-2"
+              />
+            )}
             <TagInput value={form.tags} onValueChange={(tags) => setForm({ ...form, tags })} suggestions={allTags} placeholder="Tags — press Enter to add" />
             <Input
               placeholder="Keywords, comma-separated (extra search terms)"
@@ -486,7 +607,11 @@ export default function ResourcesPage() {
                 </div>
               </div>
               <span className="mt-2 line-clamp-2 text-sm font-semibold">{r.title}</span>
-              {r.notes && <span className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.notes}</span>}
+              {r.notes && (
+                <span className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  {r.type === "File" ? stripHtml(r.notes) : r.notes}
+                </span>
+              )}
               {tags.length > 0 && (
                 <div className="mt-auto flex flex-wrap gap-1 pt-2">
                   {tags.slice(0, 3).map((t) => (
@@ -516,7 +641,7 @@ export default function ResourcesPage() {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.15 }}
               onClick={(e) => e.stopPropagation()}
-              className={cn("flex w-full flex-col", detail.type === "Note" ? "max-h-[80vh] max-w-lg" : "max-w-md")}
+              className={cn("flex w-full flex-col", detail.type === "Note" || detail.type === "File" ? "max-h-[80vh] max-w-lg" : "max-w-md")}
             >
               <Card className="flex min-h-0 flex-1 flex-col p-6">
                 <div className="mb-4 flex shrink-0 items-start justify-between">
@@ -540,7 +665,9 @@ export default function ResourcesPage() {
                   {detail.type === "File" && <DetailRow icon={FileText} label="File" value={`${detail.fileName} (${formatSize(detail.sizeBytes)})`} />}
                   {/* Notes on a Note-type resource is the actual body, not a caption — render it
                       like Apple Notes (full text, wrapped, scrollable) instead of the single-line
-                      truncated DetailRow every other field uses. */}
+                      truncated DetailRow every other field uses. Files store their notes as the
+                      same rich HTML the editor produces, so they get the same treatment rendered
+                      as formatted HTML rather than escaped plain text. */}
                   {detail.type === "Note" ? (
                     detail.notes && (
                       <div className="flex min-h-0 flex-1 flex-col gap-1">
@@ -548,6 +675,18 @@ export default function ResourcesPage() {
                           <Text className="size-3.5" /> Notes
                         </p>
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">{detail.notes}</p>
+                      </div>
+                    )
+                  ) : detail.type === "File" ? (
+                    detail.notes && (
+                      <div className="flex min-h-0 flex-1 flex-col gap-1">
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Text className="size-3.5" /> Notes
+                        </p>
+                        <div
+                          className={cn(RICH_TEXT_CONTENT_CLASSNAME, "overflow-y-auto")}
+                          dangerouslySetInnerHTML={{ __html: detail.notes }}
+                        />
                       </div>
                     )
                   ) : (
@@ -582,6 +721,7 @@ export default function ResourcesPage() {
                   <Button variant="destructive" onClick={() => setConfirmDeleteId(detail.id)}>
                     <Trash2 className="size-4" /> Delete
                   </Button>
+                  <ShareButton resourceType="Resource" resourceId={detail.id} title={detail.title} />
                 </div>
               </Card>
             </motion.div>

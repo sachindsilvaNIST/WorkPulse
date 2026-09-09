@@ -25,6 +25,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<GmailLabelEntity> GmailLabels => Set<GmailLabelEntity>();
     public DbSet<ResourceEntity> Resources => Set<ResourceEntity>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+    public DbSet<ShareEntity> Shares => Set<ShareEntity>();
+    public DbSet<ShareGrantEntity> ShareGrants => Set<ShareGrantEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -244,6 +246,29 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Share
+        builder.Entity<ShareEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.OwnerUserId }).IsUnique();
+            e.HasIndex(x => x.PublicToken).IsUnique();
+            e.HasOne(x => x.Owner)
+                .WithMany()
+                .HasForeignKey(x => x.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ShareGrant
+        builder.Entity<ShareGrantEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Email);
+            e.HasOne(x => x.Share)
+                .WithMany(s => s.Grants)
+                .HasForeignKey(x => x.ShareId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
