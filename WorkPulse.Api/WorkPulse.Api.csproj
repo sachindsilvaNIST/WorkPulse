@@ -18,13 +18,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.*" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Amazon.Lambda.AspNetCoreServer.Hosting" Version="1.7.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WorkPulse.Shared\WorkPulse.Shared.csproj" />
-    <ProjectReference Include="..\WorkPulse.Web\WorkPulse.Web.csproj" />
   </ItemGroup>
 
 </Project>

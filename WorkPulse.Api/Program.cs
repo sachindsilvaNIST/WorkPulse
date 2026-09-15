@@ -9,6 +9,11 @@ using WorkPulse.Api.Data.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// No-op outside a real Lambda runtime (e.g. `dotnet run` locally, or the old Render container),
+// so this is purely additive — it only takes over request handling when actually invoked via a
+// Lambda Function URL.
+builder.Services.AddAWSLambdaHosting(Microsoft.Extensions.DependencyInjection.LambdaEventSource.HttpApi);
+
 // Database — check DATABASE_URL (Render), then fall back to ConnectionStrings:DefaultConnection
 var connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
            ?? builder.Configuration.GetConnectionString("DefaultConnection")
@@ -104,10 +109,11 @@ builder.Services.AddScoped<WorkPulse.Api.Services.GoogleDriveService>();
 // Gmail (corporate label manager) — separate connection/scope from Drive above.
 builder.Services.AddScoped<WorkPulse.Api.Services.GmailService>();
 
-// In-app + email notifications (daily report reminders, upcoming trips) — the background
-// scheduler ticks every 30 minutes for as long as the process stays alive.
+// In-app + email notifications (daily report reminders, upcoming trips) — triggered externally
+// every 30 minutes via POST /api/internal/run-scheduler (an AWS EventBridge Scheduler cron hits
+// this) rather than an in-process BackgroundService loop, since Lambda has no persistent process
+// between invocations to run one on.
 builder.Services.AddScoped<WorkPulse.Api.Services.NotificationTriggerService>();
-builder.Services.AddHostedService<WorkPulse.Api.Services.NotificationSchedulerService>();
 
 // Sharing (Trips, Reimbursement, Reports, Contacts, Bookmarks, Resources) — one service every
 // entity controller's read/update endpoints fall back to once ownership fails.
@@ -294,18 +300,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// Serve Blazor WASM static files (production: embedded in wwwroot)
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
-
 // Unauthenticated, DB-free — just proves the process is awake. Used by the frontend to fire a
-// warm-up ping the moment the app loads, so Render's free-tier cold start (the container sleeps
-// after 15 min idle) happens in the background instead of blocking the first real data request.
+// warm-up ping the moment the app loads, so the free-tier cold start happens in the background
+// instead of blocking the first real data request.
 app.MapGet("/api/health", () => Results.Ok());
 
 app.MapControllers();
-
-// Fallback to Blazor index.html for client-side routing
-app.MapFallbackToFile("index.html");
 
 app.Run();
