@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarClock, ChevronDown, Clock, Download, Pencil, Plus, Trash2, TrendingUp, Umbrella } from "lucide-react";
+import { CalendarClock, ChevronDown, Clock, Download, Pencil, Plus, Settings2, Trash2, TrendingUp, Umbrella } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,14 @@ import { attendanceApi, settingsApi, downloadBlob } from "@/lib/api/client";
 import { formatDate } from "@/lib/date-format";
 import type { AppSettings, AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
 import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
-import { currentSettlementPeriodKey, getSettlementPeriod, nextCalendarMonth, settlementBuckets, type SettlementPeriod } from "@/lib/settlement-period";
+import {
+  currentSettlementPeriodKey,
+  effectiveSettlementPeriod,
+  getSettlementPeriod,
+  nextCalendarMonth,
+  settlementBuckets,
+  type SettlementPeriod,
+} from "@/lib/settlement-period";
 import { Spinner } from "@/components/ui/spinner";
 
 function emptyMonth(year: number, month: number): MonthlyData {
@@ -105,6 +112,15 @@ export default function DashboardPage() {
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // Custom settlement period override — lets the user pin a settlement window's exact start/end
+  // dates instead of relying on the default 21st-to-20th (weekend-adjusted) calculation, for
+  // whenever that auto-computed window doesn't match what actually got settled.
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [customStartInput, setCustomStartInput] = useState("");
+  const [customEndInput, setCustomEndInput] = useState("");
+  const [savingCustomPeriod, setSavingCustomPeriod] = useState(false);
+  const customizeRef = useRef<HTMLDivElement>(null);
+
   const exportableMonths = useMemo(() => {
     const seen = new Set(months.map((m) => `${m.year}-${m.month}`));
     const extras = extraExportMonths.filter((m) => !seen.has(`${m.year}-${m.month}`));
@@ -131,6 +147,15 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [exportOpen]);
+
+  useEffect(() => {
+    if (!customizeOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (!customizeRef.current?.contains(e.target as Node)) setCustomizeOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [customizeOpen]);
 
   function toggleExportMonth(key: string) {
     setExportSelected((prev) => {
@@ -203,9 +228,16 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [selected]);
 
+  // The nominal end-month bucket is where a custom override (if any) lives — settlementBuckets'
+  // second entry is always exactly {selected.year, selected.month} itself.
+  const endMonthData = selected ? bucketCache[`${selected.year}-${selected.month}`] : undefined;
+
   const period: SettlementPeriod | null = useMemo(
-    () => (selected ? getSettlementPeriod(selected.year, selected.month) : null),
-    [selected]
+    () =>
+      selected
+        ? effectiveSettlementPeriod(selected.year, selected.month, endMonthData?.customSettlementStart, endMonthData?.customSettlementEnd)
+        : null,
+    [selected, endMonthData]
   );
 
   const settlementOptions = useMemo(() => {
@@ -333,6 +365,38 @@ export default function DashboardPage() {
     if (selectedDate === dateStr) setSelectedDate(null);
   }
 
+  function openCustomizePeriod() {
+    setCustomStartInput(period?.periodStart ?? "");
+    setCustomEndInput(period?.periodEnd ?? "");
+    setCustomizeOpen(true);
+  }
+
+  async function persistCustomPeriod(start: string | null, end: string | null) {
+    if (!selected) return;
+    setSavingCustomPeriod(true);
+    try {
+      const bucket = await getOrFetchBucket(selected.year, selected.month);
+      const nextBucket: MonthlyData = { ...bucket, customSettlementStart: start, customSettlementEnd: end };
+      setBucketCache((prev) => ({ ...prev, [`${selected.year}-${selected.month}`]: nextBucket }));
+      await attendanceApi.saveMonth(selected.year, selected.month, nextBucket);
+      if (!months.some((mo) => mo.year === selected.year && mo.month === selected.month)) {
+        setMonths((prev) => [...prev, { year: selected.year, month: selected.month, label: nextBucket.monthLabel }]);
+      }
+      setCustomizeOpen(false);
+    } finally {
+      setSavingCustomPeriod(false);
+    }
+  }
+
+  function handleSaveCustomPeriod() {
+    if (!customStartInput || !customEndInput) return;
+    persistCustomPeriod(customStartInput, customEndInput);
+  }
+
+  function handleResetCustomPeriod() {
+    persistCustomPeriod(null, null);
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       <motion.div
@@ -343,10 +407,13 @@ export default function DashboardPage() {
       >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Attendance Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
             {period
               ? `${period.label} Settlement · ${formatShortDate(period.periodStart)} – ${formatShortDate(period.periodEnd)}, ${period.year}`
               : "Track login, logout, overtime and monthly trends"}
+            {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
+              <Badge variant="secondary" className="text-[10px]">Custom period</Badge>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -367,6 +434,67 @@ export default function DashboardPage() {
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            </div>
+          )}
+          {selected && (
+            <div className="relative" ref={customizeRef}>
+              <Button variant="outline" size="sm" onClick={() => (customizeOpen ? setCustomizeOpen(false) : openCustomizePeriod())}>
+                <Settings2 className="size-3.5" /> Customize period
+              </Button>
+              <AnimatePresence>
+                {customizeOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="glass-panel absolute right-0 top-full z-20 mt-2 w-72 p-3"
+                  >
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Settlement period for {period?.label}
+                    </p>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      Overrides the default 21st–20th (weekend-adjusted) window with exact dates — use this if the
+                      standard calculation doesn&apos;t match what actually got settled.
+                    </p>
+                    <div className="mb-3 flex flex-col gap-2">
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        Start date
+                        <Input
+                          type="date"
+                          value={customStartInput}
+                          onChange={(e) => setCustomStartInput(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        End date
+                        <Input
+                          type="date"
+                          value={customEndInput}
+                          onChange={(e) => setCustomEndInput(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
+                        <Button size="sm" variant="outline" className="flex-1" onClick={handleResetCustomPeriod} disabled={savingCustomPeriod}>
+                          Reset to default
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={handleSaveCustomPeriod}
+                        disabled={!customStartInput || !customEndInput || savingCustomPeriod}
+                      >
+                        {savingCustomPeriod ? "Saving…" : "Save"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
           <div className="relative" ref={exportRef}>

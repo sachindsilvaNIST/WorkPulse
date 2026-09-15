@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.12.0",
+    date: "2026-09-15",
+    highlights: [
+      "Attendance: added a custom settlement period — override the default 21st–20th (weekend-adjusted) window with your own exact start/end dates via \"Customize period\" on the dashboard, for whenever the standard calculation doesn't match what actually got settled",
+    ],
+  },
+  {
     version: "1.11.0",
     date: "2026-09-09",
     highlights: [

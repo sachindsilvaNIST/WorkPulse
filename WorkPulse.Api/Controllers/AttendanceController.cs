@@ -59,6 +59,8 @@ public class AttendanceController : ApiControllerBase
         {
             existing.MonthLabel = data.MonthLabel;
             existing.Title = data.Title;
+            existing.CustomSettlementStart = data.CustomSettlementStart;
+            existing.CustomSettlementEnd = data.CustomSettlementEnd;
             existing.LastModifiedUtc = DateTime.UtcNow;
 
             _db.AttendanceRecords.RemoveRange(existing.Records);

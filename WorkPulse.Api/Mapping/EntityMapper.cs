@@ -15,6 +15,8 @@ public static class EntityMapper
             Month = entity.Month,
             MonthLabel = entity.MonthLabel,
             Title = entity.Title,
+            CustomSettlementStart = entity.CustomSettlementStart,
+            CustomSettlementEnd = entity.CustomSettlementEnd,
             LastModifiedUtc = entity.LastModifiedUtc,
             Records = entity.Records.Select(r => r.ToAttendanceRecord()).OrderBy(r => r.Date).ToList()
         };
@@ -29,6 +31,8 @@ public static class EntityMapper
             Month = data.Month,
             MonthLabel = data.MonthLabel,
             Title = data.Title,
+            CustomSettlementStart = data.CustomSettlementStart,
+            CustomSettlementEnd = data.CustomSettlementEnd,
             LastModifiedUtc = DateTime.UtcNow,
             Records = data.Records.Select(r => r.ToEntity()).ToList()
         };

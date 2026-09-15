@@ -59,6 +59,21 @@ export function getSettlementPeriod(year: number, month: number): SettlementPeri
   };
 }
 
+// Applies a user-set custom start/end (from the nominal end month's saved MonthlyData) over the
+// default 21st-to-20th calculation — e.g. the settlement runs a fixed 25th-to-24th at this job
+// instead, or this particular period needs a one-off adjustment. Both custom dates must be
+// present to take effect; a partial override falls back to the default entirely.
+export function effectiveSettlementPeriod(
+  year: number,
+  month: number,
+  customStart?: string | null,
+  customEnd?: string | null
+): SettlementPeriod {
+  const base = getSettlementPeriod(year, month);
+  if (!customStart || !customEnd) return base;
+  return { ...base, periodStart: customStart, periodEnd: customEnd };
+}
+
 // The two calendar-month buckets whose records can fall inside a settlement period
 // (the period always starts in the previous calendar month and ends in its own).
 export function settlementBuckets(year: number, month: number): { year: number; month: number }[] {

@@ -75,6 +75,11 @@ export interface MonthlyData {
   month: number;
   monthLabel: string;
   title: string;
+  // Overrides the default 21st-to-20th (weekend-adjusted) settlement window — undefined/null
+  // means "use the default calculation." Both must be set together; a partial override is
+  // treated as none (see settlement-period.ts's effectiveSettlementPeriod).
+  customSettlementStart?: string | null;
+  customSettlementEnd?: string | null;
   records: AttendanceRecord[];
   lastModifiedUtc?: string;
 }

@@ -11,6 +11,12 @@ public class MonthlyData
     public int Month { get; set; }
     public string MonthLabel { get; set; } = "";
     public string Title { get; set; } = "";
+
+    // Overrides the default 21st-to-20th (weekend-adjusted) settlement window — null means "use
+    // the default calculation." Both must be set together; a partial override is treated as none.
+    public DateOnly? CustomSettlementStart { get; set; }
+    public DateOnly? CustomSettlementEnd { get; set; }
+
     public List<AttendanceRecord> Records { get; set; } = new();
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
