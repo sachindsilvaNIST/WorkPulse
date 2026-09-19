@@ -166,7 +166,16 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto-migrate on startup and seed roles
+// Auto-migrate on startup and seed roles. On Lambda this whole block re-runs on every cold
+// start (a fresh execution environment each time, not once per deploy) — if the database is
+// unreachable (a real outage: quota exhausted, network blip, etc.) and this throws unhandled,
+// it takes the ENTIRE Lambda init down with it, including endpoints that don't touch the
+// database at all (e.g. /api/health). Catching here means a DB outage degrades gracefully —
+// health checks and any non-DB code paths keep working, and DB-touching endpoints fail
+// individually per-request with their own real error instead of the whole function refusing
+// to boot.
+try
+{
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -287,6 +296,11 @@ using (var scope = app.Services.CreateScope())
                 await userManager.AddToRoleAsync(firstUser, "Admin");
         }
     }
+}
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Startup migration/seed failed — continuing to boot anyway so non-database endpoints (e.g. /api/health) stay reachable during an outage.");
 }
 
 if (app.Environment.IsDevelopment())
