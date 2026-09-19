@@ -23,49 +23,59 @@ public class ReimbursementController : ApiControllerBase
     [HttpGet("documents")]
     public async Task<ActionResult<List<TripDocumentWithTrip>>> GetAllDocuments([FromQuery] string? search, [FromQuery] string? category)
     {
+        // Selects only the columns actually needed (not "Doc = d" / "Trip = t", which would pull
+        // every document's full Content bytes across the network on every list load — see
+        // ResourcesController.GetAll for why that matters) — this is the cross-trip document
+        // library, so it's the most-hit of the three endpoints with this bug.
         var query =
             from d in _db.TripDocuments
             join t in _db.TripReports on d.TripReportId equals t.Id
             where d.UserId == UserId && t.UserId == UserId
-            select new { Doc = d, Trip = t };
+            select new
+            {
+                d.Id, d.TripReportId, d.Category, d.Label, d.FileName, d.ContentType, d.SizeBytes,
+                d.UploadedUtc, d.DocumentDate, d.DriveFileId, d.DriveWebViewLink, d.Amount, d.Currency,
+                d.ReimbursementStatus, d.ResourceId,
+                TripDestination = t.Destination, TripCategory = t.Category, TripStartDate = t.StartDate, TripEndDate = t.EndDate
+            };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var q = search.ToLower();
             query = query.Where(x =>
-                x.Doc.FileName.ToLower().Contains(q) ||
-                x.Doc.Label.ToLower().Contains(q) ||
-                x.Trip.Destination.ToLower().Contains(q));
+                x.FileName.ToLower().Contains(q) ||
+                x.Label.ToLower().Contains(q) ||
+                x.TripDestination.ToLower().Contains(q));
         }
 
         if (!string.IsNullOrWhiteSpace(category))
-            query = query.Where(x => x.Doc.Category == category);
+            query = query.Where(x => x.Category == category);
 
         var results = await query
-            .OrderByDescending(x => x.Doc.UploadedUtc)
+            .OrderByDescending(x => x.UploadedUtc)
             .ToListAsync();
 
         var mapped = results.Select(x => new TripDocumentWithTrip
         {
-            Id = x.Doc.Id,
-            TripReportId = x.Doc.TripReportId,
-            Category = x.Doc.Category,
-            Label = x.Doc.Label,
-            FileName = x.Doc.FileName,
-            ContentType = x.Doc.ContentType,
-            SizeBytes = x.Doc.SizeBytes,
-            UploadedUtc = x.Doc.UploadedUtc,
-            DocumentDate = x.Doc.DocumentDate,
-            DriveFileId = x.Doc.DriveFileId,
-            DriveWebViewLink = x.Doc.DriveWebViewLink,
-            Amount = x.Doc.Amount,
-            Currency = x.Doc.Currency,
-            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(x.Doc.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
-            ResourceId = x.Doc.ResourceId,
-            TripDestination = x.Trip.Destination,
-            TripCategory = Enum.TryParse<TripCategory>(x.Trip.Category, out var tc) ? tc : TripCategory.Domestic,
-            TripStartDate = x.Trip.StartDate,
-            TripEndDate = x.Trip.EndDate
+            Id = x.Id,
+            TripReportId = x.TripReportId,
+            Category = x.Category,
+            Label = x.Label,
+            FileName = x.FileName,
+            ContentType = x.ContentType,
+            SizeBytes = x.SizeBytes,
+            UploadedUtc = x.UploadedUtc,
+            DocumentDate = x.DocumentDate,
+            DriveFileId = x.DriveFileId,
+            DriveWebViewLink = x.DriveWebViewLink,
+            Amount = x.Amount,
+            Currency = x.Currency,
+            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(x.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
+            ResourceId = x.ResourceId,
+            TripDestination = x.TripDestination,
+            TripCategory = Enum.TryParse<TripCategory>(x.TripCategory, out var tc) ? tc : TripCategory.Domestic,
+            TripStartDate = x.TripStartDate,
+            TripEndDate = x.TripEndDate
         }).ToList();
 
         return Ok(mapped);

@@ -44,12 +44,34 @@ public class ResourcesController : ApiControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ResourceMeta>>> GetAll()
     {
+        // Projects directly to ResourceMeta in the query (not .ToListAsync() + .Select(r =>
+        // r.ToMeta()) afterward) so the generated SQL never selects the Content column at all —
+        // fetching the full entity here would pull every uploaded file's entire binary content
+        // across the network on every single list load, which is exactly what exhausted Neon's
+        // free-tier network-transfer quota.
         var resources = await _db.Resources
             .Where(r => r.UserId == UserId)
             .OrderByDescending(r => r.LastModifiedUtc)
+            .Select(r => new ResourceMeta
+            {
+                Id = r.Id,
+                Type = r.Type,
+                Title = r.Title,
+                Notes = r.Notes,
+                Url = r.Url,
+                FileName = r.FileName,
+                ContentType = r.ContentType,
+                SizeBytes = r.SizeBytes,
+                DriveFileId = r.DriveFileId,
+                DriveWebViewLink = r.DriveWebViewLink,
+                Tags = r.Tags,
+                Keywords = r.Keywords,
+                CreatedUtc = r.CreatedUtc,
+                LastModifiedUtc = r.LastModifiedUtc
+            })
             .ToListAsync();
 
-        return Ok(resources.Select(r => r.ToMeta()).ToList());
+        return Ok(resources);
     }
 
     [HttpPost]

@@ -133,8 +133,39 @@ public class TripReportsController : ApiControllerBase
         if (!string.IsNullOrWhiteSpace(category))
             query = query.Where(d => d.Category == category);
 
-        var docs = await query.OrderByDescending(d => d.UploadedUtc).ToListAsync();
-        return Ok(docs.Select(d => d.ToMeta()).ToList());
+        // Excludes Content (the file's bytes) at the SQL level — ToMeta()'s Enum.TryParse for
+        // ReimbursementStatus can't be translated to SQL, so this first pass projects to a plain
+        // anonymous type (still translatable, still excludes Content) and finishes the mapping
+        // in memory. Fetching full entities here would pull every document's entire binary
+        // content across the network on every list load.
+        var docs = await query
+            .OrderByDescending(d => d.UploadedUtc)
+            .Select(d => new
+            {
+                d.Id, d.TripReportId, d.Category, d.Label, d.FileName, d.ContentType, d.SizeBytes,
+                d.UploadedUtc, d.DocumentDate, d.DriveFileId, d.DriveWebViewLink, d.Amount, d.Currency,
+                d.ReimbursementStatus, d.ResourceId
+            })
+            .ToListAsync();
+
+        return Ok(docs.Select(d => new TripDocumentMeta
+        {
+            Id = d.Id,
+            TripReportId = d.TripReportId,
+            Category = d.Category,
+            Label = d.Label,
+            FileName = d.FileName,
+            ContentType = d.ContentType,
+            SizeBytes = d.SizeBytes,
+            UploadedUtc = d.UploadedUtc,
+            DocumentDate = d.DocumentDate,
+            DriveFileId = d.DriveFileId,
+            DriveWebViewLink = d.DriveWebViewLink,
+            Amount = d.Amount,
+            Currency = d.Currency,
+            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(d.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
+            ResourceId = d.ResourceId
+        }).ToList());
     }
 
     [HttpPost("{tripId}/documents")]
