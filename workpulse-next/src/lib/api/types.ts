@@ -34,7 +34,7 @@ export interface CurrentUser {
 }
 
 export interface UserSession {
-  id: number;
+  id: string;
   deviceLabel: string;
   ipAddress: string | null;
   createdUtc: string;
@@ -108,8 +108,30 @@ export interface WeeklyReport {
 
 export type TripCategory = "Domestic" | "Overseas";
 
-export type TripStatus = "Planned" | "InProgress" | "Completed";
+/** Self-tracked (no second-person approver) — Approved/Settled block deletion server-side. */
+export type TripStatus = "Draft" | "Submitted" | "Approved" | "Settled";
 export type ReimbursementStatusValue = "Pending" | "Submitted" | "Reimbursed";
+
+/** One row of a Trip Application's repeatable "Trip Details" table. */
+export interface TripSegment {
+  id: string;
+  sequenceNo: number;
+  purpose: string;
+  content: string;
+  projectNo: string;
+  destinationName: string;
+  placeName: string;
+  date1?: string | null;
+  date2?: string | null;
+}
+
+/** One row of a Trip Application's Budget table (estimated cost). */
+export interface TripBudgetLine {
+  id: string;
+  content: string;
+  expenseCategory: string;
+  amount: number;
+}
 
 export interface TripReport {
   id: string;
@@ -121,7 +143,58 @@ export interface TripReport {
   notes: string;
   status: TripStatus;
   lastModifiedUtc?: string;
+  tripNumber: string;
+  departmentCode: string;
+  scheduledDeparture?: string | null;
+  scheduledReturn?: string | null;
+  ticketArrangementRequest: string;
+  segments: TripSegment[];
+  budgetLines: TripBudgetLine[];
   documentCount: number;
+}
+
+/** One row of the Settlement's per-day transportation & travel expense table. */
+export interface TripSettlementTransportationLine {
+  id: string;
+  date?: string | null;
+  content: string;
+  destinationName: string;
+  placeName: string;
+  route: string;
+  transportMode: string;
+  departureTime: string;
+  arrivalTime: string;
+  gasCost?: number | null;
+  tollCost?: number | null;
+  transportationCost: number;
+  lodgingCost: number;
+  dailyAllowance: number;
+}
+
+/** One row of the Settlement's "Other" expense table. */
+export interface TripSettlementOtherLine {
+  id: string;
+  date?: string | null;
+  content: string;
+  description: string;
+  departmentCode: string;
+  expenseCategoryTaxCode: string;
+  settlementAmount: number;
+}
+
+export interface TripSettlement {
+  tripReportId: string;
+  employeeNo: string;
+  bankAccountNumber: string;
+  bank: string;
+  branch: string;
+  locationAtSettlement: string;
+  region: string;
+  accountingCode: string;
+  sourceDocumentNo: string;
+  transportationLines: TripSettlementTransportationLine[];
+  otherLines: TripSettlementOtherLine[];
+  lastModifiedUtc?: string;
 }
 
 export interface TripDocumentMeta {
@@ -151,7 +224,7 @@ export interface TripDocumentWithTrip extends TripDocumentMeta {
 }
 
 export interface ReimbursementCategory {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -179,7 +252,7 @@ export interface AppNotification {
 }
 
 export interface GmailLabel {
-  id: number;
+  id: string;
   name: string;
   type: "system" | "user";
   color: string | null;
@@ -209,7 +282,7 @@ export interface QuickLink {
 }
 
 export interface DictLabelDto {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -257,7 +330,7 @@ export interface AdminUserFeatures {
 }
 
 export interface DictEntryDto {
-  id: number;
+  id: string;
   japanese: string;
   reading?: string | null;
   meaning: string;

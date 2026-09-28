@@ -25,10 +25,10 @@ export function CategoryPicker({
   const [categories, setCategories] = useState<ReimbursementCategory[]>([]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

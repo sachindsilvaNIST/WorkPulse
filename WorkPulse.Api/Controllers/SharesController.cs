@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
@@ -20,14 +21,16 @@ public class SharesController : ApiControllerBase
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<SharesController> _logger;
+    private readonly UserManager<AppUser> _userManager;
 
-    public SharesController(AppDbContext db, ShareAccessService shareAccess, IEmailSender emailSender, IConfiguration config, ILogger<SharesController> logger)
+    public SharesController(AppDbContext db, ShareAccessService shareAccess, IEmailSender emailSender, IConfiguration config, ILogger<SharesController> logger, UserManager<AppUser> userManager)
     {
         _db = db;
         _shareAccess = shareAccess;
         _emailSender = emailSender;
         _config = config;
         _logger = logger;
+        _userManager = userManager;
     }
 
     private static readonly string[] ResourceTypes =
@@ -65,7 +68,7 @@ public class SharesController : ApiControllerBase
         if (!ResourceTypes.Contains(resourceType)) return BadRequest(new { error = "Unknown resource type." });
         if (!await OwnsResourceAsync(resourceType, resourceId)) return NotFound();
 
-        var share = await _db.Shares.Include(s => s.Grants)
+        var share = await _db.Shares
             .FirstOrDefaultAsync(s => s.ResourceType == resourceType && s.ResourceId == resourceId && s.OwnerUserId == UserId);
 
         if (share == null)
@@ -80,7 +83,7 @@ public class SharesController : ApiControllerBase
         if (!ResourceTypes.Contains(request.ResourceType)) return BadRequest(new { error = "Unknown resource type." });
         if (!await OwnsResourceAsync(request.ResourceType, request.ResourceId)) return NotFound();
 
-        var share = await _db.Shares.Include(s => s.Grants)
+        var share = await _db.Shares
             .FirstOrDefaultAsync(s => s.ResourceType == request.ResourceType && s.ResourceId == request.ResourceId && s.OwnerUserId == UserId);
 
         if (share == null)
@@ -101,16 +104,16 @@ public class SharesController : ApiControllerBase
         // only genuinely new emails trigger a fresh email.
         var previousEmails = share.Grants.Select(g => g.Email.ToLowerInvariant()).ToHashSet();
 
-        _db.ShareGrants.RemoveRange(share.Grants);
-        share.Grants = request.Grants
-            .Where(g => !string.IsNullOrWhiteSpace(g.Email))
-            .Select(g => new ShareGrantEntity
+        // Wholesale-replace the embedded Grants collection.
+        share.Grants.Clear();
+        foreach (var g in request.Grants.Where(g => !string.IsNullOrWhiteSpace(g.Email)))
+        {
+            share.Grants.Add(new ShareGrantEntity
             {
-                ShareId = share.Id,
                 Email = g.Email.Trim(),
                 Permission = g.Permission is "Read" or "Edit" ? g.Permission : "Read",
-            })
-            .ToList();
+            });
+        }
 
         var newlyGrantedEmails = share.Grants
             .Where(g => !previousEmails.Contains(g.Email.ToLowerInvariant()))
@@ -169,28 +172,31 @@ public class SharesController : ApiControllerBase
         var email = User.FindFirstValue(ClaimTypes.Email);
         if (string.IsNullOrWhiteSpace(email)) return Ok(new List<SharedWithMeItem>());
 
-        var grants = await _db.ShareGrants
-            .Where(g => g.Email.ToLower() == email.ToLower())
-            .Join(_db.Shares, g => g.ShareId, s => s.Id, (g, s) => new { g.Permission, s.Id, s.ResourceType, s.ResourceId, s.OwnerUserId })
-            .ToListAsync();
+        // Grants are embedded inside Shares now — fetch shares that have a matching grant, then
+        // flatten to (share, permission) pairs in-memory.
+        var shares = await _db.Shares.ToListAsync();
+        var matches = shares
+            .Select(s => new { Share = s, Grant = s.Grants.FirstOrDefault(g => g.Email.ToLower() == email.ToLower()) })
+            .Where(x => x.Grant != null)
+            .ToList();
 
-        var ownerNames = await _db.Users
-            .Where(u => grants.Select(g => g.OwnerUserId).Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
+        var ownerIds = matches.Select(x => x.Share.OwnerUserId).Distinct().ToList();
+        var owners = _userManager.Users.Where(u => ownerIds.Contains(u.Id)).ToList();
+        var ownerNames = owners.ToDictionary(u => u.Id, u => u.DisplayName);
 
         var result = new List<SharedWithMeItem>();
-        foreach (var g in grants)
+        foreach (var x in matches)
         {
-            var title = await ResolveTitleAsync(g.ResourceType, g.ResourceId);
+            var title = await ResolveTitleAsync(x.Share.ResourceType, x.Share.ResourceId);
             if (title == null) continue; // underlying item was deleted; grant is orphaned, just skip it
             result.Add(new SharedWithMeItem
             {
-                ShareId = g.Id,
-                ResourceType = g.ResourceType,
-                ResourceId = g.ResourceId,
+                ShareId = x.Share.Id,
+                ResourceType = x.Share.ResourceType,
+                ResourceId = x.Share.ResourceId,
                 Title = title,
-                OwnerDisplayName = ownerNames.TryGetValue(g.OwnerUserId, out var ownerName) && !string.IsNullOrWhiteSpace(ownerName) ? ownerName : "Someone",
-                Permission = g.Permission,
+                OwnerDisplayName = ownerNames.TryGetValue(x.Share.OwnerUserId, out var ownerName) && !string.IsNullOrWhiteSpace(ownerName) ? ownerName : "Someone",
+                Permission = x.Grant!.Permission,
             });
         }
         return Ok(result);

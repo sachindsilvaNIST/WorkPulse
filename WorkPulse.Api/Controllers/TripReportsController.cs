@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using MongoDB.Driver.GridFS;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
 using WorkPulse.Api.Mapping;
@@ -17,13 +19,15 @@ public class TripReportsController : ApiControllerBase
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
     private readonly ShareAccessService _shareAccess;
+    private readonly GridFSBucket _gridFs;
     private readonly ILogger<TripReportsController> _logger;
 
-    public TripReportsController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, ILogger<TripReportsController> logger)
+    public TripReportsController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, GridFSBucket gridFs, ILogger<TripReportsController> logger)
     {
         _db = db;
         _drive = drive;
         _shareAccess = shareAccess;
+        _gridFs = gridFs;
         _logger = logger;
     }
 
@@ -44,23 +48,23 @@ public class TripReportsController : ApiControllerBase
     {
         var reports = await _db.TripReports
             .Where(t => t.UserId == UserId)
-            .OrderByDescending(t => t.StartDate)
             .ToListAsync();
 
         // One query for all trips' document counts rather than N+1 — Business Trips shows this
         // count on every card in the list, so it needs to come back with the list itself.
-        var counts = await _db.TripDocuments
-            .Where(d => d.UserId == UserId)
-            .GroupBy(d => d.TripReportId)
-            .Select(g => new { TripReportId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.TripReportId, x => x.Count);
+        // Materialized first, then grouped in-memory — the Mongo EF provider doesn't support
+        // GroupBy/Select on an unmaterialized IQueryable.
+        var allDocs = await _db.TripDocuments.Where(d => d.UserId == UserId).ToListAsync();
+        var counts = allDocs.GroupBy(d => d.TripReportId).ToDictionary(g => g.Key, g => g.Count());
 
-        var dtos = reports.Select(t =>
-        {
-            var dto = t.ToTripReport();
-            dto.DocumentCount = counts.GetValueOrDefault(t.Id, 0);
-            return dto;
-        }).ToList();
+        var dtos = reports
+            .OrderByDescending(t => t.StartDate)
+            .Select(t =>
+            {
+                var dto = t.ToTripReport();
+                dto.DocumentCount = counts.GetValueOrDefault(t.Id, 0);
+                return dto;
+            }).ToList();
 
         return Ok(dtos);
     }
@@ -68,16 +72,29 @@ public class TripReportsController : ApiControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<TripReport>> Get(string id)
     {
+        // Segments/BudgetLines are embedded — load automatically with the parent, no .Include().
         var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id);
         if (entity == null) return NotFound();
         if (entity.UserId != UserId && !await HasSharedAccessAsync("TripReport", id)) return NotFound();
         return Ok(entity.ToTripReport());
     }
 
+    // "{yyyyMM}{seq:D4}" per user per month, e.g. "2026090024" — mirrors the source system's trip
+    // number format. Sequence is this user's count of trips already created this calendar month,
+    // not a global counter, so it stays small and readable.
+    private async Task<string> GenerateTripNumberAsync(DateOnly startDate)
+    {
+        var prefix = $"{startDate:yyyyMM}";
+        var countThisMonth = await _db.TripReports.CountAsync(t =>
+            t.UserId == UserId && t.TripNumber.StartsWith(prefix));
+        return $"{prefix}{(countThisMonth + 1):D4}";
+    }
+
     [HttpPost]
     public async Task<ActionResult<TripReport>> Create([FromBody] TripReport record)
     {
         var entity = record.ToEntity(UserId);
+        entity.TripNumber = await GenerateTripNumberAsync(entity.StartDate);
         _db.TripReports.Add(entity);
         await _db.SaveChangesAsync();
         return Ok(entity.ToTripReport());
@@ -97,7 +114,24 @@ public class TripReportsController : ApiControllerBase
         entity.Purpose = record.Purpose;
         entity.Notes = record.Notes;
         entity.Status = record.Status.ToString();
+        entity.DepartmentCode = record.DepartmentCode;
+        // No Kind=Utc coercion needed here anymore — that was a Npgsql/"timestamp with time zone"
+        // requirement; BSON's Date type has no such CLR-side Kind requirement.
+        entity.ScheduledDeparture = record.ScheduledDeparture;
+        entity.ScheduledReturn = record.ScheduledReturn;
+        entity.TicketArrangementRequest = record.TicketArrangementRequest;
         entity.LastModifiedUtc = DateTime.UtcNow;
+
+        // Wholesale replace, same convention as AttendanceController.SaveMonth's Records handling
+        // — the client always submits the full current set of segments/budget lines. Clear()+Add()
+        // rather than reassigning the List reference, so EF's change tracker picks up the
+        // removals correctly for an embedded collection.
+        entity.Segments.Clear();
+        foreach (var s in record.Segments.Select(s => s.ToEntity()))
+            entity.Segments.Add(s);
+        entity.BudgetLines.Clear();
+        foreach (var b in record.BudgetLines.Select(b => b.ToEntity()))
+            entity.BudgetLines.Add(b);
 
         await _db.SaveChangesAsync();
         return Ok(entity.ToTripReport());
@@ -109,9 +143,81 @@ public class TripReportsController : ApiControllerBase
         var entity = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id && t.UserId == UserId);
         if (entity == null) return NotFound();
 
+        // Once Approved or Settled, the trip is locked against casual deletion — matches the
+        // source system's dedicated "delete an approved application" screen being a distinct,
+        // more deliberate action than deleting an in-progress draft.
+        if (entity.Status is nameof(TripStatus.Approved) or nameof(TripStatus.Settled))
+            return Conflict(new { error = $"This trip is {entity.Status} and can't be deleted casually. Set it back to Draft or Submitted first if you really want to remove it." });
+
+        // Documents are a separate top-level collection (GridFS-backed), not embedded — Mongo has
+        // no cascade-delete, so clean them (and their GridFS blobs) up explicitly.
+        var docs = await _db.TripDocuments.Where(d => d.TripReportId == id).ToListAsync();
+        foreach (var doc in docs)
+        {
+            if (doc.ContentGridFsId != null)
+            {
+                try { await _gridFs.DeleteAsync(ObjectId.Parse(doc.ContentGridFsId)); }
+                catch (Exception ex) { _logger.LogWarning(ex, "GridFS delete failed for document {DocId}", doc.Id); }
+            }
+        }
+        _db.TripDocuments.RemoveRange(docs);
+
         _db.TripReports.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    // ===== SETTLEMENT =====
+    // Settlement is a single embedded sub-document on TripReportEntity now — no separate
+    // TripSettlements collection/query, just read/write trip.Settlement directly.
+
+    [HttpGet("{id}/settlement")]
+    public async Task<ActionResult<TripSettlement>> GetSettlement(string id)
+    {
+        var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id);
+        if (trip == null) return NotFound();
+        if (trip.UserId != UserId && !await HasSharedAccessAsync("TripReport", id)) return NotFound();
+
+        // No settlement started yet — an empty one, not a 404, so the frontend can render the
+        // form straight away rather than special-casing "doesn't exist yet".
+        return Ok(trip.Settlement?.ToTripSettlement(id) ?? new TripSettlement { TripReportId = id });
+    }
+
+    [HttpPut("{id}/settlement")]
+    public async Task<ActionResult<TripSettlement>> SaveSettlement(string id, [FromBody] TripSettlement record)
+    {
+        var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == id);
+        if (trip == null) return NotFound();
+        if (trip.UserId != UserId && !await HasSharedAccessAsync("TripReport", id, requireEdit: true)) return NotFound();
+
+        var settlement = trip.Settlement;
+        if (settlement != null)
+        {
+            settlement.EmployeeNo = record.EmployeeNo;
+            settlement.BankAccountNumber = record.BankAccountNumber;
+            settlement.Bank = record.Bank;
+            settlement.Branch = record.Branch;
+            settlement.LocationAtSettlement = record.LocationAtSettlement;
+            settlement.Region = record.Region;
+            settlement.AccountingCode = record.AccountingCode;
+            settlement.SourceDocumentNo = record.SourceDocumentNo;
+            settlement.LastModifiedUtc = DateTime.UtcNow;
+
+            settlement.TransportationLines.Clear();
+            foreach (var l in record.TransportationLines.Select(l => l.ToEntity()))
+                settlement.TransportationLines.Add(l);
+            settlement.OtherLines.Clear();
+            foreach (var l in record.OtherLines.Select(l => l.ToEntity()))
+                settlement.OtherLines.Add(l);
+        }
+        else
+        {
+            settlement = record.ToEntity();
+            trip.Settlement = settlement;
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(settlement.ToTripSettlement(id));
     }
 
     // ===== DOCUMENTS =====
@@ -122,50 +228,20 @@ public class TripReportsController : ApiControllerBase
         var trip = await _db.TripReports.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == UserId);
         if (trip == null) return NotFound();
 
-        var query = _db.TripDocuments.Where(d => d.TripReportId == tripId && d.UserId == UserId);
+        // TripDocumentEntity no longer carries file bytes at all (they live in GridFS) — a plain
+        // fetch-then-map is enough, no separate projection needed to keep bytes off the wire.
+        var docs = await _db.TripDocuments.Where(d => d.TripReportId == tripId && d.UserId == UserId).ToListAsync();
 
+        IEnumerable<TripDocumentEntity> filtered = docs;
         if (!string.IsNullOrWhiteSpace(search))
         {
             var q = search.ToLower();
-            query = query.Where(d => d.FileName.ToLower().Contains(q) || d.Label.ToLower().Contains(q));
+            filtered = filtered.Where(d => d.FileName.ToLower().Contains(q) || d.Label.ToLower().Contains(q));
         }
-
         if (!string.IsNullOrWhiteSpace(category))
-            query = query.Where(d => d.Category == category);
+            filtered = filtered.Where(d => d.Category == category);
 
-        // Excludes Content (the file's bytes) at the SQL level — ToMeta()'s Enum.TryParse for
-        // ReimbursementStatus can't be translated to SQL, so this first pass projects to a plain
-        // anonymous type (still translatable, still excludes Content) and finishes the mapping
-        // in memory. Fetching full entities here would pull every document's entire binary
-        // content across the network on every list load.
-        var docs = await query
-            .OrderByDescending(d => d.UploadedUtc)
-            .Select(d => new
-            {
-                d.Id, d.TripReportId, d.Category, d.Label, d.FileName, d.ContentType, d.SizeBytes,
-                d.UploadedUtc, d.DocumentDate, d.DriveFileId, d.DriveWebViewLink, d.Amount, d.Currency,
-                d.ReimbursementStatus, d.ResourceId
-            })
-            .ToListAsync();
-
-        return Ok(docs.Select(d => new TripDocumentMeta
-        {
-            Id = d.Id,
-            TripReportId = d.TripReportId,
-            Category = d.Category,
-            Label = d.Label,
-            FileName = d.FileName,
-            ContentType = d.ContentType,
-            SizeBytes = d.SizeBytes,
-            UploadedUtc = d.UploadedUtc,
-            DocumentDate = d.DocumentDate,
-            DriveFileId = d.DriveFileId,
-            DriveWebViewLink = d.DriveWebViewLink,
-            Amount = d.Amount,
-            Currency = d.Currency,
-            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(d.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
-            ResourceId = d.ResourceId
-        }).ToList());
+        return Ok(filtered.OrderByDescending(d => d.UploadedUtc).Select(d => d.ToMeta()).ToList());
     }
 
     [HttpPost("{tripId}/documents")]
@@ -198,6 +274,8 @@ public class TripReportsController : ApiControllerBase
         await file.CopyToAsync(stream);
         var bytes = stream.ToArray();
 
+        var gridFsId = await _gridFs.UploadFromBytesAsync(file.FileName, bytes);
+
         var entity = new TripDocumentEntity
         {
             TripReportId = tripId,
@@ -207,7 +285,7 @@ public class TripReportsController : ApiControllerBase
             FileName = file.FileName,
             ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType,
             SizeBytes = file.Length,
-            Content = bytes,
+            ContentGridFsId = gridFsId.ToString(),
             UploadedUtc = DateTime.UtcNow,
             DocumentDate = parsedDate,
             Amount = amount,
@@ -225,7 +303,7 @@ public class TripReportsController : ApiControllerBase
         _db.TripDocuments.Add(entity);
         await _db.SaveChangesAsync();
 
-        // Local bytes above are the guaranteed copy (already saved) — Drive is a best-effort
+        // Local GridFS copy above is the guaranteed one (already saved) — Drive is a best-effort
         // mirror on top of that, so a Drive hiccup never blocks the upload itself.
         try
         {
@@ -251,8 +329,10 @@ public class TripReportsController : ApiControllerBase
         var doc = await _db.TripDocuments.FirstOrDefaultAsync(d => d.Id == docId && d.TripReportId == tripId);
         if (doc == null) return NotFound();
         if (doc.UserId != UserId && !await HasSharedAccessAsync("TripDocument", docId)) return NotFound();
+        if (doc.ContentGridFsId == null) return NotFound();
 
-        return File(doc.Content, doc.ContentType, doc.FileName);
+        var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(doc.ContentGridFsId));
+        return File(bytes, doc.ContentType, doc.FileName);
     }
 
     // Partial update — used by both Business Trips (amount, resource link) and Reimbursement
@@ -294,6 +374,12 @@ public class TripReportsController : ApiControllerBase
 
         _db.TripDocuments.Remove(doc);
         await _db.SaveChangesAsync();
+
+        if (doc.ContentGridFsId != null)
+        {
+            try { await _gridFs.DeleteAsync(ObjectId.Parse(doc.ContentGridFsId)); }
+            catch (Exception ex) { _logger.LogWarning(ex, "GridFS delete failed for document {DocId}", doc.Id); }
+        }
 
         if (doc.DriveFileId != null)
         {

@@ -47,7 +47,7 @@ export default function DictionaryPage() {
     setForm(emptyEntry());
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     await dictionaryApi.delete(id);
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }

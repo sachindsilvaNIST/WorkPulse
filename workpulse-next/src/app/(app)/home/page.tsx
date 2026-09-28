@@ -6,7 +6,7 @@ import { ArrowUpRight, Search } from "lucide-react";
 import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
 import { useSpotlight } from "@/lib/spotlight-context";
-import { attendanceApi, dailyReportsApi, tripReportsApi, reimbursementApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
+import { attendanceApi, dailyReportsApi, tripReportsApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
 import { WeatherWidget } from "@/components/home/weather-widget";
 import { ClockWidget } from "@/components/home/clock-widget";
 import { RecentlyViewedWidget } from "@/components/home/recently-viewed-widget";
@@ -33,11 +33,10 @@ const GRID_POSITION: Record<string, string> = {
   "/dashboard": "sm:col-start-1 sm:row-start-3 sm:col-span-2",
   "/reports/daily": "sm:col-start-1 sm:row-start-4 sm:col-span-2",
   "/resources": "sm:col-start-3 sm:row-start-4 sm:row-span-2",
-  "/reimbursement": "sm:col-start-1 sm:row-start-5",
-  "/bookmarks": "sm:col-start-2 sm:row-start-5",
-  "/contacts": "sm:col-start-1 sm:row-start-6",
-  "/gmail-labels": "sm:col-start-2 sm:row-start-6",
-  "/settings": "sm:col-start-3 sm:row-start-6",
+  "/bookmarks": "sm:col-start-1 sm:row-start-5",
+  "/contacts": "sm:col-start-2 sm:row-start-5",
+  "/gmail-labels": "sm:col-start-1 sm:row-start-6",
+  "/settings": "sm:col-start-2 sm:row-start-6 sm:col-span-2",
   "/about": "sm:col-start-1 sm:row-start-7 sm:col-span-3",
 };
 
@@ -82,10 +81,6 @@ async function fetchWidgetStats(): Promise<Record<string, WidgetStat>> {
       stats["/trips"] = upcoming
         ? { primary: `${daysUntil(upcoming.startDate)}d away`, secondary: `Next: ${upcoming.destination}` }
         : { primary: `${trips.length}`, secondary: trips.length === 1 ? "trip on record" : "trips on record" };
-    }),
-
-    reimbursementApi.getAllDocuments().then((docs) => {
-      stats["/reimbursement"] = { primary: `${docs.length}`, secondary: docs.length === 1 ? "document on file" : "documents on file" };
     }),
 
     quickLinksApi.getAll().then((links) => {

@@ -23,21 +23,23 @@ public class ReimbursementController : ApiControllerBase
     [HttpGet("documents")]
     public async Task<ActionResult<List<TripDocumentWithTrip>>> GetAllDocuments([FromQuery] string? search, [FromQuery] string? category)
     {
-        // Selects only the columns actually needed (not "Doc = d" / "Trip = t", which would pull
-        // every document's full Content bytes across the network on every list load — see
-        // ResourcesController.GetAll for why that matters) — this is the cross-trip document
-        // library, so it's the most-hit of the three endpoints with this bug.
-        var query =
-            from d in _db.TripDocuments
-            join t in _db.TripReports on d.TripReportId equals t.Id
-            where d.UserId == UserId && t.UserId == UserId
-            select new
+        // TripDocumentEntity no longer carries file bytes (they live in GridFS), so this can
+        // fetch both collections directly and join in-memory — trivial dataset size for one user.
+        // (The Mongo EF provider also doesn't support query-syntax joins before materialization.)
+        var docs = await _db.TripDocuments.Where(d => d.UserId == UserId).ToListAsync();
+        var trips = await _db.TripReports.Where(t => t.UserId == UserId).ToListAsync();
+        var tripsById = trips.ToDictionary(t => t.Id);
+
+        var query = docs
+            .Where(d => tripsById.ContainsKey(d.TripReportId))
+            .Select(d => new
             {
                 d.Id, d.TripReportId, d.Category, d.Label, d.FileName, d.ContentType, d.SizeBytes,
                 d.UploadedUtc, d.DocumentDate, d.DriveFileId, d.DriveWebViewLink, d.Amount, d.Currency,
                 d.ReimbursementStatus, d.ResourceId,
-                TripDestination = t.Destination, TripCategory = t.Category, TripStartDate = t.StartDate, TripEndDate = t.EndDate
-            };
+                Trip = tripsById[d.TripReportId]
+            })
+            .AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -45,38 +47,36 @@ public class ReimbursementController : ApiControllerBase
             query = query.Where(x =>
                 x.FileName.ToLower().Contains(q) ||
                 x.Label.ToLower().Contains(q) ||
-                x.TripDestination.ToLower().Contains(q));
+                x.Trip.Destination.ToLower().Contains(q));
         }
 
         if (!string.IsNullOrWhiteSpace(category))
             query = query.Where(x => x.Category == category);
 
-        var results = await query
+        var mapped = query
             .OrderByDescending(x => x.UploadedUtc)
-            .ToListAsync();
-
-        var mapped = results.Select(x => new TripDocumentWithTrip
-        {
-            Id = x.Id,
-            TripReportId = x.TripReportId,
-            Category = x.Category,
-            Label = x.Label,
-            FileName = x.FileName,
-            ContentType = x.ContentType,
-            SizeBytes = x.SizeBytes,
-            UploadedUtc = x.UploadedUtc,
-            DocumentDate = x.DocumentDate,
-            DriveFileId = x.DriveFileId,
-            DriveWebViewLink = x.DriveWebViewLink,
-            Amount = x.Amount,
-            Currency = x.Currency,
-            ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(x.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
-            ResourceId = x.ResourceId,
-            TripDestination = x.TripDestination,
-            TripCategory = Enum.TryParse<TripCategory>(x.TripCategory, out var tc) ? tc : TripCategory.Domestic,
-            TripStartDate = x.TripStartDate,
-            TripEndDate = x.TripEndDate
-        }).ToList();
+            .Select(x => new TripDocumentWithTrip
+            {
+                Id = x.Id,
+                TripReportId = x.TripReportId,
+                Category = x.Category,
+                Label = x.Label,
+                FileName = x.FileName,
+                ContentType = x.ContentType,
+                SizeBytes = x.SizeBytes,
+                UploadedUtc = x.UploadedUtc,
+                DocumentDate = x.DocumentDate,
+                DriveFileId = x.DriveFileId,
+                DriveWebViewLink = x.DriveWebViewLink,
+                Amount = x.Amount,
+                Currency = x.Currency,
+                ReimbursementStatus = Enum.TryParse<ReimbursementStatus>(x.ReimbursementStatus, out var rs) ? rs : ReimbursementStatus.Pending,
+                ResourceId = x.ResourceId,
+                TripDestination = x.Trip.Destination,
+                TripCategory = Enum.TryParse<TripCategory>(x.Trip.Category, out var tc) ? tc : TripCategory.Domestic,
+                TripStartDate = x.Trip.StartDate,
+                TripEndDate = x.Trip.EndDate
+            }).ToList();
 
         return Ok(mapped);
     }
@@ -110,7 +110,7 @@ public class ReimbursementController : ApiControllerBase
     }
 
     [HttpPut("categories/{id}")]
-    public async Task<ActionResult<ReimbursementCategory>> RenameCategory(int id, [FromBody] CreateCategoryRequest request)
+    public async Task<ActionResult<ReimbursementCategory>> RenameCategory(string id, [FromBody] CreateCategoryRequest request)
     {
         var entity = await _db.ReimbursementCategories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == UserId);
         if (entity == null) return NotFound();
@@ -139,7 +139,7 @@ public class ReimbursementController : ApiControllerBase
     }
 
     [HttpDelete("categories/{id}")]
-    public async Task<ActionResult> DeleteCategory(int id)
+    public async Task<ActionResult> DeleteCategory(string id)
     {
         var entity = await _db.ReimbursementCategories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == UserId);
         if (entity == null) return NotFound();

@@ -2,7 +2,7 @@ namespace WorkPulse.Api.Data.Entities;
 
 public class DictionaryEntryEntity
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public string Japanese { get; set; } = "";
     public string? Reading { get; set; }
@@ -22,6 +22,9 @@ public class DictionaryEntryEntity
     public DateTime? SrsLastReviewUtc { get; set; }
     public int SrsReviewCount { get; set; }              // Total reviews (incl. failures)
 
-    public AppUser User { get; set; } = null!;
-    public ICollection<DictionaryEntryLabelEntity> EntryLabels { get; set; } = new List<DictionaryEntryLabelEntity>();
+    // Replaces the old DictionaryEntryLabelEntity many-to-many join table — Mongo has no FK
+    // support, so the "many" side just holds the other side's ids directly, hydrated against
+    // DictionaryLabels in-memory where needed (same technique SharesController.SharedWithMe
+    // already used for owner-name lookups).
+    public List<string> LabelIds { get; set; } = new();
 }

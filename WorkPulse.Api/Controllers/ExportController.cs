@@ -2,6 +2,8 @@ using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using MongoDB.Driver.GridFS;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
 using WorkPulse.Api.Mapping;
@@ -13,8 +15,13 @@ namespace WorkPulse.Api.Controllers;
 public class ExportController : ApiControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly GridFSBucket _gridFs;
 
-    public ExportController(AppDbContext db) => _db = db;
+    public ExportController(AppDbContext db, GridFSBucket gridFs)
+    {
+        _db = db;
+        _gridFs = gridFs;
+    }
 
     /// <summary>Everything the user owns, as one ZIP — a single data.json with every structured
     /// record (attendance, reports, trips, reimbursement, bookmarks, resources, contacts,
@@ -25,7 +32,7 @@ public class ExportController : ApiControllerBase
     [HttpGet("all")]
     public async Task<ActionResult> ExportAll()
     {
-        var months = await _db.AttendanceMonths.Include(m => m.Records).Where(m => m.UserId == UserId).ToListAsync();
+        var months = await _db.AttendanceMonths.Where(m => m.UserId == UserId).ToListAsync();
         var dailyReports = await _db.DailyReports.Where(r => r.UserId == UserId).ToListAsync();
         var weeklyReports = await _db.WeeklyReports.Where(r => r.UserId == UserId).ToListAsync();
         var trips = await _db.TripReports.Where(t => t.UserId == UserId).ToListAsync();
@@ -65,20 +72,23 @@ public class ExportController : ApiControllerBase
             // export is still browsable without unzipping into a flat pile.
             foreach (var doc in tripDocs)
             {
+                if (doc.ContentGridFsId == null) continue;
                 var tripName = trips.FirstOrDefault(t => t.Id == doc.TripReportId)?.Destination ?? "Unknown Trip";
                 var fileName = string.IsNullOrWhiteSpace(doc.Label) ? doc.FileName : doc.Label;
                 var entry = archive.CreateEntry(
                     $"trip-documents/{SanitizePathSegment(tripName)}/{doc.Id}-{SanitizePathSegment(fileName)}",
                     CompressionLevel.Optimal);
+                var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(doc.ContentGridFsId));
                 await using var entryStream = entry.Open();
-                await entryStream.WriteAsync(doc.Content);
+                await entryStream.WriteAsync(bytes);
             }
 
-            foreach (var res in resources.Where(r => r.Type == "File"))
+            foreach (var res in resources.Where(r => r.Type == "File" && r.ContentGridFsId != null))
             {
                 var entry = archive.CreateEntry($"resources/{res.Id}-{SanitizePathSegment(res.FileName)}", CompressionLevel.Optimal);
+                var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(res.ContentGridFsId!));
                 await using var entryStream = entry.Open();
-                await entryStream.WriteAsync(res.Content);
+                await entryStream.WriteAsync(bytes);
             }
         }
 
@@ -202,7 +212,7 @@ public class ExportController : ApiControllerBase
         // Trip documents need their parent trip to exist first (either already there, or just
         // added above in this same request) — TripReports is saved before this runs via the
         // SaveChanges below only applying once, so check against what's now tracked in-memory too.
-        var knownTripIds = new HashSet<string>(await _db.TripReports.Where(t => t.UserId == UserId).Select(t => t.Id).ToListAsync());
+        var knownTripIds = new HashSet<string>((await _db.TripReports.Where(t => t.UserId == UserId).ToListAsync()).Select(t => t.Id));
         foreach (var e in _db.ChangeTracker.Entries<TripReportEntity>())
             if (e.State == EntityState.Added) knownTripIds.Add(e.Entity.Id);
 
@@ -210,6 +220,11 @@ public class ExportController : ApiControllerBase
         {
             if (await _db.TripDocuments.AnyAsync(d => d.Id == doc.Id && d.UserId == UserId)) { summary.Skipped++; continue; }
             if (!knownTripIds.Contains(doc.TripReportId)) { summary.Skipped++; continue; }
+
+            string? gridFsId = null;
+            var docBytes = ReadZipFile(archive, "trip-documents/", doc.Id);
+            if (docBytes != null)
+                gridFsId = (await _gridFs.UploadFromBytesAsync(doc.FileName, docBytes)).ToString();
 
             _db.TripDocuments.Add(new TripDocumentEntity
             {
@@ -221,7 +236,7 @@ public class ExportController : ApiControllerBase
                 FileName = doc.FileName,
                 ContentType = doc.ContentType,
                 SizeBytes = doc.SizeBytes,
-                Content = ReadZipFile(archive, "trip-documents/", doc.Id) ?? Array.Empty<byte>(),
+                ContentGridFsId = gridFsId,
                 UploadedUtc = doc.UploadedUtc,
                 DocumentDate = doc.DocumentDate,
                 Amount = doc.Amount,
@@ -236,6 +251,14 @@ public class ExportController : ApiControllerBase
         {
             if (await _db.Resources.AnyAsync(r => r.Id == res.Id && r.UserId == UserId)) { summary.Skipped++; continue; }
 
+            string? gridFsId = null;
+            if (res.Type == "File")
+            {
+                var resBytes = ReadZipFile(archive, "resources/", res.Id);
+                if (resBytes != null)
+                    gridFsId = (await _gridFs.UploadFromBytesAsync(res.FileName, resBytes)).ToString();
+            }
+
             _db.Resources.Add(new ResourceEntity
             {
                 Id = res.Id,
@@ -247,7 +270,7 @@ public class ExportController : ApiControllerBase
                 FileName = res.FileName,
                 ContentType = res.ContentType,
                 SizeBytes = res.SizeBytes,
-                Content = res.Type == "File" ? ReadZipFile(archive, "resources/", res.Id) ?? Array.Empty<byte>() : Array.Empty<byte>(),
+                ContentGridFsId = gridFsId,
                 Tags = res.Tags,
                 Keywords = res.Keywords,
                 CreatedUtc = res.CreatedUtc,

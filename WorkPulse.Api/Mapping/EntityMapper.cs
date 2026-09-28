@@ -216,8 +216,15 @@ public static class EntityMapper
             EndDate = entity.EndDate,
             Purpose = entity.Purpose,
             Notes = entity.Notes,
-            Status = Enum.TryParse<TripStatus>(entity.Status, out var ts) ? ts : TripStatus.Planned,
-            LastModifiedUtc = entity.LastModifiedUtc
+            Status = Enum.TryParse<TripStatus>(entity.Status, out var ts) ? ts : TripStatus.Draft,
+            LastModifiedUtc = entity.LastModifiedUtc,
+            TripNumber = entity.TripNumber,
+            DepartmentCode = entity.DepartmentCode,
+            ScheduledDeparture = entity.ScheduledDeparture,
+            ScheduledReturn = entity.ScheduledReturn,
+            TicketArrangementRequest = entity.TicketArrangementRequest,
+            Segments = entity.Segments.OrderBy(s => s.SequenceNo).Select(s => s.ToTripSegment()).ToList(),
+            BudgetLines = entity.BudgetLines.Select(b => b.ToTripBudgetLine()).ToList()
         };
     }
 
@@ -234,7 +241,185 @@ public static class EntityMapper
             Purpose = record.Purpose,
             Notes = record.Notes,
             Status = record.Status.ToString(),
-            LastModifiedUtc = DateTime.UtcNow
+            LastModifiedUtc = DateTime.UtcNow,
+            DepartmentCode = record.DepartmentCode,
+            // No Kind=Utc coercion needed here anymore — that was a Npgsql/"timestamp with time
+            // zone" requirement; BSON's Date type has no such CLR-side Kind requirement.
+            ScheduledDeparture = record.ScheduledDeparture,
+            ScheduledReturn = record.ScheduledReturn,
+            TicketArrangementRequest = record.TicketArrangementRequest,
+            Segments = record.Segments.Select(s => s.ToEntity()).ToList(),
+            BudgetLines = record.BudgetLines.Select(b => b.ToEntity()).ToList()
+        };
+    }
+
+    // --- TripSegment <-> TripSegmentEntity ---
+
+    public static TripSegment ToTripSegment(this TripSegmentEntity entity)
+    {
+        return new TripSegment
+        {
+            Id = entity.Id,
+            SequenceNo = entity.SequenceNo,
+            Purpose = entity.Purpose,
+            Content = entity.Content,
+            ProjectNo = entity.ProjectNo,
+            DestinationName = entity.DestinationName,
+            PlaceName = entity.PlaceName,
+            Date1 = entity.Date1,
+            Date2 = entity.Date2
+        };
+    }
+
+    public static TripSegmentEntity ToEntity(this TripSegment record)
+    {
+        return new TripSegmentEntity
+        {
+            SequenceNo = record.SequenceNo,
+            Purpose = record.Purpose,
+            Content = record.Content,
+            ProjectNo = record.ProjectNo,
+            DestinationName = record.DestinationName,
+            PlaceName = record.PlaceName,
+            Date1 = record.Date1,
+            Date2 = record.Date2
+        };
+    }
+
+    // --- TripBudgetLine <-> TripBudgetLineEntity ---
+
+    public static TripBudgetLine ToTripBudgetLine(this TripBudgetLineEntity entity)
+    {
+        return new TripBudgetLine
+        {
+            Id = entity.Id,
+            Content = entity.Content,
+            ExpenseCategory = entity.ExpenseCategory,
+            Amount = entity.Amount
+        };
+    }
+
+    public static TripBudgetLineEntity ToEntity(this TripBudgetLine record)
+    {
+        return new TripBudgetLineEntity
+        {
+            Content = record.Content,
+            ExpenseCategory = record.ExpenseCategory,
+            Amount = record.Amount
+        };
+    }
+
+    // --- TripSettlement <-> TripSettlementEntity ---
+    // TripSettlementEntity is a single embedded sub-document on TripReportEntity now (OwnsOne),
+    // not its own top-level collection — it no longer carries its own Id/TripReportId; the trip
+    // id is passed in from the controller's own route parameter instead.
+
+    public static TripSettlement ToTripSettlement(this TripSettlementEntity entity, string tripReportId)
+    {
+        return new TripSettlement
+        {
+            TripReportId = tripReportId,
+            EmployeeNo = entity.EmployeeNo,
+            BankAccountNumber = entity.BankAccountNumber,
+            Bank = entity.Bank,
+            Branch = entity.Branch,
+            LocationAtSettlement = entity.LocationAtSettlement,
+            Region = entity.Region,
+            AccountingCode = entity.AccountingCode,
+            SourceDocumentNo = entity.SourceDocumentNo,
+            LastModifiedUtc = entity.LastModifiedUtc,
+            TransportationLines = entity.TransportationLines.Select(l => l.ToTripSettlementTransportationLine()).ToList(),
+            OtherLines = entity.OtherLines.Select(l => l.ToTripSettlementOtherLine()).ToList()
+        };
+    }
+
+    public static TripSettlementEntity ToEntity(this TripSettlement record)
+    {
+        return new TripSettlementEntity
+        {
+            EmployeeNo = record.EmployeeNo,
+            BankAccountNumber = record.BankAccountNumber,
+            Bank = record.Bank,
+            Branch = record.Branch,
+            LocationAtSettlement = record.LocationAtSettlement,
+            Region = record.Region,
+            AccountingCode = record.AccountingCode,
+            SourceDocumentNo = record.SourceDocumentNo,
+            LastModifiedUtc = DateTime.UtcNow,
+            TransportationLines = record.TransportationLines.Select(l => l.ToEntity()).ToList(),
+            OtherLines = record.OtherLines.Select(l => l.ToEntity()).ToList()
+        };
+    }
+
+    // --- TripSettlementTransportationLine <-> TripSettlementTransportationLineEntity ---
+
+    public static TripSettlementTransportationLine ToTripSettlementTransportationLine(this TripSettlementTransportationLineEntity entity)
+    {
+        return new TripSettlementTransportationLine
+        {
+            Id = entity.Id,
+            Date = entity.Date,
+            Content = entity.Content,
+            DestinationName = entity.DestinationName,
+            PlaceName = entity.PlaceName,
+            Route = entity.Route,
+            TransportMode = entity.TransportMode,
+            DepartureTime = entity.DepartureTime,
+            ArrivalTime = entity.ArrivalTime,
+            GasCost = entity.GasCost,
+            TollCost = entity.TollCost,
+            TransportationCost = entity.TransportationCost,
+            LodgingCost = entity.LodgingCost,
+            DailyAllowance = entity.DailyAllowance
+        };
+    }
+
+    public static TripSettlementTransportationLineEntity ToEntity(this TripSettlementTransportationLine record)
+    {
+        return new TripSettlementTransportationLineEntity
+        {
+            Date = record.Date,
+            Content = record.Content,
+            DestinationName = record.DestinationName,
+            PlaceName = record.PlaceName,
+            Route = record.Route,
+            TransportMode = record.TransportMode,
+            DepartureTime = record.DepartureTime,
+            ArrivalTime = record.ArrivalTime,
+            GasCost = record.GasCost,
+            TollCost = record.TollCost,
+            TransportationCost = record.TransportationCost,
+            LodgingCost = record.LodgingCost,
+            DailyAllowance = record.DailyAllowance
+        };
+    }
+
+    // --- TripSettlementOtherLine <-> TripSettlementOtherLineEntity ---
+
+    public static TripSettlementOtherLine ToTripSettlementOtherLine(this TripSettlementOtherLineEntity entity)
+    {
+        return new TripSettlementOtherLine
+        {
+            Id = entity.Id,
+            Date = entity.Date,
+            Content = entity.Content,
+            Description = entity.Description,
+            DepartmentCode = entity.DepartmentCode,
+            ExpenseCategoryTaxCode = entity.ExpenseCategoryTaxCode,
+            SettlementAmount = entity.SettlementAmount
+        };
+    }
+
+    public static TripSettlementOtherLineEntity ToEntity(this TripSettlementOtherLine record)
+    {
+        return new TripSettlementOtherLineEntity
+        {
+            Date = record.Date,
+            Content = record.Content,
+            Description = record.Description,
+            DepartmentCode = record.DepartmentCode,
+            ExpenseCategoryTaxCode = record.ExpenseCategoryTaxCode,
+            SettlementAmount = record.SettlementAmount
         };
     }
 

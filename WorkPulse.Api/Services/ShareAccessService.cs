@@ -22,12 +22,11 @@ public class ShareAccessService
     {
         if (string.IsNullOrWhiteSpace(requesterEmail)) return null;
 
-        var grant = await _db.ShareGrants
-            .Where(g => g.Email.ToLower() == requesterEmail.ToLower())
-            .Join(_db.Shares, g => g.ShareId, s => s.Id, (g, s) => new { g.Permission, s.ResourceType, s.ResourceId })
-            .FirstOrDefaultAsync(x => x.ResourceType == resourceType && x.ResourceId == resourceId);
+        // Grants are embedded inside their Share now — one lookup, no join.
+        var share = await _db.Shares
+            .FirstOrDefaultAsync(s => s.ResourceType == resourceType && s.ResourceId == resourceId);
 
-        return grant?.Permission;
+        return share?.Grants.FirstOrDefault(g => g.Email.ToLower() == requesterEmail.ToLower())?.Permission;
     }
 
     /// <summary>The shared item's own data, via the exact same ToXxx() mapper its normal owner-

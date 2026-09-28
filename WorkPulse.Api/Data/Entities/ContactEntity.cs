@@ -13,6 +13,4 @@ public class ContactEntity
     public string ContactNumber { get; set; } = "";
     public string Notes { get; set; } = "";
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
-
-    public AppUser User { get; set; } = null!;
 }

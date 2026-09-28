@@ -46,7 +46,6 @@ public class ExcelController : ApiControllerBase
         foreach (var ym in months.OrderBy(m => m.Year).ThenBy(m => m.Month))
         {
             var entity = await _db.AttendanceMonths
-                .Include(m => m.Records)
                 .FirstOrDefaultAsync(m => m.UserId == UserId && m.Year == ym.Year && m.Month == ym.Month);
             // A month with nothing saved yet is still a valid thing to export — it just comes out
             // as a labeled section with no rows, rather than silently vanishing from the file.

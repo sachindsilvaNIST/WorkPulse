@@ -16,15 +16,15 @@ public class ResourceEntity
     public string FileName { get; set; } = ""; // File only
     public string ContentType { get; set; } = ""; // File only
     public long SizeBytes { get; set; } // File only
-    public byte[] Content { get; set; } = Array.Empty<byte>(); // File only
-    // Google Drive mirror (File only) — same best-effort pattern as TripDocumentEntity: the local
-    // Content bytes above are the guaranteed copy, this is set only once a mirror upload succeeds.
+    // File only — the file's bytes live in GridFS (Mongo documents cap out at 16MB, and uploads
+    // here can be up to 50MB); this is the GridFS file id, not the content itself.
+    public string? ContentGridFsId { get; set; }
+    // Google Drive mirror (File only) — same best-effort pattern as TripDocumentEntity: the GridFS
+    // copy above is the guaranteed one, this is set only once a mirror upload succeeds.
     public string? DriveFileId { get; set; }
     public string? DriveWebViewLink { get; set; }
     public string Tags { get; set; } = "";
     public string Keywords { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
-
-    public AppUser User { get; set; } = null!;
 }

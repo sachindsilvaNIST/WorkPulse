@@ -20,8 +20,13 @@ public class SessionsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<SessionDto>>> GetSessions()
     {
+        // Materialize first, then reshape in-memory — the Mongo EF provider doesn't support
+        // Select-projections on an unmaterialized IQueryable.
         var sessions = await _db.UserSessions
             .Where(s => s.UserId == UserId)
+            .ToListAsync();
+
+        var result = sessions
             .OrderByDescending(s => s.LastUsedUtc)
             .Select(s => new SessionDto
             {
@@ -31,13 +36,13 @@ public class SessionsController : ControllerBase
                 CreatedUtc = s.CreatedUtc,
                 LastUsedUtc = s.LastUsedUtc
             })
-            .ToListAsync();
+            .ToList();
 
-        return Ok(sessions);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> RevokeSession(int id)
+    public async Task<IActionResult> RevokeSession(string id)
     {
         var session = await _db.UserSessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == UserId);
         if (session == null) return NotFound();
@@ -59,7 +64,7 @@ public class SessionsController : ControllerBase
 
 public class SessionDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
     public string DeviceLabel { get; set; } = "";
     public string? IpAddress { get; set; }
     public DateTime CreatedUtc { get; set; }

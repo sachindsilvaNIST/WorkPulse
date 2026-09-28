@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build*)",
+      "Bash(dotnet run*)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet ef*)",
+      "Bash(dotnet tool*)",
+      "Bash(npm install*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npx tsc*)",
+      "Bash(npx eslint*)",
+      "Bash(npx playwright*)",
+      "Bash(brew install*)",
+      "Bash(brew services*)",
+      "Bash(psql*)",
+      "Bash(createdb*)",
+      "Bash(git status*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git push*)",
+      "Bash(git remote*)",
+      "Bash(curl * http://localhost:*)",
+      "Bash(kill*)",
+      "Bash(lsof*)",
+      "Bash(zsh -lc*)",
+      "Bash(zsh*)",
+      "Bash(node*)",
+      "Bash(npx*)",
+      "Bash(python3*)"
+    ]
+  }
+}

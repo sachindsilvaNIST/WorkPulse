@@ -10,6 +10,4 @@ public class QuickLinkEntity
     public string Keywords { get; set; } = "";
     public int SortOrder { get; set; }
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
-
-    public AppUser User { get; set; } = null!;
 }

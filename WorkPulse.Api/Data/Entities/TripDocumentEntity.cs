@@ -10,7 +10,9 @@ public class TripDocumentEntity
     public string FileName { get; set; } = "";
     public string ContentType { get; set; } = "";
     public long SizeBytes { get; set; }
-    public byte[] Content { get; set; } = Array.Empty<byte>();
+    // The file's bytes live in GridFS (uploads here can be up to 50MB, well past Mongo's 16MB
+    // per-document limit); this is the GridFS file id, not the content itself.
+    public string? ContentGridFsId { get; set; }
     public DateTime UploadedUtc { get; set; } = DateTime.UtcNow;
     /// <summary>The document's own date (e.g. receipt/invoice date) — distinct from UploadedUtc,
     /// which is when it was added to WorkPulse. Nullable: documents uploaded before this field
@@ -37,6 +39,4 @@ public class TripDocumentEntity
     /// level, same as DriveFileId above; a deleted Resource just leaves a dangling id here rather
     /// than requiring a cascade or blocking the delete.</summary>
     public string? ResourceId { get; set; }
-
-    public TripReportEntity TripReport { get; set; } = null!;
 }

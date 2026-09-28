@@ -7,6 +7,7 @@ import type {
   DailyReport,
   WeeklyReport,
   TripReport,
+  TripSettlement,
   TripDocumentMeta,
   TripDocumentWithTrip,
   ReimbursementStatusValue,
@@ -278,6 +279,10 @@ export const tripReportsApi = {
   ) => request<TripDocumentMeta>(`/api/tripreports/${tripId}/documents/${docId}`, { method: "PUT", body: JSON.stringify(update) }),
   exportTrip: (tripId: string, format: "xlsx" | "html") =>
     requestBlob(`/api/excel/trips/${tripId}/export?format=${format}`, { method: "POST" }),
+
+  getSettlement: (tripId: string) => request<TripSettlement>(`/api/tripreports/${tripId}/settlement`),
+  saveSettlement: (tripId: string, record: TripSettlement) =>
+    request<TripSettlement>(`/api/tripreports/${tripId}/settlement`, { method: "PUT", body: JSON.stringify(record) }),
 };
 
 export const reimbursementApi = {
@@ -291,9 +296,9 @@ export const reimbursementApi = {
   getCategories: () => request<ReimbursementCategory[]>("/api/reimbursement/categories"),
   createCategory: (name: string) =>
     request<ReimbursementCategory>("/api/reimbursement/categories", { method: "POST", body: JSON.stringify({ name }) }),
-  renameCategory: (id: number, name: string) =>
+  renameCategory: (id: string, name: string) =>
     request<ReimbursementCategory>(`/api/reimbursement/categories/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
-  deleteCategory: (id: number) => request<void>(`/api/reimbursement/categories/${id}`, { method: "DELETE" }),
+  deleteCategory: (id: string) => request<void>(`/api/reimbursement/categories/${id}`, { method: "DELETE" }),
 };
 
 export const googleDriveApi = {
@@ -308,9 +313,9 @@ export const gmailApi = {
   disconnect: () => request<void>("/api/gmail/disconnect", { method: "POST" }),
   getLabels: () => request<GmailLabel[]>("/api/gmail/labels"),
   createLabel: (name: string) => request<GmailLabel>("/api/gmail/labels", { method: "POST", body: JSON.stringify({ name }) }),
-  renameLabel: (id: number, name: string) =>
+  renameLabel: (id: string, name: string) =>
     request<GmailLabel>(`/api/gmail/labels/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
-  deleteLabel: (id: number) => request<void>(`/api/gmail/labels/${id}`, { method: "DELETE" }),
+  deleteLabel: (id: string) => request<void>(`/api/gmail/labels/${id}`, { method: "DELETE" }),
 };
 
 export const notificationsApi = {
@@ -343,9 +348,9 @@ export const dictionaryApi = {
     request<DictEntryDto[]>(`/api/dictionary/entries${search ? `?search=${encodeURIComponent(search)}` : ""}`),
   create: (dto: Partial<DictEntryDto>) =>
     request<DictEntryDto>("/api/dictionary/entries", { method: "POST", body: JSON.stringify(dto) }),
-  update: (id: number, dto: Partial<DictEntryDto>) =>
+  update: (id: string, dto: Partial<DictEntryDto>) =>
     request<DictEntryDto>(`/api/dictionary/entries/${id}`, { method: "PUT", body: JSON.stringify(dto) }),
-  delete: (id: number) => request<void>(`/api/dictionary/entries/${id}`, { method: "DELETE" }),
+  delete: (id: string) => request<void>(`/api/dictionary/entries/${id}`, { method: "DELETE" }),
 };
 
 export const settingsApi = {
@@ -355,7 +360,7 @@ export const settingsApi = {
 
 export const sessionsApi = {
   list: () => request<UserSession[]>("/api/sessions"),
-  revoke: (id: number) => request<void>(`/api/sessions/${id}`, { method: "DELETE" }),
+  revoke: (id: string) => request<void>(`/api/sessions/${id}`, { method: "DELETE" }),
   revokeAll: () => request<void>("/api/sessions", { method: "DELETE" }),
 };
 

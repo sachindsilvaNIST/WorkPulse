@@ -17,13 +17,14 @@ public class AttendanceController : ApiControllerBase
     [HttpGet("months")]
     public async Task<ActionResult<List<YearMonthDto>>> GetAvailableMonths()
     {
+        // Materialize full entities first, then reshape in-memory — the Mongo EF provider
+        // doesn't support Select-projections on an unmaterialized IQueryable.
         var months = await _db.AttendanceMonths
             .Where(m => m.UserId == UserId)
-            .OrderByDescending(m => m.Year).ThenByDescending(m => m.Month)
-            .Select(m => new { m.Year, m.Month })
             .ToListAsync();
 
         var result = months
+            .OrderByDescending(m => m.Year).ThenByDescending(m => m.Month)
             .Select(m => new YearMonthDto
             {
                 Year = m.Year,
@@ -38,8 +39,9 @@ public class AttendanceController : ApiControllerBase
     [HttpGet("{year}/{month}")]
     public async Task<ActionResult<MonthlyData>> GetMonth(int year, int month)
     {
+        // Records is an embedded collection now — loads automatically with the parent, no
+        // .Include() needed.
         var entity = await _db.AttendanceMonths
-            .Include(m => m.Records)
             .FirstOrDefaultAsync(m => m.UserId == UserId && m.Year == year && m.Month == month);
 
         if (entity == null)
@@ -52,7 +54,6 @@ public class AttendanceController : ApiControllerBase
     public async Task<ActionResult<MonthlyData>> SaveMonth(int year, int month, [FromBody] MonthlyData data)
     {
         var existing = await _db.AttendanceMonths
-            .Include(m => m.Records)
             .FirstOrDefaultAsync(m => m.UserId == UserId && m.Year == year && m.Month == month);
 
         if (existing != null)
@@ -63,8 +64,12 @@ public class AttendanceController : ApiControllerBase
             existing.CustomSettlementEnd = data.CustomSettlementEnd;
             existing.LastModifiedUtc = DateTime.UtcNow;
 
-            _db.AttendanceRecords.RemoveRange(existing.Records);
-            existing.Records = data.Records.Select(r => r.ToEntity()).ToList();
+            // Wholesale-replace the embedded collection — Clear() + re-add rather than
+            // reassigning the List reference outright, so EF's change tracker picks up the
+            // removals correctly for an owned collection.
+            existing.Records.Clear();
+            foreach (var r in data.Records.Select(r => r.ToEntity()))
+                existing.Records.Add(r);
         }
         else
         {

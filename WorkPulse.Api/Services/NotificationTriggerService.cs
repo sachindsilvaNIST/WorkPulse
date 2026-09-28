@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
@@ -14,6 +15,7 @@ namespace WorkPulse.Api.Services;
 public class NotificationTriggerService
 {
     private readonly AppDbContext _db;
+    private readonly UserManager<AppUser> _userManager;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<NotificationTriggerService> _logger;
 
@@ -25,9 +27,10 @@ public class NotificationTriggerService
     // early risers mid-morning about a report they'd write later the same day anyway.
     private const int DailyReportReminderHourJst = 18;
 
-    public NotificationTriggerService(AppDbContext db, IEmailSender emailSender, ILogger<NotificationTriggerService> logger)
+    public NotificationTriggerService(AppDbContext db, UserManager<AppUser> userManager, IEmailSender emailSender, ILogger<NotificationTriggerService> logger)
     {
         _db = db;
+        _userManager = userManager;
         _emailSender = emailSender;
         _logger = logger;
     }
@@ -47,13 +50,16 @@ public class NotificationTriggerService
     {
         var dedupePrefix = $"DailyReportReminder:{today:yyyy-MM-dd}";
 
-        var users = await _db.Users
-            .Include(u => u.Settings)
-            .Where(u => u.Settings == null || u.Settings.NotificationsEnabled)
-            .ToListAsync();
+        // Identity (AppUser) and UserSettingsEntity live in separate stores now — fetch both and
+        // join in-memory (tiny dataset for a single-user app).
+        var users = _userManager.Users.ToList();
+        var settingsByUserId = (await _db.UserSettings.ToListAsync()).ToDictionary(s => s.UserId);
 
         foreach (var user in users)
         {
+            settingsByUserId.TryGetValue(user.Id, out var settings);
+            if (settings is { NotificationsEnabled: false }) continue;
+
             var dedupeKey = $"{dedupePrefix}:{user.Id}";
             var alreadySent = await _db.Notifications.AnyAsync(n => n.UserId == user.Id && n.DedupeKey == dedupeKey);
             if (alreadySent) continue;
@@ -62,7 +68,7 @@ public class NotificationTriggerService
             if (hasToday) continue;
 
             await CreateAsync(
-                user,
+                user.Id, user.Email, settings?.NotificationChannel,
                 type: "DailyReportReminder",
                 title: "Today's report is still empty",
                 message: "You haven't filled in a daily report yet today.",
@@ -75,20 +81,25 @@ public class NotificationTriggerService
     private async Task GenerateTripRemindersAsync(DateOnly tomorrow)
     {
         var upcomingTrips = await _db.TripReports
-            .Include(t => t.User).ThenInclude(u => u.Settings)
             .Where(t => t.StartDate == tomorrow)
             .ToListAsync();
 
+        var settingsByUserId = (await _db.UserSettings.ToListAsync()).ToDictionary(s => s.UserId);
+
         foreach (var trip in upcomingTrips)
         {
-            if (trip.User.Settings is { NotificationsEnabled: false }) continue;
+            settingsByUserId.TryGetValue(trip.UserId, out var settings);
+            if (settings is { NotificationsEnabled: false }) continue;
 
             var dedupeKey = $"TripUpcoming:{trip.Id}";
             var alreadySent = await _db.Notifications.AnyAsync(n => n.UserId == trip.UserId && n.DedupeKey == dedupeKey);
             if (alreadySent) continue;
 
+            var user = await _userManager.FindByIdAsync(trip.UserId);
+            if (user == null) continue;
+
             await CreateAsync(
-                trip.User,
+                trip.UserId, user.Email, settings?.NotificationChannel,
                 type: "TripUpcoming",
                 title: "Trip starts tomorrow",
                 message: $"Your trip to {trip.Destination} starts tomorrow.",
@@ -98,11 +109,11 @@ public class NotificationTriggerService
         }
     }
 
-    private async Task CreateAsync(AppUser user, string type, string title, string message, string href, string dedupeKey)
+    private async Task CreateAsync(string userId, string? userEmail, string? notificationChannel, string type, string title, string message, string href, string dedupeKey)
     {
         _db.Notifications.Add(new NotificationEntity
         {
-            UserId = user.Id,
+            UserId = userId,
             Type = type,
             Title = title,
             Message = message,
@@ -111,19 +122,19 @@ public class NotificationTriggerService
         });
         await _db.SaveChangesAsync();
 
-        var channel = user.Settings?.NotificationChannel ?? "Email";
-        if (channel != "Email" || string.IsNullOrEmpty(user.Email)) return;
+        var channel = notificationChannel ?? "Email";
+        if (channel != "Email" || string.IsNullOrEmpty(userEmail)) return;
 
         try
         {
-            await _emailSender.SendAsync(user.Email, title, message);
+            await _emailSender.SendAsync(userEmail, title, message);
         }
         catch (Exception ex)
         {
             // Best-effort, matching the rest of the app's email sends (2FA codes, registration
             // codes) — a delivery failure shouldn't ever block the in-app notification that was
             // already saved above.
-            _logger.LogWarning(ex, "Failed to email notification {Type} to {UserId}", type, user.Id);
+            _logger.LogWarning(ex, "Failed to email notification {Type} to {UserId}", type, userId);
         }
     }
 }

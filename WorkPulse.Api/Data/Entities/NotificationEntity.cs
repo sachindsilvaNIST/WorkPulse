@@ -17,6 +17,4 @@ public class NotificationEntity
     public string DedupeKey { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public DateTime? ReadUtc { get; set; }
-
-    public AppUser User { get; set; } = null!;
 }

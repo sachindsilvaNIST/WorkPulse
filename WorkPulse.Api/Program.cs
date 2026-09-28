@@ -1,9 +1,12 @@
 using System.Text;
+using AspNetCore.Identity.Mongo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
+using MongoDB.EntityFrameworkCore.Extensions;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
 
@@ -14,57 +17,49 @@ var builder = WebApplication.CreateBuilder(args);
 // Lambda Function URL.
 builder.Services.AddAWSLambdaHosting(Microsoft.Extensions.DependencyInjection.LambdaEventSource.HttpApi);
 
-// Database — check DATABASE_URL (Render), then fall back to ConnectionStrings:DefaultConnection
-var connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
-           ?? builder.Configuration.GetConnectionString("DefaultConnection")
-           ?? "";
-var usePostgres = false;
+// Database — MongoDB Atlas. MONGO_CONNECTION_STRING/MONGO_DATABASE_NAME env vars in production
+// (Lambda), Mongo:ConnectionString/Mongo:DatabaseName in appsettings/user-secrets for local dev —
+// same two-tier lookup shape the old Postgres DATABASE_URL/ConnectionStrings fallback used.
+var mongoConnStr = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING")
+                 ?? builder.Configuration["Mongo:ConnectionString"]
+                 ?? throw new InvalidOperationException("Mongo connection string not configured. Set MONGO_CONNECTION_STRING or Mongo:ConnectionString.");
+var mongoDbName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME")
+                ?? builder.Configuration["Mongo:DatabaseName"]
+                ?? "workpulse";
 
-if (connStr.StartsWith("postgresql://") || connStr.StartsWith("postgres://"))
-{
-    // Strip query params not supported by Npgsql (e.g., channel_binding, sslmode)
-    var cleanUrl = connStr.Split('?')[0];
-    var uri = new Uri(cleanUrl);
-    var userInfo = uri.UserInfo.Split(':');
-    var port = uri.Port > 0 ? uri.Port : 5432;
-    connStr = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')}"
-            + $";Username={userInfo[0]};Password={userInfo[1]}"
-            + ";SSL Mode=Require;Trust Server Certificate=true";
-    usePostgres = true;
-}
-else if (!string.IsNullOrEmpty(connStr) && connStr.Contains("Host="))
-{
-    usePostgres = true;
-}
+// AspNetCore.Identity.Mongo's MongoIdentityOptions.ConnectionString wants the database name
+// embedded in the URI path (e.g. ".../?params" -> ".../workpulse?params"), same shape as its own
+// default "mongodb://localhost/default" — insert it before the query string, not just appended,
+// or it silently becomes part of the query string instead of the path.
+var mongoConnStrWithDb = mongoConnStr.Contains('?')
+    ? (mongoConnStr[..mongoConnStr.IndexOf('?')].TrimEnd('/') + $"/{mongoDbName}" + mongoConnStr[mongoConnStr.IndexOf('?')..])
+    : $"{mongoConnStr.TrimEnd('/')}/{mongoDbName}";
 
-if (usePostgres)
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connStr));
-}
-else
-{
-    // Local dev: use SQLite (no PostgreSQL needed)
-    var sqlitePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WorkPulse", "nist_attendance.db");
-    Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite($"Data Source={sqlitePath}"));
-}
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMongoDB(mongoConnStr, mongoDbName));
 
-// Identity
-builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
-})
-.AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<AppDbContext>()
-.AddDefaultTokenProviders();
+// GridFS for file uploads (Resources, TripDocuments) — Mongo documents cap out at 16MB, and
+// uploads here can be up to 50MB, so file bytes live in GridFS instead of an inline field.
+builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnStr));
+builder.Services.AddSingleton(sp =>
+    new GridFSBucket(sp.GetRequiredService<IMongoClient>().GetDatabase(mongoDbName)));
+
+// Identity — deliberately NOT routed through the MongoDB.EntityFrameworkCore AppDbContext above;
+// see AppUser.cs's doc comment for why. AddIdentityMongoDbProvider talks to Mongo directly via
+// the native driver, the same relationship SQL Server's original Identity store had to ADO.NET.
+builder.Services.AddIdentityMongoDbProvider<AppUser, AppRole, string>(
+    identityOptions =>
+    {
+        identityOptions.Password.RequireDigit = false;
+        identityOptions.Password.RequireLowercase = false;
+        identityOptions.Password.RequireUppercase = false;
+        identityOptions.Password.RequireNonAlphanumeric = false;
+        identityOptions.Password.RequiredLength = 6;
+    },
+    mongoOptions =>
+    {
+        mongoOptions.ConnectionString = mongoConnStrWithDb;
+    });
 
 // JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -118,6 +113,10 @@ builder.Services.AddScoped<WorkPulse.Api.Services.NotificationTriggerService>();
 // Sharing (Trips, Reimbursement, Reports, Contacts, Bookmarks, Resources) — one service every
 // entity controller's read/update endpoints fall back to once ownership fails.
 builder.Services.AddScoped<WorkPulse.Api.Services.ShareAccessService>();
+
+// Account deletion — Mongo has no cascade-delete, so this explicitly purges every collection a
+// user owns before the Identity user itself is deleted (AuthController/AdminController).
+builder.Services.AddScoped<WorkPulse.Api.Services.UserAccountService>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -179,103 +178,16 @@ try
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var isSqlite = db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
 
-    // On a genuinely empty database (e.g. a fresh Render Postgres instance), AspNetUsers
-    // doesn't exist yet — but the raw SQL bootstrap below creates DictionaryEntries/Labels
-    // with a foreign key to it. Apply just InitialCreate first so that table exists; this
-    // is a no-op (MigrateAsync to an already-applied target) on any database that has run
-    // migrations before, so it's safe for existing local/dev databases too.
-    if (!(await db.Database.GetAppliedMigrationsAsync()).Any())
-    {
-        var migrator = db.Database.GetInfrastructure().GetRequiredService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
-        await migrator.MigrateAsync("20260317022327_InitialCreate");
-    }
-
-    // Ensure the Dictionary tables exist BEFORE running the remaining migrations. InitialCreate
-    // never actually created DictionaryEntries/DictionaryLabels/DictionaryEntryLabels (they were
-    // bolted on later via this raw SQL bootstrap); AddJlptLevelToDictionaryEntry and
-    // AddSrsFieldsToDictionaryEntry both ALTER those tables and will fail on a genuinely
-    // fresh database if this runs after Migrate() instead of before it.
-    var conn = db.Database.GetDbConnection();
-    await conn.OpenAsync();
-    using (var cmd = conn.CreateCommand())
-    {
-        cmd.CommandText = isSqlite
-            ? @"
-                CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
-                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_DictionaryEntries"" PRIMARY KEY AUTOINCREMENT,
-                    ""UserId"" TEXT NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                    ""Japanese"" TEXT NOT NULL,
-                    ""Reading"" TEXT NULL,
-                    ""Meaning"" TEXT NOT NULL,
-                    ""ExampleJp"" TEXT NULL,
-                    ""ExampleEn"" TEXT NULL,
-                    ""Notes"" TEXT NULL,
-                    ""CreatedUtc"" TEXT NOT NULL,
-                    ""LastModifiedUtc"" TEXT NOT NULL
-                );
-                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
-
-                CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
-                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_DictionaryLabels"" PRIMARY KEY AUTOINCREMENT,
-                    ""UserId"" TEXT NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                    ""Name"" TEXT NOT NULL,
-                    ""Color"" TEXT NOT NULL DEFAULT '#0078D4',
-                    ""CreatedUtc"" TEXT NOT NULL
-                );
-                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
-
-                CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
-                    ""EntryId"" INTEGER NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
-                    ""LabelId"" INTEGER NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
-                    PRIMARY KEY (""EntryId"", ""LabelId"")
-                );
-                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
-            "
-            : @"
-                CREATE TABLE IF NOT EXISTS ""DictionaryEntries"" (
-                    ""Id"" serial PRIMARY KEY,
-                    ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                    ""Japanese"" text NOT NULL,
-                    ""Reading"" text,
-                    ""Meaning"" text NOT NULL,
-                    ""ExampleJp"" text,
-                    ""ExampleEn"" text,
-                    ""Notes"" text,
-                    ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now(),
-                    ""LastModifiedUtc"" timestamp with time zone NOT NULL DEFAULT now()
-                );
-                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntries_UserId"" ON ""DictionaryEntries"" (""UserId"");
-
-                CREATE TABLE IF NOT EXISTS ""DictionaryLabels"" (
-                    ""Id"" serial PRIMARY KEY,
-                    ""UserId"" text NOT NULL REFERENCES ""AspNetUsers""(""Id"") ON DELETE CASCADE,
-                    ""Name"" text NOT NULL,
-                    ""Color"" text NOT NULL DEFAULT '#0078D4',
-                    ""CreatedUtc"" timestamp with time zone NOT NULL DEFAULT now()
-                );
-                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_DictionaryLabels_UserId_Name"" ON ""DictionaryLabels"" (""UserId"", ""Name"");
-
-                CREATE TABLE IF NOT EXISTS ""DictionaryEntryLabels"" (
-                    ""EntryId"" integer NOT NULL REFERENCES ""DictionaryEntries""(""Id"") ON DELETE CASCADE,
-                    ""LabelId"" integer NOT NULL REFERENCES ""DictionaryLabels""(""Id"") ON DELETE CASCADE,
-                    PRIMARY KEY (""EntryId"", ""LabelId"")
-                );
-                CREATE INDEX IF NOT EXISTS ""IX_DictionaryEntryLabels_LabelId"" ON ""DictionaryEntryLabels"" (""LabelId"");
-            ";
-        await cmd.ExecuteNonQueryAsync();
-    }
-
-    // Now apply migrations (InitialCreate + all incremental ones) — the Dictionary
-    // tables already exist, so AddJlptLevelToDictionaryEntry/AddSrsFieldsToDictionaryEntry
-    // can ALTER them successfully even on a brand-new database.
-    db.Database.Migrate();
+    // Mongo collections are created implicitly on first write, and indexes are declared via
+    // HasIndex(...) in AppDbContext.OnModelCreating — this replaces the old Migrate() call
+    // (MongoDB.EntityFrameworkCore doesn't support EF migrations, Mongo has no schema/DDL).
+    db.Database.EnsureCreated();
 
     // Seed Admin role
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
     if (!await roleManager.RoleExistsAsync("Admin"))
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
+        await roleManager.CreateAsync(new AppRole("Admin"));
 
     // Promote the designated owner email to Admin if they exist (idempotent).
     // Falls back to "first user" if the owner email isn't registered yet.
@@ -291,7 +203,7 @@ using (var scope = app.Services.CreateScope())
         var admins = await userManager.GetUsersInRoleAsync("Admin");
         if (admins.Count == 0)
         {
-            var firstUser = db.Users.OrderBy(u => u.Id).FirstOrDefault();
+            var firstUser = userManager.Users.OrderBy(u => u.Id).FirstOrDefault();
             if (firstUser != null)
                 await userManager.AddToRoleAsync(firstUser, "Admin");
         }

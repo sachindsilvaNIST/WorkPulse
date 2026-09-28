@@ -5,8 +5,7 @@ namespace WorkPulse.Api.Data.Entities;
 /// is fast and doesn't hit the Gmail API on every keystroke.</summary>
 public class GmailLabelEntity
 {
-    public int Id { get; set; }
-    public int ConnectionId { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string GmailLabelId { get; set; } = "";
     /// <summary>Gmail's own nesting convention — "Clients/Acme Corp" — parsed into a tree client-side.</summary>
     public string Name { get; set; } = "";
@@ -15,6 +14,4 @@ public class GmailLabelEntity
     public string Type { get; set; } = "user";
     public string? Color { get; set; }
     public DateTime LastSyncedUtc { get; set; } = DateTime.UtcNow;
-
-    public GmailConnectionEntity Connection { get; set; } = null!;
 }

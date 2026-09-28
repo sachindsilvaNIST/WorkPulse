@@ -2,7 +2,7 @@ namespace WorkPulse.Api.Data.Entities;
 
 public class UserSettingsEntity
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public TimeOnly StandardLoginTime { get; set; } = new(8, 25);
     public TimeOnly StandardLogoutTime { get; set; } = new(17, 30);
@@ -18,6 +18,4 @@ public class UserSettingsEntity
     public bool NotificationsEnabled { get; set; } = true;
     public string NotificationChannel { get; set; } = "Email";
     public string AccentColor { get; set; } = "blue";
-
-    public AppUser User { get; set; } = null!;
 }

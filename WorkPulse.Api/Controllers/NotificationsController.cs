@@ -60,7 +60,9 @@ public class NotificationsController : ApiControllerBase
     [HttpDelete]
     public async Task<IActionResult> ClearAll()
     {
-        await _db.Notifications.Where(n => n.UserId == UserId).ExecuteDeleteAsync();
+        var notifications = await _db.Notifications.Where(n => n.UserId == UserId).ToListAsync();
+        _db.Notifications.RemoveRange(notifications);
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 }

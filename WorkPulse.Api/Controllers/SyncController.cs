@@ -24,7 +24,6 @@ public class SyncController : ApiControllerBase
         foreach (var monthData in request.Months)
         {
             var existing = await _db.AttendanceMonths
-                .Include(m => m.Records)
                 .FirstOrDefaultAsync(m => m.UserId == UserId && m.Year == monthData.Year && m.Month == monthData.Month);
 
             if (existing != null)
@@ -35,8 +34,9 @@ public class SyncController : ApiControllerBase
                     existing.MonthLabel = monthData.MonthLabel;
                     existing.Title = monthData.Title;
                     existing.LastModifiedUtc = monthData.LastModifiedUtc;
-                    _db.AttendanceRecords.RemoveRange(existing.Records);
-                    existing.Records = monthData.Records.Select(r => r.ToEntity()).ToList();
+                    existing.Records.Clear();
+                    foreach (var r in monthData.Records.Select(r => r.ToEntity()))
+                        existing.Records.Add(r);
                 }
             }
             else
@@ -218,7 +218,6 @@ public class SyncController : ApiControllerBase
     public async Task<ActionResult<SyncResponse>> Pull([FromBody] SyncPullRequest request)
     {
         var months = await _db.AttendanceMonths
-            .Include(m => m.Records)
             .Where(m => m.UserId == UserId && m.LastModifiedUtc > request.LastSyncedAt)
             .ToListAsync();
 

@@ -6,10 +6,8 @@ namespace WorkPulse.Api.Data.Entities;
 /// was deleted, still display their category text correctly with no orphaned-reference cleanup.</summary>
 public class ReimbursementCategoryEntity
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public string Name { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
-
-    public AppUser User { get; set; } = null!;
 }

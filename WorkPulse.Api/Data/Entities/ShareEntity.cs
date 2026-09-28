@@ -25,6 +25,5 @@ public class ShareEntity
 
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 
-    public AppUser Owner { get; set; } = null!;
     public ICollection<ShareGrantEntity> Grants { get; set; } = new List<ShareGrantEntity>();
 }

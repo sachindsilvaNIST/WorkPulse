@@ -7,7 +7,7 @@ namespace WorkPulse.Api.Data.Entities;
 /// </summary>
 public class UserSessionEntity
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public string RefreshToken { get; set; } = "";
     public string DeviceLabel { get; set; } = "";
@@ -15,6 +15,4 @@ public class UserSessionEntity
     public DateTime CreatedUtc { get; set; }
     public DateTime LastUsedUtc { get; set; }
     public DateTime ExpiresUtc { get; set; }
-
-    public AppUser User { get; set; } = null!;
 }

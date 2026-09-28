@@ -21,11 +21,9 @@ public class DictionaryController : ApiControllerBase
     // ===== ENTRIES =====
 
     [HttpGet("entries")]
-    public async Task<ActionResult<List<DictEntryDto>>> GetEntries([FromQuery] string? search, [FromQuery] int? labelId, [FromQuery] string? jlptLevel)
+    public async Task<ActionResult<List<DictEntryDto>>> GetEntries([FromQuery] string? search, [FromQuery] string? labelId, [FromQuery] string? jlptLevel)
     {
-        var query = _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
-            .Where(e => e.UserId == UserId);
+        var query = _db.DictionaryEntries.Where(e => e.UserId == UserId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -37,9 +35,9 @@ public class DictionaryController : ApiControllerBase
                 (e.Notes != null && e.Notes.ToLower().Contains(q)));
         }
 
-        if (labelId.HasValue)
+        if (!string.IsNullOrWhiteSpace(labelId))
         {
-            query = query.Where(e => e.EntryLabels.Any(el => el.LabelId == labelId.Value));
+            query = query.Where(e => e.LabelIds.Contains(labelId));
         }
 
         if (!string.IsNullOrWhiteSpace(jlptLevel))
@@ -47,22 +45,20 @@ public class DictionaryController : ApiControllerBase
             query = query.Where(e => e.JlptLevel == jlptLevel);
         }
 
-        var entries = await query
-            .OrderByDescending(e => e.LastModifiedUtc)
-            .ToListAsync();
+        var entries = await query.ToListAsync();
+        var labelsById = await GetLabelsByIdAsync();
 
-        return Ok(entries.Select(ToDto).ToList());
+        return Ok(entries.OrderByDescending(e => e.LastModifiedUtc).Select(e => ToDto(e, labelsById)).ToList());
     }
 
     [HttpGet("entries/{id}")]
-    public async Task<ActionResult<DictEntryDto>> GetEntry(int id)
+    public async Task<ActionResult<DictEntryDto>> GetEntry(string id)
     {
         var entry = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
             .FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
 
         if (entry == null) return NotFound();
-        return Ok(ToDto(entry));
+        return Ok(ToDto(entry, await GetLabelsByIdAsync()));
     }
 
     [HttpPost("entries")]
@@ -77,39 +73,20 @@ public class DictionaryController : ApiControllerBase
             ExampleJp = dto.ExampleJp,
             ExampleEn = dto.ExampleEn,
             Notes = dto.Notes,
-            JlptLevel = dto.JlptLevel
+            JlptLevel = dto.JlptLevel,
+            LabelIds = dto.LabelIds ?? new List<string>()
         };
 
         _db.DictionaryEntries.Add(entry);
         await _db.SaveChangesAsync();
 
-        // Assign labels
-        if (dto.LabelIds?.Count > 0)
-        {
-            foreach (var labelId in dto.LabelIds)
-            {
-                _db.DictionaryEntryLabels.Add(new DictionaryEntryLabelEntity
-                {
-                    EntryId = entry.Id,
-                    LabelId = labelId
-                });
-            }
-            await _db.SaveChangesAsync();
-        }
-
-        // Reload with labels
-        var result = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
-            .FirstAsync(e => e.Id == entry.Id);
-
-        return Ok(ToDto(result));
+        return Ok(ToDto(entry, await GetLabelsByIdAsync()));
     }
 
     [HttpPut("entries/{id}")]
-    public async Task<ActionResult<DictEntryDto>> UpdateEntry(int id, [FromBody] DictEntryCreateDto dto)
+    public async Task<ActionResult<DictEntryDto>> UpdateEntry(string id, [FromBody] DictEntryCreateDto dto)
     {
         var entry = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels)
             .FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
 
         if (entry == null) return NotFound();
@@ -121,33 +98,16 @@ public class DictionaryController : ApiControllerBase
         entry.ExampleEn = dto.ExampleEn;
         entry.Notes = dto.Notes;
         entry.JlptLevel = dto.JlptLevel;
+        entry.LabelIds = dto.LabelIds ?? new List<string>();
         entry.LastModifiedUtc = DateTime.UtcNow;
-
-        // Update labels
-        _db.DictionaryEntryLabels.RemoveRange(entry.EntryLabels);
-        if (dto.LabelIds?.Count > 0)
-        {
-            foreach (var labelId in dto.LabelIds)
-            {
-                _db.DictionaryEntryLabels.Add(new DictionaryEntryLabelEntity
-                {
-                    EntryId = entry.Id,
-                    LabelId = labelId
-                });
-            }
-        }
 
         await _db.SaveChangesAsync();
 
-        var result = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
-            .FirstAsync(e => e.Id == entry.Id);
-
-        return Ok(ToDto(result));
+        return Ok(ToDto(entry, await GetLabelsByIdAsync()));
     }
 
     [HttpDelete("entries/{id}")]
-    public async Task<ActionResult> DeleteEntry(int id)
+    public async Task<ActionResult> DeleteEntry(string id)
     {
         var entry = await _db.DictionaryEntries
             .FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
@@ -166,15 +126,19 @@ public class DictionaryController : ApiControllerBase
     {
         var now = DateTime.UtcNow;
         var entries = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
             .Where(e => e.UserId == UserId &&
                         (e.SrsNextReviewUtc == null || e.SrsNextReviewUtc <= now))
+            .ToListAsync();
+
+        var labelsById = await GetLabelsByIdAsync();
+        var result = entries
             .OrderBy(e => e.SrsNextReviewUtc == null ? 1 : 0)   // due cards first, new cards after
             .ThenBy(e => e.SrsNextReviewUtc)
             .Take(Math.Clamp(limit, 1, 100))
-            .ToListAsync();
+            .Select(e => ToDto(e, labelsById))
+            .ToList();
 
-        return Ok(entries.Select(ToDto).ToList());
+        return Ok(result);
     }
 
     [HttpGet("srs/stats")]
@@ -200,10 +164,9 @@ public class DictionaryController : ApiControllerBase
     }
 
     [HttpPost("srs/review/{id}")]
-    public async Task<ActionResult<DictEntryDto>> ReviewEntry(int id, [FromBody] SrsReviewDto dto)
+    public async Task<ActionResult<DictEntryDto>> ReviewEntry(string id, [FromBody] SrsReviewDto dto)
     {
         var entry = await _db.DictionaryEntries
-            .Include(e => e.EntryLabels).ThenInclude(el => el.Label)
             .FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
 
         if (entry == null) return NotFound();
@@ -212,7 +175,7 @@ public class DictionaryController : ApiControllerBase
 
         SrsScheduler.ApplyReview(entry, (ReviewGrade)dto.Grade);
         await _db.SaveChangesAsync();
-        return Ok(ToDto(entry));
+        return Ok(ToDto(entry, await GetLabelsByIdAsync()));
     }
 
     // ===== AI: Generate example sentences =====
@@ -241,19 +204,23 @@ public class DictionaryController : ApiControllerBase
     [HttpGet("labels")]
     public async Task<ActionResult<List<DictLabelDto>>> GetLabels()
     {
-        var labels = await _db.DictionaryLabels
-            .Where(l => l.UserId == UserId)
+        // Materialize both collections, then count each label's usage in-memory — LabelIds
+        // replaced the old many-to-many join table, so there's no server-side Count() to run.
+        var labels = await _db.DictionaryLabels.Where(l => l.UserId == UserId).ToListAsync();
+        var entries = await _db.DictionaryEntries.Where(e => e.UserId == UserId).ToListAsync();
+
+        var result = labels
             .OrderBy(l => l.Name)
             .Select(l => new DictLabelDto
             {
                 Id = l.Id,
                 Name = l.Name,
                 Color = l.Color,
-                EntryCount = l.EntryLabels.Count
+                EntryCount = entries.Count(e => e.LabelIds.Contains(l.Id))
             })
-            .ToListAsync();
+            .ToList();
 
-        return Ok(labels);
+        return Ok(result);
     }
 
     [HttpPost("labels")]
@@ -273,7 +240,7 @@ public class DictionaryController : ApiControllerBase
     }
 
     [HttpPut("labels/{id}")]
-    public async Task<ActionResult> UpdateLabel(int id, [FromBody] DictLabelCreateDto dto)
+    public async Task<ActionResult> UpdateLabel(string id, [FromBody] DictLabelCreateDto dto)
     {
         var label = await _db.DictionaryLabels
             .FirstOrDefaultAsync(l => l.Id == id && l.UserId == UserId);
@@ -288,7 +255,7 @@ public class DictionaryController : ApiControllerBase
     }
 
     [HttpDelete("labels/{id}")]
-    public async Task<ActionResult> DeleteLabel(int id)
+    public async Task<ActionResult> DeleteLabel(string id)
     {
         var label = await _db.DictionaryLabels
             .FirstOrDefaultAsync(l => l.Id == id && l.UserId == UserId);
@@ -296,13 +263,25 @@ public class DictionaryController : ApiControllerBase
         if (label == null) return NotFound();
 
         _db.DictionaryLabels.Remove(label);
+
+        // Pull the deleted label's id out of every entry's LabelIds array — Mongo has no cascade
+        // FK support, so this has to happen explicitly.
+        var affectedEntries = await _db.DictionaryEntries
+            .Where(e => e.UserId == UserId && e.LabelIds.Contains(id))
+            .ToListAsync();
+        foreach (var entry in affectedEntries)
+            entry.LabelIds.Remove(id);
+
         await _db.SaveChangesAsync();
         return Ok();
     }
 
-    // ===== DTOs =====
+    // ===== helpers =====
 
-    private static DictEntryDto ToDto(DictionaryEntryEntity e) => new()
+    private async Task<Dictionary<string, DictionaryLabelEntity>> GetLabelsByIdAsync() =>
+        (await _db.DictionaryLabels.Where(l => l.UserId == UserId).ToListAsync()).ToDictionary(l => l.Id);
+
+    private static DictEntryDto ToDto(DictionaryEntryEntity e, Dictionary<string, DictionaryLabelEntity> labelsById) => new()
     {
         Id = e.Id,
         Japanese = e.Japanese,
@@ -318,12 +297,10 @@ public class DictionaryController : ApiControllerBase
         SrsIntervalDays = e.SrsIntervalDays,
         SrsNextReviewUtc = e.SrsNextReviewUtc,
         SrsReviewCount = e.SrsReviewCount,
-        Labels = e.EntryLabels.Select(el => new DictLabelDto
-        {
-            Id = el.Label.Id,
-            Name = el.Label.Name,
-            Color = el.Label.Color
-        }).ToList()
+        Labels = e.LabelIds
+            .Where(labelsById.ContainsKey)
+            .Select(id => new DictLabelDto { Id = labelsById[id].Id, Name = labelsById[id].Name, Color = labelsById[id].Color })
+            .ToList()
     };
 }
 
@@ -331,7 +308,7 @@ public class DictionaryController : ApiControllerBase
 
 public class DictEntryDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
     public string Japanese { get; set; } = "";
     public string? Reading { get; set; }
     public string Meaning { get; set; } = "";
@@ -372,12 +349,12 @@ public class DictEntryCreateDto
     public string? ExampleEn { get; set; }
     public string? Notes { get; set; }
     public string? JlptLevel { get; set; }
-    public List<int>? LabelIds { get; set; }
+    public List<string>? LabelIds { get; set; }
 }
 
 public class DictLabelDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Color { get; set; } = "#0078D4";
     public int EntryCount { get; set; }

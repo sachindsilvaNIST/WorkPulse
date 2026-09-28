@@ -23,15 +23,17 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly AppDbContext _db;
+    private readonly UserAccountService _accountPurge;
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
     private readonly IMemoryCache _cache;
 
-    public AuthController(UserManager<AppUser> userManager, AppDbContext db, IEmailSender emailSender, IConfiguration config, ILogger<AuthController> logger, IMemoryCache cache)
+    public AuthController(UserManager<AppUser> userManager, AppDbContext db, UserAccountService accountPurge, IEmailSender emailSender, IConfiguration config, ILogger<AuthController> logger, IMemoryCache cache)
     {
         _userManager = userManager;
         _db = db;
+        _accountPurge = accountPurge;
         _emailSender = emailSender;
         _config = config;
         _logger = logger;
@@ -324,8 +326,9 @@ public class AuthController : ControllerBase
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return BadRequest(new { error = "Incorrect password." });
 
-        // Every user-owned table cascades on AspNetUsers.Id via ON DELETE CASCADE (see
-        // AppDbContext.OnModelCreating), so this one call cleans up everything the user owns.
+        // Mongo has no cascade-delete — purge every collection this user owns first, then delete
+        // the Identity user itself.
+        await _accountPurge.PurgeAllUserDataAsync(user.Id);
         await _userManager.DeleteAsync(user);
         return Ok();
     }

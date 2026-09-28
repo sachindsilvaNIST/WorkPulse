@@ -43,7 +43,6 @@ const QUICK_ACTIONS: { label: string; description: string; icon: ElementType; co
   { label: "New Trip", description: "Start a new Business Trip", icon: Briefcase, color: "#5E5CE6", href: "/trips?new=1" },
   { label: "New Daily Report", description: "Write today's Daily Report", icon: FileText, color: "#FF375F", href: "/reports/daily?new=1" },
   { label: "New Weekly Report", description: "Write this week's report", icon: FileText, color: "#FF375F", href: "/reports/weekly?new=1" },
-  { label: "Upload Reimbursement", description: "Add a document for reimbursement", icon: Receipt, color: "#30D9C0", href: "/reimbursement?new=1" },
 ];
 
 function stripHtml(html: string): string {
@@ -233,7 +232,7 @@ export function SpotlightSearch() {
             description: `${d.tripDestination} · ${d.category}`,
             icon: Receipt,
             color: "#30D9C0",
-            action: () => router.push(`/reimbursement?q=${encodeURIComponent(d.label || d.fileName)}`),
+            action: () => router.push(`/trips?open=${d.tripReportId}`),
           }))
       : [];
 

@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
+using MongoDB.Driver.GridFS;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
 using WorkPulse.Api.Mapping;
@@ -23,13 +25,15 @@ public class ResourcesController : ApiControllerBase
     private readonly AppDbContext _db;
     private readonly GoogleDriveService _drive;
     private readonly ShareAccessService _shareAccess;
+    private readonly GridFSBucket _gridFs;
     private readonly ILogger<ResourcesController> _logger;
 
-    public ResourcesController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, ILogger<ResourcesController> logger)
+    public ResourcesController(AppDbContext db, GoogleDriveService drive, ShareAccessService shareAccess, GridFSBucket gridFs, ILogger<ResourcesController> logger)
     {
         _db = db;
         _drive = drive;
         _shareAccess = shareAccess;
+        _gridFs = gridFs;
         _logger = logger;
     }
 
@@ -44,34 +48,19 @@ public class ResourcesController : ApiControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ResourceMeta>>> GetAll()
     {
-        // Projects directly to ResourceMeta in the query (not .ToListAsync() + .Select(r =>
-        // r.ToMeta()) afterward) so the generated SQL never selects the Content column at all —
-        // fetching the full entity here would pull every uploaded file's entire binary content
-        // across the network on every single list load, which is exactly what exhausted Neon's
-        // free-tier network-transfer quota.
+        // ResourceEntity no longer carries file bytes at all (they live in GridFS, referenced by
+        // ContentGridFsId) — a plain fetch-then-map is enough, no separate projection needed to
+        // keep bytes off the wire.
         var resources = await _db.Resources
             .Where(r => r.UserId == UserId)
-            .OrderByDescending(r => r.LastModifiedUtc)
-            .Select(r => new ResourceMeta
-            {
-                Id = r.Id,
-                Type = r.Type,
-                Title = r.Title,
-                Notes = r.Notes,
-                Url = r.Url,
-                FileName = r.FileName,
-                ContentType = r.ContentType,
-                SizeBytes = r.SizeBytes,
-                DriveFileId = r.DriveFileId,
-                DriveWebViewLink = r.DriveWebViewLink,
-                Tags = r.Tags,
-                Keywords = r.Keywords,
-                CreatedUtc = r.CreatedUtc,
-                LastModifiedUtc = r.LastModifiedUtc
-            })
             .ToListAsync();
 
-        return Ok(resources);
+        var result = resources
+            .OrderByDescending(r => r.LastModifiedUtc)
+            .Select(r => r.ToMeta())
+            .ToList();
+
+        return Ok(result);
     }
 
     [HttpPost]
@@ -106,6 +95,7 @@ public class ResourcesController : ApiControllerBase
             Keywords = keywords ?? "",
         };
 
+        byte[]? fileBytes = null;
         if (type == "File")
         {
             if (file == null || file.Length == 0)
@@ -115,22 +105,25 @@ public class ResourcesController : ApiControllerBase
 
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);
-            entity.Content = stream.ToArray();
+            fileBytes = stream.ToArray();
             entity.FileName = file.FileName;
             entity.ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType;
             entity.SizeBytes = file.Length;
+
+            var gridFsId = await _gridFs.UploadFromBytesAsync(entity.FileName, fileBytes);
+            entity.ContentGridFsId = gridFsId.ToString();
         }
 
         _db.Resources.Add(entity);
         await _db.SaveChangesAsync();
 
-        // Local bytes above are the guaranteed copy (already saved) — Drive is a best-effort
+        // Local GridFS copy above is the guaranteed one (already saved) — Drive is a best-effort
         // mirror on top of that, so a Drive hiccup never blocks the upload itself.
-        if (type == "File")
+        if (type == "File" && fileBytes != null)
         {
             try
             {
-                var mirrored = await _drive.TryUploadResourceAsync(UserId, entity.FileName, entity.ContentType, entity.Content);
+                var mirrored = await _drive.TryUploadResourceAsync(UserId, entity.FileName, entity.ContentType, fileBytes);
                 if (mirrored != null)
                 {
                     entity.DriveFileId = mirrored.Value.FileId;
@@ -177,8 +170,10 @@ public class ResourcesController : ApiControllerBase
         var entity = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id && r.Type == "File");
         if (entity == null) return NotFound();
         if (entity.UserId != UserId && !await HasSharedAccessAsync(id)) return NotFound();
+        if (entity.ContentGridFsId == null) return NotFound();
 
-        return File(entity.Content, entity.ContentType, entity.FileName);
+        var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(entity.ContentGridFsId));
+        return File(bytes, entity.ContentType, entity.FileName);
     }
 
     [HttpDelete("{id}")]
@@ -189,6 +184,12 @@ public class ResourcesController : ApiControllerBase
 
         _db.Resources.Remove(entity);
         await _db.SaveChangesAsync();
+
+        if (entity.ContentGridFsId != null)
+        {
+            try { await _gridFs.DeleteAsync(ObjectId.Parse(entity.ContentGridFsId)); }
+            catch (Exception ex) { _logger.LogWarning(ex, "GridFS delete failed for resource {ResourceId}", entity.Id); }
+        }
 
         if (entity.DriveFileId != null)
         {

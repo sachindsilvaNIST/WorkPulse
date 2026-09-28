@@ -1,0 +1,150 @@
+2026-08-30T06:22:47.196300802Z       LIMIT @__p_1
+2026-08-30T06:22:47.345331028Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:22:47.345358098Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:22:47.345362478Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:22:47.345366038Z       FROM "Notifications" AS n
+2026-08-30T06:22:47.345381688Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:22:47.345386349Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:22:47.345391609Z       LIMIT @__p_1
+2026-08-30T06:22:53.146058746Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:22:53.146087736Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:22:53.146093476Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:22:53.146096996Z       FROM "Notifications" AS n
+2026-08-30T06:22:53.146112656Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:22:53.146115027Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:22:53.146117507Z       LIMIT @__p_1
+2026-08-30T06:22:53.360237694Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:22:53.360258704Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:22:53.360264014Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:22:53.360267514Z       FROM "Notifications" AS n
+2026-08-30T06:22:53.360270835Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:22:53.360273335Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:22:53.360276825Z       LIMIT @__p_1
+2026-08-30T06:22:59.370363212Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:22:59.370392492Z       Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:22:59.370398323Z       SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."DisabledFeaturesCsv", a."DisplayName", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."RefreshToken", a."RefreshTokenExpiryUtc", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+2026-08-30T06:22:59.370449773Z       FROM "AspNetUsers" AS a
+2026-08-30T06:22:59.370455073Z       WHERE a."NormalizedEmail" = @__normalizedEmail_0
+2026-08-30T06:22:59.370458984Z       LIMIT 2
+2026-08-30T06:22:59.371149566Z info: System.Net.Http.HttpClient.Default.LogicalHandler[100]
+2026-08-30T06:22:59.371163177Z       Start processing HTTP request POST https://api.resend.com/emails
+2026-08-30T06:22:59.371167877Z info: System.Net.Http.HttpClient.Default.ClientHandler[100]
+2026-08-30T06:22:59.371172217Z       Sending HTTP request POST https://api.resend.com/emails
+2026-08-30T06:22:59.538600191Z info: System.Net.Http.HttpClient.Default.ClientHandler[101]
+2026-08-30T06:22:59.538617132Z       Received HTTP response headers after 167.3526ms - 403
+2026-08-30T06:22:59.538620612Z info: System.Net.Http.HttpClient.Default.LogicalHandler[101]
+2026-08-30T06:22:59.538623702Z       End processing HTTP request after 167.506ms - 403
+2026-08-30T06:22:59.539278514Z warn: WorkPulse.Api.Controllers.AuthController[0]
+2026-08-30T06:22:59.539289814Z       Failed to send confirmation code to sachinrons123@gmail.com
+2026-08-30T06:22:59.539295024Z       System.InvalidOperationException: Resend send failed (403): {"statusCode":403,"name":"validation_error","message":"You can only send testing emails to your own email address (sachinronson16@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain."}
+2026-08-30T06:22:59.539299944Z          at WorkPulse.Api.Services.ResendEmailSender.SendAsync(String toEmail, String subject, String body) in /src/WorkPulse.Api/Services/ResendEmailSender.cs:line 50
+2026-08-30T06:22:59.539304664Z          at WorkPulse.Api.Controllers.AuthController.SendCodeAsync(String email, String code, String subject, String instructions) in /src/WorkPulse.Api/Controllers/AuthController.cs:line 342
+2026-08-30T06:23:19.631989105Z info: System.Net.Http.HttpClient.Default.LogicalHandler[100]
+2026-08-30T06:23:19.637054138Z       Start processing HTTP request POST https://api.resend.com/emails
+2026-08-30T06:23:19.637062218Z info: System.Net.Http.HttpClient.Default.ClientHandler[100]
+2026-08-30T06:23:19.637066199Z       Sending HTTP request POST https://api.resend.com/emails
+2026-08-30T06:23:19.90140523Z info: System.Net.Http.HttpClient.Default.ClientHandler[101]
+2026-08-30T06:23:19.901429711Z       Received HTTP response headers after 154.8525ms - 403
+2026-08-30T06:23:19.901432991Z info: System.Net.Http.HttpClient.Default.LogicalHandler[101]
+2026-08-30T06:23:19.901435521Z       End processing HTTP request after 155.1464ms - 403
+2026-08-30T06:23:19.901437871Z warn: WorkPulse.Api.Controllers.AuthController[0]
+2026-08-30T06:23:19.901441261Z       Failed to send confirmation code to sachinrons123@gmail.com
+2026-08-30T06:23:19.901445131Z       System.InvalidOperationException: Resend send failed (403): {"statusCode":403,"name":"validation_error","message":"You can only send testing emails to your own email address (sachinronson16@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain."}
+2026-08-30T06:23:19.901448651Z          at WorkPulse.Api.Services.ResendEmailSender.SendAsync(String toEmail, String subject, String body) in /src/WorkPulse.Api/Services/ResendEmailSender.cs:line 50
+2026-08-30T06:23:19.901452311Z          at WorkPulse.Api.Controllers.AuthController.SendCodeAsync(String email, String code, String subject, String instructions) in /src/WorkPulse.Api/Controllers/AuthController.cs:line 342
+2026-08-30T06:23:47.36286613Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:23:47.36289684Z       Executed DbCommand (2ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:23:47.36290747Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:23:47.362913791Z       FROM "Notifications" AS n
+2026-08-30T06:23:47.362921131Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:23:47.362925841Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:23:47.362931191Z       LIMIT @__p_1
+2026-08-30T06:23:47.581610048Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:23:47.581633318Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:23:47.581637768Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:23:47.581641039Z       FROM "Notifications" AS n
+2026-08-30T06:23:47.581644219Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:23:47.581647048Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:23:47.581650259Z       LIMIT @__p_1
+2026-08-30T06:23:53.063811561Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:23:53.063841651Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:23:53.063849511Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:23:53.063854742Z       FROM "Notifications" AS n
+2026-08-30T06:23:53.063860292Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:23:53.063866232Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:23:53.063871522Z       LIMIT @__p_1
+2026-08-30T06:23:53.21166698Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:23:53.211691351Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:23:53.211696581Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:23:53.211701491Z       FROM "Notifications" AS n
+2026-08-30T06:23:53.211706701Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:23:53.211725961Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:23:53.211730021Z       LIMIT @__p_1
+2026-08-30T06:24:15.323270516Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:15.323292537Z       Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:15.323299437Z       SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."DisabledFeaturesCsv", a."DisplayName", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."RefreshToken", a."RefreshTokenExpiryUtc", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+2026-08-30T06:24:15.323304877Z       FROM "AspNetUsers" AS a
+2026-08-30T06:24:15.32618465Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:15.3261992Z       Executed DbCommand (3ms) [Parameters=[@__userId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:15.32620488Z       SELECT a0."Name"
+2026-08-30T06:24:15.326210341Z       FROM "AspNetUserRoles" AS a
+2026-08-30T06:24:15.326214381Z       INNER JOIN "AspNetRoles" AS a0 ON a."RoleId" = a0."Id"
+2026-08-30T06:24:15.326218771Z       WHERE a."UserId" = @__userId_0
+2026-08-30T06:24:15.35708172Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:15.357107731Z       Executed DbCommand (2ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:15.357113631Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:24:15.357118131Z       FROM "Notifications" AS n
+2026-08-30T06:24:15.357122971Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:24:15.357127091Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:24:15.357131861Z       LIMIT @__p_1
+2026-08-30T06:24:15.47618177Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:15.47619872Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:15.47620485Z       SELECT u."Id", u."AccentColor", u."DateFormat", u."DefaultLandingPage", u."DefaultTitle", u."FontSizePreset", u."IdleTimeoutMinutes", u."LastOpenedMonth", u."NotificationChannel", u."NotificationsEnabled", u."OvertimeBreakDeductionMinutes", u."StandardLoginTime", u."StandardLogoutTime", u."ThemeVariant", u."UserId", u."WeekStartDay"
+2026-08-30T06:24:15.47621006Z       FROM "UserSettings" AS u
+2026-08-30T06:24:15.47621527Z       WHERE u."UserId" = @__UserId_0
+2026-08-30T06:24:15.47621966Z       LIMIT 1
+2026-08-30T06:24:15.498389889Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:15.49841002Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:15.4984162Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:24:15.49842139Z       FROM "Notifications" AS n
+2026-08-30T06:24:15.49842625Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:24:15.49843078Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:24:15.49843587Z       LIMIT @__p_1
+2026-08-30T06:24:47.38932743Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:47.389363161Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:47.389369501Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:24:47.389396621Z       FROM "Notifications" AS n
+2026-08-30T06:24:47.389400142Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:24:47.389403122Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:24:47.389406742Z       LIMIT @__p_1
+2026-08-30T06:24:47.631838391Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:47.631860982Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?', @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:47.631865222Z       SELECT n."Id", n."CreatedUtc", n."DedupeKey", n."Href", n."Message", n."ReadUtc", n."Title", n."Type", n."UserId"
+2026-08-30T06:24:47.631868612Z       FROM "Notifications" AS n
+2026-08-30T06:24:47.631872332Z       WHERE n."UserId" = @__UserId_0
+2026-08-30T06:24:47.631875402Z       ORDER BY n."CreatedUtc" DESC
+2026-08-30T06:24:47.631878942Z       LIMIT @__p_1
+2026-08-30T06:24:48.35858017Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:48.35861116Z       Executed DbCommand (2ms) [Parameters=[@__UserId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:48.35862688Z       SELECT q."Id", q."Category", q."Keywords", q."Label", q."LastModifiedUtc", q."SortOrder", q."Url", q."UserId"
+2026-08-30T06:24:48.3586322Z       FROM "QuickLinks" AS q
+2026-08-30T06:24:48.358635561Z       WHERE q."UserId" = @__UserId_0
+2026-08-30T06:24:48.358638481Z       ORDER BY q."SortOrder", q."Label"
+2026-08-30T06:24:48.361261649Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:48.361279379Z       Executed DbCommand (1ms) [Parameters=[@__UserId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:48.361283609Z       SELECT r."Id", r."Content", r."ContentType", r."CreatedUtc", r."DriveFileId", r."DriveWebViewLink", r."FileName", r."Keywords", r."LastModifiedUtc", r."Notes", r."SizeBytes", r."Tags", r."Title", r."Type", r."Url", r."UserId"
+2026-08-30T06:24:48.36128682Z       FROM "Resources" AS r
+2026-08-30T06:24:48.361290249Z       WHERE r."UserId" = @__UserId_0
+2026-08-30T06:24:48.36129363Z       ORDER BY r."LastModifiedUtc" DESC
+2026-08-30T06:24:48.58156786Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:48.58159807Z       Executed DbCommand (2ms) [Parameters=[@__UserId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:48.58160212Z       SELECT q."Id", q."Category", q."Keywords", q."Label", q."LastModifiedUtc", q."SortOrder", q."Url", q."UserId"
+2026-08-30T06:24:48.581606191Z       FROM "QuickLinks" AS q
+2026-08-30T06:24:48.581610091Z       WHERE q."UserId" = @__UserId_0
+2026-08-30T06:24:48.581613471Z       ORDER BY q."SortOrder", q."Label"
+2026-08-30T06:24:49.294443942Z info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+2026-08-30T06:24:49.294470523Z       Executed DbCommand (2ms) [Parameters=[@__UserId_0='?'], CommandType='Text', CommandTimeout='30']
+2026-08-30T06:24:49.294475943Z       SELECT q."Id", q."Category", q."Keywords", q."Label", q."LastModifiedUtc", q."SortOrder", q."Url", q."UserId"
+2026-08-30T06:24:49.294480313Z       FROM "QuickLinks" AS q
+2026-08-30T06:24:49.294485203Z       WHERE q."UserId" = @__UserId_0
+2026-08-30T06:24:49.294488863Z       ORDER BY q."SortOrder", q."Label"

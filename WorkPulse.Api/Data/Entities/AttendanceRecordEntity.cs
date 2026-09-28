@@ -1,9 +1,10 @@
 namespace WorkPulse.Api.Data.Entities;
 
+// Embedded inside AttendanceMonthEntity.Records — no longer a top-level collection, so no
+// MonthId/back-navigation is needed; the parent relationship is now implicit in containment.
 public class AttendanceRecordEntity
 {
-    public int Id { get; set; }
-    public int MonthId { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public DateOnly Date { get; set; }
     public string DayType { get; set; } = "WorkDay";
     public string? HolidayName { get; set; }
@@ -17,6 +18,4 @@ public class AttendanceRecordEntity
     public int OvertimeMinutes { get; set; }
     public bool IsOvertime { get; set; }
     public bool IsOvertimeDecided { get; set; }
-
-    public AttendanceMonthEntity Month { get; set; } = null!;
 }

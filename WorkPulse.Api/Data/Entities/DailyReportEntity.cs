@@ -8,6 +8,4 @@ public class DailyReportEntity
     public string Title { get; set; } = "";
     public string Body { get; set; } = "";
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
-
-    public AppUser User { get; set; } = null!;
 }

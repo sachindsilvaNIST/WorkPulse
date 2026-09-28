@@ -123,6 +123,8 @@ public class GmailController : ControllerBase
     }
 
     // ===== Labels (Stage 2: browse, search, CRUD) =====
+    // Labels are embedded inside GmailConnectionEntity.Labels now — no separate DbSet/query,
+    // just mutate the list on the loaded connection and save.
 
     private static GmailLabelDto ToDto(GmailLabelEntity e) => new(e.Id, e.Name, e.Type, e.Color);
 
@@ -138,13 +140,12 @@ public class GmailController : ControllerBase
         if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
 
         var live = await _gmail.ListLabelsAsync(conn.AccessToken!);
-        var existing = await _db.GmailLabels.Where(l => l.ConnectionId == conn.Id).ToListAsync();
 
         var liveIds = live.Select(l => l.Id).ToHashSet();
-        foreach (var stale in existing.Where(e => !liveIds.Contains(e.GmailLabelId)))
-            _db.GmailLabels.Remove(stale);
+        foreach (var stale in conn.Labels.Where(e => !liveIds.Contains(e.GmailLabelId)).ToList())
+            conn.Labels.Remove(stale);
 
-        var byGmailId = existing.ToDictionary(e => e.GmailLabelId);
+        var byGmailId = conn.Labels.ToDictionary(e => e.GmailLabelId);
         foreach (var l in live)
         {
             if (byGmailId.TryGetValue(l.Id, out var entity))
@@ -156,9 +157,8 @@ public class GmailController : ControllerBase
             }
             else
             {
-                _db.GmailLabels.Add(new GmailLabelEntity
+                conn.Labels.Add(new GmailLabelEntity
                 {
-                    ConnectionId = conn.Id,
                     GmailLabelId = l.Id,
                     Name = l.Name,
                     Type = l.Type,
@@ -168,8 +168,7 @@ public class GmailController : ControllerBase
         }
         await _db.SaveChangesAsync();
 
-        var result = await _db.GmailLabels.Where(l => l.ConnectionId == conn.Id).OrderBy(l => l.Name).ToListAsync();
-        return Ok(result.Select(ToDto).ToList());
+        return Ok(conn.Labels.OrderBy(l => l.Name).Select(ToDto).ToList());
     }
 
     [HttpPost("labels")]
@@ -194,19 +193,18 @@ public class GmailController : ControllerBase
 
         var entity = new GmailLabelEntity
         {
-            ConnectionId = conn.Id,
             GmailLabelId = created.Id,
             Name = created.Name,
             Type = created.Type,
         };
-        _db.GmailLabels.Add(entity);
+        conn.Labels.Add(entity);
         await _db.SaveChangesAsync();
         return Ok(ToDto(entity));
     }
 
     [HttpPut("labels/{id}")]
     [Authorize]
-    public async Task<ActionResult<GmailLabelDto>> RenameLabel(int id, [FromBody] GmailLabelRequest request)
+    public async Task<ActionResult<GmailLabelDto>> RenameLabel(string id, [FromBody] GmailLabelRequest request)
     {
         var name = (request.Name ?? "").Trim();
         if (name.Length == 0) return BadRequest(new { error = "Label name is required." });
@@ -214,7 +212,7 @@ public class GmailController : ControllerBase
         var conn = await _gmail.GetValidConnectionAsync(UserId);
         if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
 
-        var entity = await _db.GmailLabels.FirstOrDefaultAsync(l => l.Id == id && l.ConnectionId == conn.Id);
+        var entity = conn.Labels.FirstOrDefault(l => l.Id == id);
         if (entity == null) return NotFound();
         if (entity.Type != "user")
             return BadRequest(new { error = "System labels can't be renamed." });
@@ -237,12 +235,12 @@ public class GmailController : ControllerBase
 
     [HttpDelete("labels/{id}")]
     [Authorize]
-    public async Task<ActionResult> DeleteLabel(int id)
+    public async Task<ActionResult> DeleteLabel(string id)
     {
         var conn = await _gmail.GetValidConnectionAsync(UserId);
         if (conn == null) return NotFound(new { error = "Gmail isn't connected." });
 
-        var entity = await _db.GmailLabels.FirstOrDefaultAsync(l => l.Id == id && l.ConnectionId == conn.Id);
+        var entity = conn.Labels.FirstOrDefault(l => l.Id == id);
         if (entity == null) return NotFound();
         if (entity.Type != "user")
             return BadRequest(new { error = "System labels can't be deleted." });
@@ -261,13 +259,13 @@ public class GmailController : ControllerBase
             return StatusCode(ex.StatusCode, new { error = ex.Message });
         }
 
-        _db.GmailLabels.Remove(entity);
+        conn.Labels.Remove(entity);
         await _db.SaveChangesAsync();
         return NoContent();
     }
 }
 
-public record GmailLabelDto(int Id, string Name, string Type, string? Color);
+public record GmailLabelDto(string Id, string Name, string Type, string? Color);
 
 public class GmailLabelRequest
 {

@@ -6,7 +6,7 @@ namespace WorkPulse.Api.Data.Entities;
 /// track the Gmail push-notification subscription used for real-time label sync.</summary>
 public class GmailConnectionEntity
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public string RefreshToken { get; set; } = "";
     public string? AccessToken { get; set; }
@@ -20,5 +20,5 @@ public class GmailConnectionEntity
     public DateTime? WatchExpiryUtc { get; set; }
     public DateTime ConnectedUtc { get; set; } = DateTime.UtcNow;
 
-    public AppUser User { get; set; } = null!;
+    public ICollection<GmailLabelEntity> Labels { get; set; } = new List<GmailLabelEntity>();
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPulse.Api.Data;
 using WorkPulse.Api.Data.Entities;
+using WorkPulse.Api.Services;
 
 namespace WorkPulse.Api.Controllers;
 
@@ -14,11 +15,13 @@ public class AdminController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly AppDbContext _db;
+    private readonly UserAccountService _accountPurge;
 
-    public AdminController(UserManager<AppUser> userManager, AppDbContext db)
+    public AdminController(UserManager<AppUser> userManager, AppDbContext db, UserAccountService accountPurge)
     {
         _userManager = userManager;
         _db = db;
+        _accountPurge = accountPurge;
     }
 
     [HttpGet("users")]
@@ -146,14 +149,8 @@ public class AdminController : ControllerBase
         if (user.Id == currentUserId)
             return BadRequest(new { error = "Cannot delete your own account" });
 
-        // Delete user's data first
-        var months = await _db.AttendanceMonths.Where(m => m.UserId == id).ToListAsync();
-        _db.AttendanceMonths.RemoveRange(months);
-        var contacts = await _db.Contacts.Where(c => c.UserId == id).ToListAsync();
-        _db.Contacts.RemoveRange(contacts);
-        var settings = await _db.UserSettings.Where(s => s.UserId == id).ToListAsync();
-        _db.UserSettings.RemoveRange(settings);
-        await _db.SaveChangesAsync();
+        // Mongo has no cascade-delete — purge every collection this user owns first.
+        await _accountPurge.PurgeAllUserDataAsync(id);
 
         await _userManager.DeleteAsync(user);
         return Ok();

@@ -1,18 +1,20 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.EntityFrameworkCore.Extensions;
 using WorkPulse.Api.Data.Entities;
 
 namespace WorkPulse.Api.Data;
 
-public class AppDbContext : IdentityDbContext<AppUser>
+// Plain DbContext, not IdentityDbContext<AppUser> — Identity now lives in its own Mongo
+// collection via AspNetCore.Identity.Mongo (see AppUser.cs/Program.cs), entirely separate from
+// this context's model, since the Mongo EF Core provider doesn't support the Select-projection
+// LINQ patterns the stock Identity stores rely on internally.
+public class AppDbContext : DbContext
 {
     public DbSet<AttendanceMonthEntity> AttendanceMonths => Set<AttendanceMonthEntity>();
-    public DbSet<AttendanceRecordEntity> AttendanceRecords => Set<AttendanceRecordEntity>();
     public DbSet<ContactEntity> Contacts => Set<ContactEntity>();
     public DbSet<UserSettingsEntity> UserSettings => Set<UserSettingsEntity>();
     public DbSet<DictionaryEntryEntity> DictionaryEntries => Set<DictionaryEntryEntity>();
     public DbSet<DictionaryLabelEntity> DictionaryLabels => Set<DictionaryLabelEntity>();
-    public DbSet<DictionaryEntryLabelEntity> DictionaryEntryLabels => Set<DictionaryEntryLabelEntity>();
     public DbSet<QuickLinkEntity> QuickLinks => Set<QuickLinkEntity>();
     public DbSet<DailyReportEntity> DailyReports => Set<DailyReportEntity>();
     public DbSet<WeeklyReportEntity> WeeklyReports => Set<WeeklyReportEntity>();
@@ -22,11 +24,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<ReimbursementCategoryEntity> ReimbursementCategories => Set<ReimbursementCategoryEntity>();
     public DbSet<GoogleDriveConnectionEntity> GoogleDriveConnections => Set<GoogleDriveConnectionEntity>();
     public DbSet<GmailConnectionEntity> GmailConnections => Set<GmailConnectionEntity>();
-    public DbSet<GmailLabelEntity> GmailLabels => Set<GmailLabelEntity>();
     public DbSet<ResourceEntity> Resources => Set<ResourceEntity>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<ShareEntity> Shares => Set<ShareEntity>();
-    public DbSet<ShareGrantEntity> ShareGrants => Set<ShareGrantEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -34,242 +34,132 @@ public class AppDbContext : IdentityDbContext<AppUser>
     {
         base.OnModelCreating(builder);
 
-        // AttendanceMonth
+        // AttendanceMonth — Records embedded (wholesale-replaced together on every save, same as
+        // the app's own AttendanceController.SaveMonth pattern already assumed).
         builder.Entity<AttendanceMonthEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("attendance_months");
             e.HasIndex(x => new { x.UserId, x.Year, x.Month }).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany(u => u.AttendanceMonths)
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            e.OwnsMany(x => x.Records, r => r.HasElementName("records"));
         });
 
-        // AttendanceRecord
-        builder.Entity<AttendanceRecordEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.MonthId, x.Date }).IsUnique();
-            e.HasOne(x => x.Month)
-                .WithMany(m => m.Records)
-                .HasForeignKey(x => x.MonthId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Contact
         builder.Entity<ContactEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("contacts");
             e.HasIndex(x => x.UserId);
-            e.HasOne(x => x.User)
-                .WithMany(u => u.Contacts)
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // UserSettings
         builder.Entity<UserSettingsEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("user_settings");
             e.HasIndex(x => x.UserId).IsUnique();
-            e.HasOne(x => x.User)
-                .WithOne(u => u.Settings)
-                .HasForeignKey<UserSettingsEntity>(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // UserSession
-        builder.Entity<UserSessionEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.UserId);
-            e.HasIndex(x => x.RefreshToken).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ReimbursementCategory
-        builder.Entity<ReimbursementCategoryEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.UserId, x.Name }).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // GoogleDriveConnection
-        builder.Entity<GoogleDriveConnectionEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.UserId).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Resource
-        builder.Entity<ResourceEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.UserId);
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // GmailConnection
-        builder.Entity<GmailConnectionEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.UserId).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // GmailLabel
-        builder.Entity<GmailLabelEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.ConnectionId, x.GmailLabelId }).IsUnique();
-            e.HasOne(x => x.Connection)
-                .WithMany()
-                .HasForeignKey(x => x.ConnectionId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // DictionaryEntry
+        // DictionaryEntry — LabelIds replaces the old many-to-many join table (see LabelIds'
+        // own doc comment on DictionaryEntryEntity).
         builder.Entity<DictionaryEntryEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("dictionary_entries");
             e.HasIndex(x => x.UserId);
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // DictionaryLabel
         builder.Entity<DictionaryLabelEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("dictionary_labels");
             e.HasIndex(x => new { x.UserId, x.Name }).IsUnique();
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // DictionaryEntryLabel (many-to-many join)
-        builder.Entity<DictionaryEntryLabelEntity>(e =>
-        {
-            e.HasKey(x => new { x.EntryId, x.LabelId });
-            e.HasOne(x => x.Entry)
-                .WithMany(entry => entry.EntryLabels)
-                .HasForeignKey(x => x.EntryId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Label)
-                .WithMany(label => label.EntryLabels)
-                .HasForeignKey(x => x.LabelId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // QuickLink
         builder.Entity<QuickLinkEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("quick_links");
             e.HasIndex(x => x.UserId);
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // DailyReport
         builder.Entity<DailyReportEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("daily_reports");
             e.HasIndex(x => new { x.UserId, x.ReportDate });
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // WeeklyReport
         builder.Entity<WeeklyReportEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("weekly_reports");
             e.HasIndex(x => new { x.UserId, x.WeekStartDate });
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // TripReport
+        // TripReport — Segments/BudgetLines/Settlement (and Settlement's own
+        // TransportationLines/OtherLines, nested one level further) are all embedded; Documents
+        // stays a separate top-level collection (see TripReportEntity's doc comment for why).
         builder.Entity<TripReportEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("trip_reports");
             e.HasIndex(x => new { x.UserId, x.StartDate });
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            e.OwnsMany(x => x.Segments, s => s.HasElementName("segments"));
+            e.OwnsMany(x => x.BudgetLines, b => b.HasElementName("budgetLines"));
+            e.OwnsOne(x => x.Settlement, s =>
+            {
+                s.HasElementName("settlement");
+                s.OwnsMany(x => x.TransportationLines, t => t.HasElementName("transportationLines"));
+                s.OwnsMany(x => x.OtherLines, o => o.HasElementName("otherLines"));
+            });
         });
 
-        // TripDocument
         builder.Entity<TripDocumentEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("trip_documents");
             e.HasIndex(x => x.TripReportId);
             e.HasIndex(x => x.UserId);
-            e.HasOne(x => x.TripReport)
-                .WithMany(t => t.Documents)
-                .HasForeignKey(x => x.TripReportId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Notification
+        builder.Entity<UserSessionEntity>(e =>
+        {
+            e.ToCollection("user_sessions");
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.RefreshToken).IsUnique();
+        });
+
+        builder.Entity<ReimbursementCategoryEntity>(e =>
+        {
+            e.ToCollection("reimbursement_categories");
+            e.HasIndex(x => new { x.UserId, x.Name }).IsUnique();
+        });
+
+        builder.Entity<GoogleDriveConnectionEntity>(e =>
+        {
+            e.ToCollection("google_drive_connections");
+            e.HasIndex(x => x.UserId).IsUnique();
+        });
+
+        // GmailConnection — Labels embedded (1:1 connection per user, full-refresh sync pattern).
+        builder.Entity<GmailConnectionEntity>(e =>
+        {
+            e.ToCollection("gmail_connections");
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.OwnsMany(x => x.Labels, l => l.HasElementName("labels"));
+        });
+
+        builder.Entity<ResourceEntity>(e =>
+        {
+            e.ToCollection("resources");
+            e.HasIndex(x => x.UserId);
+        });
+
         builder.Entity<NotificationEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("notifications");
             e.HasIndex(x => new { x.UserId, x.DedupeKey }).IsUnique();
             e.HasIndex(x => new { x.UserId, x.CreatedUtc });
-            e.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Share
+        // Share — Grants embedded (wholesale-replaced together, same as SharesController's save
+        // pattern already assumed). ResourceType/ResourceId stays a loose string pointer, same as
+        // today — Mongo has no FK support either, so nothing is lost.
         builder.Entity<ShareEntity>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToCollection("shares");
             e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.OwnerUserId }).IsUnique();
             e.HasIndex(x => x.PublicToken).IsUnique();
-            e.HasOne(x => x.Owner)
-                .WithMany()
-                .HasForeignKey(x => x.OwnerUserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ShareGrant
-        builder.Entity<ShareGrantEntity>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Email);
-            e.HasOne(x => x.Share)
-                .WithMany(s => s.Grants)
-                .HasForeignKey(x => x.ShareId)
-                .OnDelete(DeleteBehavior.Cascade);
+            e.OwnsMany(x => x.Grants, g => g.HasElementName("grants"));
         });
     }
 }

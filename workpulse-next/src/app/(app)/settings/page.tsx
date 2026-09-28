@@ -438,7 +438,7 @@ export default function SettingsPage() {
       .finally(() => setSessionsLoading(false));
   }, []);
 
-  async function revokeSession(id: number) {
+  async function revokeSession(id: string) {
     await sessionsApi.revoke(id);
     setSessions((prev) => prev.filter((s) => s.id !== id));
   }
