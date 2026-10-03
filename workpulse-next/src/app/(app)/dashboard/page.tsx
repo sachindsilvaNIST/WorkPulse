@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bar,
@@ -15,7 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarClock, ChevronDown, Clock, Download, Pencil, Plus, Settings2, Trash2, TrendingUp, Umbrella } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
@@ -24,9 +25,15 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
-import { attendanceApi, settingsApi, downloadBlob } from "@/lib/api/client";
+import { GlassPanel } from "@/components/ui/glass-panel";
+import { IconButton } from "@/components/ui/icon-button";
+import { ToolbarCapsule } from "@/components/ui/toolbar-capsule";
+import { StatTile } from "@/components/ui/stat-tile";
+import { ProgressRing } from "@/components/ui/progress";
+import { DataTable, DataTd, DataTh, DataTr } from "@/components/ui/table";
+import { attendanceApi, settingsApi, tripReportsApi, downloadBlob } from "@/lib/api/client";
 import { formatDate } from "@/lib/date-format";
-import type { AppSettings, AttendanceRecord, MonthlyData, YearMonthDto } from "@/lib/api/types";
+import type { AppSettings, AttendanceRecord, MonthlyData, TripReport, YearMonthDto } from "@/lib/api/types";
 import { DAY_TYPE_COLORS, LEAVE_DAY_TYPES, TIME_TRACKED_DAY_TYPES, dayTypeLabel } from "@/lib/attendance-day-types";
 import {
   currentSettlementPeriodKey,
@@ -53,28 +60,24 @@ function formatShortDate(iso: string): string {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-3">
-        <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
-        >
-          <Icon className="size-5" strokeWidth={2} />
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-semibold tracking-tight">{value}</p>
-        </div>
-      </div>
-    </Card>
-  );
+function toMinutes(time?: string | null): number | null {
+  if (!time) return null;
+  const [h, m] = time.slice(0, 5).split(":").map(Number);
+  return h * 60 + m;
 }
 
-function overtimeFlag(r: AttendanceRecord): string {
-  if (r.dayType !== "WorkDay" || !r.isOvertimeDecided) return "";
-  return r.isOvertime ? "YES" : "NO";
+function formatHm(totalMinutes: number): string {
+  const abs = Math.abs(Math.round(totalMinutes));
+  return `${Math.floor(abs / 60)}h ${String(abs % 60).padStart(2, "0")}m`;
+}
+
+function formatClock(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  return `${String(h).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}`;
+}
+
+function isoDateToday(): string {
+  return new Date().toLocaleDateString("en-CA");
 }
 
 export default function DashboardPage() {
@@ -398,298 +401,390 @@ export default function DashboardPage() {
     persistCustomPeriod(null, null);
   }
 
+  const [trips, setTrips] = useState<TripReport[]>([]);
+  useEffect(() => {
+    tripReportsApi.getAll().then(setTrips).catch(() => {});
+  }, []);
+
+  const todayIso = isoDateToday();
+  const nowDate = new Date();
+  const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
+  const todayRecord = data?.records.find((r) => r.date === todayIso);
+  const standardLogin = toMinutes(appSettings?.standardLoginTime) ?? 8 * 60 + 25;
+  const standardLogout = toMinutes(appSettings?.standardLogoutTime) ?? 17 * 60 + 30;
+  const standardMinutes = Math.max(1, standardLogout - standardLogin);
+  const todayLogin = toMinutes(todayRecord?.loginTime);
+  const todayLogout = toMinutes(todayRecord?.logoutTime);
+  const workedMinutes =
+    todayLogin == null
+      ? 0
+      : todayLogout != null
+        ? Math.max(0, todayLogout - todayLogin)
+        : Math.max(0, nowMinutes - todayLogin);
+  const todayState: "none" | "running" | "done" =
+    todayLogin == null ? "none" : todayLogout != null ? "done" : "running";
+  const endReference = todayLogout ?? nowMinutes;
+  const deltaToStandardEnd = standardLogout - endReference;
+
+  const averageClockIn = useMemo(() => {
+    if (!data) return null;
+    const logins = data.records
+      .filter((r) => r.dayType === "WorkDay" && r.loginTime)
+      .map((r) => toMinutes(r.loginTime) as number);
+    if (logins.length === 0) return null;
+    return Math.round(logins.reduce((a, b) => a + b, 0) / logins.length);
+  }, [data]);
+
+  const holidayCount = useMemo(() => (data ? data.records.filter((r) => !!r.holidayName).length : 0), [data]);
+
+  const nextTrip = useMemo(() => {
+    return [...trips]
+      .filter((t) => t.startDate >= todayIso)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
+  }, [trips, todayIso]);
+
+  const todayLabel = nowDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  const selectedIndex = selected ? settlementOptions.findIndex((o) => o.year === selected.year && o.month === selected.month) : -1;
+  const olderOption = selectedIndex >= 0 ? settlementOptions[selectedIndex + 1] : undefined;
+  const newerOption = selectedIndex > 0 ? settlementOptions[selectedIndex - 1] : undefined;
+
+  function statusFor(r: AttendanceRecord): { variant: "success" | "warning" | "neutral" | "info"; label: string; dot?: boolean } {
+    if (r.date === todayIso && r.loginTime && !r.logoutTime) return { variant: "info", label: "In progress", dot: true };
+    if (r.isOvertime) return { variant: "warning", label: "Overtime" };
+    if (r.holidayName) return { variant: "neutral", label: r.holidayName };
+    if (r.dayType !== "WorkDay") return { variant: "neutral", label: dayTypeLabel(r.dayType) };
+    if (r.loginTime) return { variant: "success", label: "On time" };
+    return { variant: "neutral", label: dayTypeLabel(r.dayType) };
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       <PageToolbar
-        title="Attendance Dashboard"
+        title="Attendance"
         description={
           <span className="flex flex-wrap items-center gap-2">
             {period
               ? `${period.label} Settlement · ${formatShortDate(period.periodStart)} – ${formatShortDate(period.periodEnd)}, ${period.year}`
               : "Track login, logout, overtime and monthly trends"}
             {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
-              <Badge variant="secondary" className="text-[10px]">Custom period</Badge>
+              <Badge variant="neutral">Custom period</Badge>
             )}
           </span>
         }
       >
-        <div className="flex flex-wrap items-center gap-2">
-          {settlementOptions.length > 0 && selected && (
-            <div className="relative">
-              <select
-                className="h-9 appearance-none rounded-full border border-input bg-background/60 py-2 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
-                value={`${selected.year}-${selected.month}`}
-                onChange={(e) => {
-                  const [y, m] = e.target.value.split("-").map(Number);
-                  setSelected({ year: y, month: m });
-                }}
-              >
-                {settlementOptions.map((opt) => (
-                  <option key={`${opt.year}-${opt.month}`} value={`${opt.year}-${opt.month}`}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          )}
-          {selected && (
-            <div className="relative" ref={customizeRef}>
-              <Button variant="outline" size="sm" onClick={() => (customizeOpen ? setCustomizeOpen(false) : openCustomizePeriod())}>
-                <Settings2 className="size-3.5" /> Customize period
-              </Button>
-              <AnimatePresence>
-                {customizeOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    className="glass-panel absolute right-0 top-full z-20 mt-2 w-72 p-3"
-                  >
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Settlement period for {period?.label}
-                    </p>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Overrides the default 21st–20th (weekend-adjusted) window with exact dates — use this if the
-                      standard calculation doesn&apos;t match what actually got settled.
-                    </p>
-                    <div className="mb-3 flex flex-col gap-2">
-                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                        Start date
-                        <Input
-                          type="date"
-                          value={customStartInput}
-                          onChange={(e) => setCustomStartInput(e.target.value)}
-                          className="h-8 text-xs"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                        End date
-                        <Input
-                          type="date"
-                          value={customEndInput}
-                          onChange={(e) => setCustomEndInput(e.target.value)}
-                          className="h-8 text-xs"
-                        />
-                      </label>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
-                        <Button size="sm" variant="outline" className="flex-1" onClick={handleResetCustomPeriod} disabled={savingCustomPeriod}>
-                          Reset to default
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={handleSaveCustomPeriod}
-                        disabled={!customStartInput || !customEndInput || savingCustomPeriod}
-                      >
-                        {savingCustomPeriod ? "Saving…" : "Save"}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-          <div className="relative" ref={exportRef}>
-            <Button variant="outline" size="sm" onClick={() => setExportOpen((v) => !v)}>
-              <Download className="size-3.5" /> Export
+        {selected && (
+          <ToolbarCapsule aria-label="Settlement period">
+            <IconButton aria-label="Previous settlement period" disabled={!olderOption} onClick={() => olderOption && setSelected({ year: olderOption.year, month: olderOption.month })}>
+              <ChevronLeft />
+            </IconButton>
+            <span className="min-w-[7.5rem] text-center text-sm font-semibold tabular-nums" aria-live="polite">
+              {period?.label ?? ""}
+            </span>
+            <IconButton aria-label="Next settlement period" disabled={!newerOption} onClick={() => newerOption && setSelected({ year: newerOption.year, month: newerOption.month })}>
+              <ChevronRight />
+            </IconButton>
+          </ToolbarCapsule>
+        )}
+
+        {selected && (
+          <div className="relative" ref={customizeRef}>
+            <Button variant="glass" size="sm" onClick={() => (customizeOpen ? setCustomizeOpen(false) : openCustomizePeriod())}>
+              <Settings2 className="size-4" /> Customize period
             </Button>
             <AnimatePresence>
-              {exportOpen && (
+              {customizeOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -6, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="glass-panel absolute right-0 top-full z-20 mt-2 w-72 p-3"
+                  className="glass absolute right-0 top-full z-20 mt-2 w-72 rounded-inner p-4"
                 >
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select months</p>
-                  <div className="mb-3 flex max-h-52 flex-col gap-0.5 overflow-y-auto">
-                    {exportableMonths.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">No months yet — add one below.</p>}
-                    {exportableMonths.map((m) => {
-                      const key = `${m.year}-${m.month}`;
-                      return (
-                        <label
-                          key={key}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-foreground/5"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={exportSelected.has(key)}
-                            onChange={() => toggleExportMonth(key)}
-                            className="size-3.5 cursor-pointer"
-                          />
-                          {m.label}
-                        </label>
-                      );
-                    })}
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">Settlement period for {period?.label}</p>
+                  <p className="mb-3 text-xs text-text-secondary">
+                    Overrides the default 21st–20th (weekend-adjusted) window with exact dates — use this if the standard calculation doesn&apos;t match what actually got settled.
+                  </p>
+                  <div className="mb-3 flex flex-col gap-2">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                      Start date
+                      <Input type="date" value={customStartInput} onChange={(e) => setCustomStartInput(e.target.value)} className="h-9 text-xs" />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                      End date
+                      <Input type="date" value={customEndInput} onChange={(e) => setCustomEndInput(e.target.value)} className="h-9 text-xs" />
+                    </label>
                   </div>
-                  <div className="mb-3 flex gap-1.5">
-                    <Input
-                      type="month"
-                      value={addMonthValue}
-                      onChange={(e) => setAddMonthValue(e.target.value)}
-                      className="h-8 flex-1 text-xs"
-                    />
-                    <Button size="sm" variant="outline" onClick={handleAddExportMonth} disabled={!addMonthValue}>
-                      Add
+                  <div className="flex gap-1.5">
+                    {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
+                      <Button size="sm" variant="outline" className="flex-1" onClick={handleResetCustomPeriod} disabled={savingCustomPeriod}>
+                        Reset to default
+                      </Button>
+                    )}
+                    <Button size="sm" className="flex-1" onClick={handleSaveCustomPeriod} disabled={!customStartInput || !customEndInput || savingCustomPeriod}>
+                      {savingCustomPeriod ? "Saving…" : "Save"}
                     </Button>
                   </div>
-                  <div className="mb-3 flex gap-1">
-                    <Button
-                      variant={exportFormat === "xlsx" ? "default" : "outline"}
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setExportFormat("xlsx")}
-                    >
-                      XLSX
-                    </Button>
-                    <Button
-                      variant={exportFormat === "html" ? "default" : "outline"}
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setExportFormat("html")}
-                    >
-                      HTML
-                    </Button>
-                  </div>
-                  <Button size="sm" className="w-full" onClick={handleExport} disabled={exportSelected.size === 0 || exporting}>
-                    {exporting ? "Exporting…" : exportSelected.size > 0 ? `Export ${exportSelected.size} month${exportSelected.size === 1 ? "" : "s"}` : "Export"}
-                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-          <Button
-            variant={editMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => setEditMode((v) => !v)}
-          >
-            <Pencil className="size-3.5" /> {editMode ? "Done" : "Edit"}
+        )}
+
+        <div className="relative" ref={exportRef}>
+          <Button variant="glass" size="sm" onClick={() => setExportOpen((v) => !v)}>
+            <Download className="size-4" /> Export
           </Button>
+          <AnimatePresence>
+            {exportOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="glass absolute right-0 top-full z-20 mt-2 w-72 rounded-inner p-4"
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Select months</p>
+                <div className="mb-3 flex max-h-52 flex-col gap-0.5 overflow-y-auto">
+                  {exportableMonths.length === 0 && <p className="px-2 py-1.5 text-xs text-text-secondary">No months yet — add one below.</p>}
+                  {exportableMonths.map((m) => {
+                    const key = `${m.year}-${m.month}`;
+                    return (
+                      <label key={key} className="flex cursor-pointer items-center gap-2 rounded-item px-2 py-1.5 text-sm hover:bg-fill-1">
+                        <input type="checkbox" checked={exportSelected.has(key)} onChange={() => toggleExportMonth(key)} className="size-4 cursor-pointer accent-primary" />
+                        {m.label}
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="mb-3 flex gap-1.5">
+                  <Input type="month" value={addMonthValue} onChange={(e) => setAddMonthValue(e.target.value)} className="h-9 flex-1 text-xs" />
+                  <Button size="sm" variant="outline" onClick={handleAddExportMonth} disabled={!addMonthValue}>
+                    Add
+                  </Button>
+                </div>
+                <div className="mb-3 flex gap-1">
+                  <Button variant={exportFormat === "xlsx" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setExportFormat("xlsx")}>
+                    XLSX
+                  </Button>
+                  <Button variant={exportFormat === "html" ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setExportFormat("html")}>
+                    HTML
+                  </Button>
+                </div>
+                <Button size="sm" className="w-full" onClick={handleExport} disabled={exportSelected.size === 0 || exporting}>
+                  {exporting ? "Exporting…" : exportSelected.size > 0 ? `Export ${exportSelected.size} month${exportSelected.size === 1 ? "" : "s"}` : "Export"}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        <IconButton
+          aria-label={editMode ? "Finish editing" : "Edit records"}
+          aria-pressed={editMode}
+          title={editMode ? "Done" : "Edit"}
+          onClick={() => setEditMode((v) => !v)}
+          className={editMode ? "bg-primary text-primary-foreground hover:bg-primary" : undefined}
+        >
+          <Pencil />
+        </IconButton>
+
+        <Button size="default" onClick={() => setDialogState({ date: todayIso })}>
+          <Plus className="size-4" /> Log time
+        </Button>
       </PageToolbar>
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
-      {error && !loading && <p className="text-sm text-muted-foreground">{error}</p>}
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <Spinner size={16} /> Loading…
+        </div>
+      )}
+      {error && !loading && <p className="text-sm text-text-secondary">{error}</p>}
 
       {!loading && data && stats && (
-        <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Work Days" value={String(stats.workDays)} icon={CalendarClock} color="var(--brand-blue)" />
-            <StatCard label="Overtime Days" value={String(stats.overtimeCount)} icon={Clock} color="var(--brand-orange)" />
-            <StatCard label="Overtime Total" value={stats.overtimeDisplay} icon={TrendingUp} color="var(--brand-purple)" />
-            <StatCard label="Leave Days" value={String(stats.leaveDays)} icon={Umbrella} color="var(--brand-green)" />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap gap-4">
+            <GlassPanel className="flex flex-[2_1_400px] flex-wrap items-center gap-6 p-[22px]">
+              <ProgressRing
+                value={standardMinutes > 0 ? workedMinutes / standardMinutes : 0}
+                center={formatHm(workedMinutes)}
+                caption={`of ${formatHm(standardMinutes)}`}
+                label={`Worked ${formatHm(workedMinutes)} of ${formatHm(standardMinutes)}`}
+              />
+              <div className="flex min-w-[220px] flex-1 flex-col gap-3.5">
+                <p className="text-[13px] font-semibold text-text-secondary">Today · {todayLabel}</p>
+                <h2 className="text-[22px] font-bold tracking-[-0.02em] text-text-primary">
+                  {todayState === "none" ? "Not clocked in yet" : todayState === "running" ? "You're on the clock" : "Done for today"}
+                </h2>
+                <div className="flex flex-wrap gap-5">
+                  <div>
+                    <p className="text-xs text-text-secondary">Clocked in</p>
+                    <p className="text-[17px] font-semibold tabular-nums">{todayRecord?.loginTime ?? "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Standard end</p>
+                    <p className="text-[17px] font-semibold tabular-nums">{formatClock(standardLogout)}</p>
+                  </div>
+                  {todayLogin != null && (
+                    <div>
+                      <p className="text-xs text-text-secondary">{deltaToStandardEnd >= 0 ? "Remaining" : "Overtime"}</p>
+                      <p className="text-[17px] font-semibold tabular-nums">{formatHm(deltaToStandardEnd)}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button disabled title="Coming soon">Clock in</Button>
+                  <Button variant="glass" disabled title="Coming soon">Add note</Button>
+                </div>
+              </div>
+            </GlassPanel>
+
+            <div className="grid flex-[3_1_480px] grid-cols-2 gap-4">
+              <StatTile label="Work days" value={stats.workDays} unit={`of ${data.records.length}`} caption={`Period so far · ${holidayCount} holiday${holidayCount === 1 ? "" : "s"}`} />
+              <StatTile label="Overtime sessions" value={stats.overtimeCount} caption="Sessions past the standard end" />
+              <StatTile label="Overtime total" value={stats.overtimeDisplay} caption="Across this period" />
+              <StatTile
+                label="Avg. clock-in"
+                value={averageClockIn != null ? formatClock(averageClockIn) : "—"}
+                caption="Work days with a login"
+              />
+            </div>
           </div>
 
-          {/* Records table */}
-          <Card className="mt-6">
-            <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
-              <CardTitle>Attendance Records</CardTitle>
-              <div className="flex items-center gap-2">
-                <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} small inputClassName="h-8 w-40 text-xs" />
-                {editMode && (
-                  <>
-                    <Button size="sm" onClick={() => setDialogState({ date: new Date().toISOString().slice(0, 10) })}>
-                      <Plus className="size-3.5" /> Entry
-                    </Button>
-                    {selectedDate && (
-                      <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteDate(selectedDate)}>
-                        <Trash2 className="size-3.5" /> Delete
+          <div className="flex flex-wrap items-start gap-4">
+            <GlassPanel className="flex-[3_1_560px] p-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 pb-2.5 pt-3">
+                <h2 className="text-[17px] font-[650] tracking-[-0.01em]">Attendance log</h2>
+                <div className="flex items-center gap-2">
+                  <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} small inputClassName="h-9 w-40 text-xs" />
+                  {editMode && (
+                    <>
+                      <Button size="sm" onClick={() => setDialogState({ date: todayIso })}>
+                        <Plus className="size-3.5" /> Entry
                       </Button>
-                    )}
-                  </>
-                )}
+                      {selectedDate && (
+                        <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteDate(selectedDate)}>
+                          <Trash2 className="size-3.5" /> Delete
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="overflow-x-auto p-0">
               {filteredRecords.length === 0 ? (
-                <p className="p-5 text-sm text-muted-foreground">No records for this settlement period yet.</p>
+                <p className="p-5 text-sm text-text-secondary">No records for this settlement period yet.</p>
               ) : (
-                <table className="w-full text-sm">
+                <DataTable>
                   <thead>
-                    <tr className="border-b border-white/10 text-left text-xs text-muted-foreground">
-                      <th className="px-4 py-2 font-medium">Date</th>
-                      <th className="px-4 py-2 font-medium">Type</th>
-                      <th className="px-4 py-2 font-medium">Login</th>
-                      <th className="px-4 py-2 font-medium">Logout</th>
-                      <th className="px-4 py-2 font-medium">OT</th>
-                      {editMode && <th className="px-4 py-2 font-medium"></th>}
+                    <tr>
+                      <DataTh>Date</DataTh>
+                      <DataTh>In</DataTh>
+                      <DataTh>Out</DataTh>
+                      <DataTh>Worked</DataTh>
+                      <DataTh>Overtime</DataTh>
+                      <DataTh>Status</DataTh>
+                      {editMode && <DataTh />}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRecords.map((r) => (
-                      <tr
-                        key={r.date}
-                        onClick={() => editMode && setSelectedDate(r.date === selectedDate ? null : r.date)}
-                        className={`border-b border-white/5 ${editMode ? "cursor-pointer" : ""} ${
-                          selectedDate === r.date ? "bg-primary/10" : "hover:bg-foreground/5"
-                        }`}
-                      >
-                        <td className="px-4 py-2">{formatDate(r.date, appSettings?.dateFormat ?? "MM/dd/yyyy")}</td>
-                        <td className="px-4 py-2">
-                          <Badge
-                            variant="outline"
-                            style={{
-                              backgroundColor: `color-mix(in srgb, ${DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93"} 15%, transparent)`,
-                              borderColor: `color-mix(in srgb, ${DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93"} 35%, transparent)`,
-                              color: DAY_TYPE_COLORS[r.dayType] ?? "#8E8E93",
-                            }}
-                          >
-                            {dayTypeLabel(r.dayType)}
-                          </Badge>
-                          {r.tripRegion && <span className="ml-1.5 text-xs text-muted-foreground">{r.tripRegion}</span>}
-                          {r.dayType === "HourlyLeave" && (
-                            <span className="ml-1.5 text-xs text-muted-foreground">
-                              {r.leaveHours ?? 0}h {r.leaveMinutes ?? 0}m
-                            </span>
-                          )}
-                          {r.holidayName && r.dayType !== "BusinessTrip" && (
-                            <span className="ml-1.5 text-xs text-muted-foreground">{r.holidayName}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2">{r.loginTime ?? "—"}</td>
-                        <td className="px-4 py-2">{r.logoutTime ?? "—"}</td>
-                        <td className="px-4 py-2">
-                          {overtimeFlag(r) && (
-                            <Badge variant={overtimeFlag(r) === "YES" ? "default" : "secondary"}>
-                              {overtimeFlag(r) === "YES" ? `${r.overtimeHours}h ${r.overtimeMinutes}m` : "No OT"}
+                    {filteredRecords.map((r) => {
+                      const status = statusFor(r);
+                      const inMin = toMinutes(r.loginTime);
+                      const outMin = toMinutes(r.logoutTime);
+                      const worked = inMin != null && outMin != null ? formatHm(outMin - inMin) : "—";
+                      const [yy, mm, dd] = r.date.split("-").map(Number);
+                      const weekday = new Date(Date.UTC(yy, mm - 1, dd)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+                      return (
+                        <DataTr
+                          key={r.date}
+                          onClick={() => editMode && setSelectedDate(r.date === selectedDate ? null : r.date)}
+                          className={`${editMode ? "cursor-pointer" : ""} ${selectedDate === r.date ? "bg-fill-1" : ""}`}
+                        >
+                          <DataTd>
+                            <span className="font-semibold">{formatDate(r.date, appSettings?.dateFormat ?? "MM/dd/yyyy")}</span>
+                            <span className="ml-1.5 text-xs text-text-secondary">{weekday}</span>
+                            {r.tripRegion && <span className="ml-1.5 text-xs text-text-secondary">{r.tripRegion}</span>}
+                            {r.dayType === "HourlyLeave" && (
+                              <span className="ml-1.5 text-xs text-text-secondary">
+                                {r.leaveHours ?? 0}h {r.leaveMinutes ?? 0}m
+                              </span>
+                            )}
+                          </DataTd>
+                          <DataTd>{r.loginTime ?? "—"}</DataTd>
+                          <DataTd>{r.logoutTime ?? "—"}</DataTd>
+                          <DataTd>{worked}</DataTd>
+                          <DataTd>{r.isOvertime ? `${r.overtimeHours}h ${r.overtimeMinutes}m` : "—"}</DataTd>
+                          <DataTd>
+                            <Badge variant={status.variant} dot={status.dot}>
+                              {status.label}
                             </Badge>
+                          </DataTd>
+                          {editMode && (
+                            <DataTd>
+                              <div className="flex items-center justify-end gap-1">
+                                <IconButton
+                                  aria-label={`Edit ${r.date}`}
+                                  className="size-9"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDialogState({ date: r.date, record: r });
+                                  }}
+                                >
+                                  <Pencil />
+                                </IconButton>
+                                <IconButton
+                                  aria-label={`Delete ${r.date}`}
+                                  className="size-9 hover:text-status-danger-fg"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteDate(r.date);
+                                  }}
+                                >
+                                  <Trash2 />
+                                </IconButton>
+                              </div>
+                            </DataTd>
                           )}
-                        </td>
-                        {editMode && (
-                          <td className="px-4 py-2">
-                            <div className="flex items-center gap-2">
-                              <Pencil
-                                className="size-3.5 cursor-pointer text-muted-foreground hover:text-primary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDialogState({ date: r.date, record: r });
-                                }}
-                              />
-                              <Trash2
-                                className="size-3.5 cursor-pointer text-muted-foreground hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setConfirmDeleteDate(r.date);
-                                }}
-                              />
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
+                        </DataTr>
+                      );
+                    })}
                   </tbody>
-                </table>
+                </DataTable>
               )}
-            </CardContent>
-          </Card>
+            </GlassPanel>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="flex min-w-[260px] flex-[1_1_300px] flex-col gap-4">
+              {nextTrip ? (
+                <GlassPanel className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] font-semibold text-text-secondary">Next business trip</p>
+                    <Badge variant={nextTrip.status === "Approved" ? "success" : nextTrip.status === "Submitted" ? "warning" : "neutral"}>
+                      {nextTrip.status}
+                    </Badge>
+                  </div>
+                  <p className="text-[22px] font-bold tracking-[-0.02em]">{nextTrip.destination || "Untitled trip"}</p>
+                  <p className="text-sm text-text-secondary">
+                    {formatShortDate(nextTrip.startDate)} – {formatShortDate(nextTrip.endDate)} · {nextTrip.category}
+                  </p>
+                  <Button asChild variant="glass" className="w-full">
+                    <Link href="/trips">Upload receipts</Link>
+                  </Button>
+                </GlassPanel>
+              ) : (
+                <GlassPanel className="flex flex-col gap-1.5">
+                  <p className="text-[13px] font-semibold text-text-secondary">Next business trip</p>
+                  <p className="text-sm text-text-secondary">No upcoming trips.</p>
+                </GlassPanel>
+              )}
+
+              <GlassPanel className="flex flex-col gap-2 opacity-70">
+                <p className="text-[13px] font-semibold text-text-secondary">Weekly report</p>
+                <p className="text-sm text-text-secondary">Coming soon.</p>
+              </GlassPanel>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Daily hours worked</CardTitle>
@@ -697,13 +792,13 @@ export default function DashboardPage() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={dailyHoursChart}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                    <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" width={30} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--separator)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="var(--text-secondary)" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="var(--text-secondary)" width={30} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--separator)", background: "var(--glass-bg)", fontSize: 12 }} />
                     <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
                       {dailyHoursChart.map((entry) => (
-                        <Cell key={entry.day} fill={DAY_TYPE_COLORS[entry.dayType] ?? "var(--brand-blue)"} />
+                        <Cell key={entry.day} fill={DAY_TYPE_COLORS[entry.dayType] ?? "var(--accent)"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -720,17 +815,17 @@ export default function DashboardPage() {
                   <PieChart>
                     <Pie data={dayTypeChart} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
                       {dayTypeChart.map((entry) => (
-                        <Cell key={entry.key} fill={DAY_TYPE_COLORS[entry.key] ?? "#999"} />
+                        <Cell key={entry.key} fill={DAY_TYPE_COLORS[entry.key] ?? "var(--text-tertiary)"} />
                       ))}
                     </Pie>
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--separator)", background: "var(--glass-bg)", fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-        </>
+        </div>
       )}
 
       {dialogState && (

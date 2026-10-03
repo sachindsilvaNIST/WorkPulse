@@ -1,15 +1,14 @@
 import * as React from "react";
-import { GlassPanel } from "@/components/ui/glass-panel";
 import { cn } from "@/lib/utils";
 
-/** Table inside a glass panel. Scrolls horizontally inside the panel rather than the page. */
+/** Table that scrolls horizontally inside its container. Sits on the parent glass panel, never on its own glass. */
 export function DataTable({ className, children, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <GlassPanel size="inner" className="overflow-x-auto p-2">
+    <div className="overflow-x-auto">
       <table className={cn("w-full min-w-[640px] border-collapse text-sm text-text-body", className)} {...props}>
         {children}
       </table>
-    </GlassPanel>
+    </div>
   );
 }
 
