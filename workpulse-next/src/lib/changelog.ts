@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.13.1",
+    date: "2026-10-03",
+    highlights: [
+      "Daily report reminders no longer send an email — the reminder still appears in your notifications",
+    ],
+  },
+  {
     version: "1.13.0",
     date: "2026-10-03",
     highlights: [

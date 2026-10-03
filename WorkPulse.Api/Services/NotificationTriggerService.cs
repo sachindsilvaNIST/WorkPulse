@@ -73,7 +73,8 @@ public class NotificationTriggerService
                 title: "Today's report is still empty",
                 message: "You haven't filled in a daily report yet today.",
                 href: "/reports/daily",
-                dedupeKey: dedupeKey
+                dedupeKey: dedupeKey,
+                sendEmail: false
             );
         }
     }
@@ -109,7 +110,7 @@ public class NotificationTriggerService
         }
     }
 
-    private async Task CreateAsync(string userId, string? userEmail, string? notificationChannel, string type, string title, string message, string href, string dedupeKey)
+    private async Task CreateAsync(string userId, string? userEmail, string? notificationChannel, string type, string title, string message, string href, string dedupeKey, bool sendEmail = true)
     {
         _db.Notifications.Add(new NotificationEntity
         {
@@ -123,7 +124,7 @@ public class NotificationTriggerService
         await _db.SaveChangesAsync();
 
         var channel = notificationChannel ?? "Email";
-        if (channel != "Email" || string.IsNullOrEmpty(userEmail)) return;
+        if (!sendEmail || channel != "Email" || string.IsNullOrEmpty(userEmail)) return;
 
         try
         {
