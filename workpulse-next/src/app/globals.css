@@ -306,7 +306,9 @@
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-bottom: 1px solid var(--separator);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-sm);
 }
 
 @keyframes shimmer {

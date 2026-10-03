@@ -109,7 +109,6 @@ export function IconBadge({
       className={cn("relative flex shrink-0 items-center justify-center text-white", size, className)}
       style={{ ...(flat ? flatIconStyle(color, color2) : liquidGlassIconStyle(color, color2)), clipPath: SQUIRCLE_CLIP_PATH }}
     >
-      {!flat && <div className="liquid-sheen pointer-events-none absolute inset-0" />}
       <Icon className={cn(iconSize, "relative")} style={APPLE_ICON_GLYPH_STYLE} />
     </div>
   );

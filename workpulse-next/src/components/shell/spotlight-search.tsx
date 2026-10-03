@@ -362,7 +362,6 @@ export function SpotlightSearch() {
                             className="relative flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-[22%] text-white"
                             style={liquidGlassIconStyle(r.color)}
                           >
-                            <div className="liquid-sheen pointer-events-none absolute inset-0" />
                             <Icon className="relative size-4.5" style={APPLE_ICON_GLYPH_STYLE} />
                           </span>
                           <span className="min-w-0 flex-1">

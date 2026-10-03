@@ -50,7 +50,7 @@ export function PageToolbar({
     <div
       ref={toolbarRef}
       className={cn(
-        "sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-transparent px-4 py-4 transition-colors duration-200 lg:-mx-6 lg:px-6",
+        "sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-tile border border-transparent px-4 py-3 transition-[background-color,box-shadow,border-color] duration-[240ms] ease-glass",
         solid && "toolbar-solid"
       )}
     >

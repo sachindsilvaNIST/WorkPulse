@@ -357,7 +357,7 @@ export default function ContactsPage() {
             {groupContacts.map((c) => {
               const accent = categoryColor(c.department);
               return (
-                <motion.div key={c.id} layoutId={`contact-${c.id}`} whileHover={{ y: -2 }}>
+                <div key={c.id}>
                   <Card
                     className="cursor-pointer p-4"
                     style={accentCardStyle(accent)}
@@ -409,7 +409,7 @@ export default function ContactsPage() {
                       </p>
                     )}
                   </Card>
-                </motion.div>
+                </div>
               );
             })}
           </div>

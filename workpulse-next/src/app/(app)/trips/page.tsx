@@ -408,7 +408,7 @@ export default function TripsPage() {
           {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
           {!loading && trips.length === 0 && <p className="text-sm text-text-secondary">No trips yet.</p>}
           {trips.map((t) => (
-            <motion.div key={t.id} whileHover={{ y: -2 }}>
+            <div key={t.id}>
               <Card
                 onClick={() => setSelectedId(t.id)}
                 className={`cursor-pointer p-4 ${selectedId === t.id ? "ring-2 ring-primary" : ""}`}
@@ -433,7 +433,7 @@ export default function TripsPage() {
                   )}
                 </div>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
 
