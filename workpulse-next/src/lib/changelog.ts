@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.0",
+    date: "2026-10-03",
+    highlights: [
+      "Attendance: switch between Month, Period, and Year views",
+      "Attendance: Clock in and Clock out on the today card, filled with the current time in the entry dialog",
+      "Rounded page headers, and removed the glass sheen and hover animations",
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2026-10-03",
     highlights: [
