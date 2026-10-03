@@ -28,6 +28,7 @@ import { AttendanceEntryDialog } from "@/components/attendance/entry-dialog";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { IconButton } from "@/components/ui/icon-button";
 import { ToolbarCapsule } from "@/components/ui/toolbar-capsule";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { StatTile } from "@/components/ui/stat-tile";
 import { ProgressRing } from "@/components/ui/progress";
 import { DataTable, DataTd, DataTh, DataTr } from "@/components/ui/table";
@@ -90,6 +91,7 @@ export default function DashboardPage() {
   const [months, setMonths] = useState<YearMonthDto[]>([]);
   const [selected, setSelected] = useState<{ year: number; month: number } | null>(null);
   const [bucketCache, setBucketCache] = useState<Record<string, MonthlyData>>({});
+  const [viewMode, setViewMode] = useState<"month" | "period" | "year">("period");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -213,6 +215,24 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!selected || viewMode !== "year") return;
+    const missing = months.filter(
+      (m) => m.year === selected.year && !bucketCache[`${m.year}-${m.month}`]
+    );
+    if (missing.length === 0) return;
+    Promise.all(
+      missing.map((m) => attendanceApi.getMonth(m.year, m.month).catch(() => emptyMonth(m.year, m.month)))
+    ).then((fetched) => {
+      setBucketCache((prev) => {
+        const next = { ...prev };
+        for (const m of fetched) next[`${m.year}-${m.month}`] = m;
+        return next;
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, selected, months]);
+
+  useEffect(() => {
     if (!selected) return;
     setLoading(true);
     setError(null);
@@ -261,6 +281,29 @@ export default function DashboardPage() {
 
   const data: MonthlyData | null = useMemo(() => {
     if (!selected || !period) return null;
+    if (viewMode === "month") {
+      const bucket = bucketCache[`${selected.year}-${selected.month}`];
+      const label = new Date(selected.year, selected.month - 1, 1).toLocaleString("default", { month: "long", year: "numeric" });
+      return {
+        year: selected.year,
+        month: selected.month,
+        monthLabel: label,
+        title: `${label} (calendar month)`,
+        records: [...(bucket?.records ?? [])],
+      };
+    }
+    if (viewMode === "year") {
+      const records = Object.entries(bucketCache)
+        .filter(([key]) => key.startsWith(`${selected.year}-`))
+        .flatMap(([, b]) => b.records);
+      return {
+        year: selected.year,
+        month: selected.month,
+        monthLabel: String(selected.year),
+        title: `${selected.year} (calendar year)`,
+        records,
+      };
+    }
     const records = settlementBuckets(selected.year, selected.month)
       .flatMap((b) => bucketCache[`${b.year}-${b.month}`]?.records ?? [])
       .filter((r) => r.date >= period.periodStart && r.date <= period.periodEnd);
@@ -271,7 +314,7 @@ export default function DashboardPage() {
       title: `${period.label} Settlement (${period.periodStart} to ${period.periodEnd})`,
       records,
     };
-  }, [selected, period, bucketCache]);
+  }, [selected, period, bucketCache, viewMode]);
 
   const stats = useMemo(() => {
     if (!data) return null;
@@ -445,9 +488,31 @@ export default function DashboardPage() {
 
   const todayLabel = nowDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
-  const selectedIndex = selected ? settlementOptions.findIndex((o) => o.year === selected.year && o.month === selected.month) : -1;
-  const olderOption = selectedIndex >= 0 ? settlementOptions[selectedIndex + 1] : undefined;
-  const newerOption = selectedIndex > 0 ? settlementOptions[selectedIndex - 1] : undefined;
+  const stepOptions = useMemo<{ year: number; month: number; label: string }[]>(() => {
+    if (viewMode === "period") {
+      return settlementOptions.map((o) => ({ year: o.year, month: o.month, label: o.label }));
+    }
+    if (viewMode === "month") {
+      return [...months]
+        .sort((a, b) => b.year - a.year || b.month - a.month)
+        .map((m) => ({
+          year: m.year,
+          month: m.month,
+          label: new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long", year: "numeric" }),
+        }));
+    }
+    const years = Array.from(new Set(months.map((m) => m.year))).sort((a, b) => b - a);
+    return years.map((y) => ({ year: y, month: 1, label: String(y) }));
+  }, [viewMode, settlementOptions, months]);
+
+  const currentStepIndex = selected
+    ? stepOptions.findIndex((o) => o.year === selected.year && (viewMode === "year" || o.month === selected.month))
+    : -1;
+  const olderOption = currentStepIndex >= 0 ? stepOptions[currentStepIndex + 1] : undefined;
+  const newerOption = currentStepIndex > 0 ? stepOptions[currentStepIndex - 1] : undefined;
+  const stepLabel = viewMode === "period" ? period?.label ?? "" : viewMode === "month"
+    ? new Date(selected?.year ?? 2000, (selected?.month ?? 1) - 1, 1).toLocaleString("default", { month: "long", year: "numeric" })
+    : String(selected?.year ?? "");
 
   function statusFor(r: AttendanceRecord): { variant: "success" | "warning" | "neutral" | "info"; label: string; dot?: boolean } {
     if (r.date === todayIso && r.loginTime && !r.logoutTime) return { variant: "info", label: "In progress", dot: true };
@@ -474,17 +539,30 @@ export default function DashboardPage() {
         }
       >
         {selected && (
-          <ToolbarCapsule aria-label="Settlement period">
-            <IconButton aria-label="Previous settlement period" disabled={!olderOption} onClick={() => olderOption && setSelected({ year: olderOption.year, month: olderOption.month })}>
+          <ToolbarCapsule aria-label="Attendance period">
+            <IconButton aria-label="Previous" disabled={!olderOption} onClick={() => olderOption && setSelected({ year: olderOption.year, month: olderOption.month })}>
               <ChevronLeft />
             </IconButton>
-            <span className="min-w-[7.5rem] text-center text-sm font-semibold tabular-nums" aria-live="polite">
-              {period?.label ?? ""}
+            <span className="min-w-[8.5rem] text-center text-sm font-semibold tabular-nums" aria-live="polite">
+              {stepLabel}
             </span>
-            <IconButton aria-label="Next settlement period" disabled={!newerOption} onClick={() => newerOption && setSelected({ year: newerOption.year, month: newerOption.month })}>
+            <IconButton aria-label="Next" disabled={!newerOption} onClick={() => newerOption && setSelected({ year: newerOption.year, month: newerOption.month })}>
               <ChevronRight />
             </IconButton>
           </ToolbarCapsule>
+        )}
+
+        {selected && (
+          <SegmentedControl
+            label="View"
+            value={viewMode}
+            onChange={(v) => setViewMode(v)}
+            options={[
+              { value: "month", label: "Month" },
+              { value: "period", label: "Period" },
+              { value: "year", label: "Year" },
+            ]}
+          />
         )}
 
         {selected && (
