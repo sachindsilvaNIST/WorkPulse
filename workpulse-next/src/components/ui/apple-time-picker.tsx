@@ -21,7 +21,7 @@ function ScrollColumn({ values, selected, onSelect, open }: { values: string[]; 
   }, [open]);
 
   return (
-    <div ref={listRef} className="h-40 w-14 overflow-y-auto rounded-lg border border-white/10 bg-background/30">
+    <div ref={listRef} className="h-40 w-14 overflow-y-auto rounded-lg border border-separator bg-background/30">
       {values.map((v) => (
         <button
           key={v}
@@ -29,7 +29,7 @@ function ScrollColumn({ values, selected, onSelect, open }: { values: string[]; 
           data-value={v}
           onClick={() => onSelect(v)}
           className={cn(
-            "flex h-8 w-full cursor-pointer items-center justify-center rounded-md text-xs tabular-nums hover:bg-foreground/8",
+            "flex h-8 w-full cursor-pointer items-center justify-center rounded-md text-xs tabular-nums hover:bg-fill-1",
             v === selected && "bg-primary/15 font-semibold text-primary"
           )}
         >
@@ -67,12 +67,12 @@ export function AppleTimePicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex w-full items-center justify-between gap-1.5 border border-input bg-background/50 outline-none backdrop-blur-md transition-colors hover:bg-foreground/5 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+          "flex w-full items-center justify-between gap-1.5 border border-input bg-background/50 outline-none backdrop-blur-md transition-colors hover:bg-fill-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
           size === "sm" ? "h-8 rounded-lg px-2 text-xs" : "h-9 rounded-full px-3.5 text-xs"
         )}
       >
-        <span className={cn("truncate tabular-nums", !value && "text-muted-foreground")}>{value || "--:--"}</span>
-        <Clock className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className={cn("truncate tabular-nums", !value && "text-text-secondary")}>{value || "--:--"}</span>
+        <Clock className="size-3.5 shrink-0 text-text-secondary" />
       </button>
 
       {createPortal(
@@ -89,7 +89,7 @@ export function AppleTimePicker({
             >
               <div className="flex items-center gap-1.5">
                 <ScrollColumn values={HOURS} selected={hour} onSelect={(h) => onChange(`${h}:${minute || "00"}`)} open={open} />
-                <span className="text-sm font-semibold text-muted-foreground">:</span>
+                <span className="text-sm font-semibold text-text-secondary">:</span>
                 <ScrollColumn values={MINUTES} selected={minute} onSelect={(m) => onChange(`${hour || "00"}:${m}`)} open={open} />
               </div>
             </motion.div>

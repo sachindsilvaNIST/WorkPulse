@@ -240,7 +240,7 @@ export default function ContactsPage() {
                 "rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all",
                 d === department
                   ? "border-primary/40 bg-primary/15 text-primary ring-2 ring-primary/25 ring-offset-1 ring-offset-background"
-                  : "border-border bg-background/40 text-muted-foreground hover:bg-foreground/5"
+                  : "border-border bg-background/40 text-text-secondary hover:bg-fill-1"
               )}
             >
               {d}
@@ -338,9 +338,9 @@ export default function ContactsPage() {
           </div>
       </FormModal>
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <Users className="size-10 opacity-40" />
           <p>No contacts found.</p>
         </div>
@@ -349,9 +349,9 @@ export default function ContactsPage() {
       {grouped.map(({ department: groupName, contacts: groupContacts }) => (
         <div key={groupName ?? "flat"} className="mb-6 last:mb-0">
           {groupName && (
-            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary">
               <Building2 className="size-3" /> {groupName}
-              <span className="font-normal normal-case text-muted-foreground/70">({groupContacts.length})</span>
+              <span className="font-normal normal-case text-text-secondary/70">({groupContacts.length})</span>
             </h2>
           )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -373,7 +373,7 @@ export default function ContactsPage() {
                         <p className="font-semibold">
                           {c.familyName} {c.givenName}
                         </p>
-                        <p className="text-xs text-muted-foreground">{c.affiliation}</p>
+                        <p className="text-xs text-text-secondary">{c.affiliation}</p>
                       </div>
                       <DeleteIconButton
                         onDelete={() => handleDelete(c.id)}
@@ -390,13 +390,13 @@ export default function ContactsPage() {
                       </span>
                     )}
                     {c.email && (
-                      <p className="mt-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <p className="mt-2 flex min-w-0 items-center gap-1.5 text-xs text-text-secondary">
                         <Mail className="size-3 shrink-0" /> <span className="truncate">{c.email}</span>
                         <CopyButton value={c.email} className="ml-auto" />
                       </p>
                     )}
                     {c.contactNumber && (
-                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-secondary">
                         <Phone className="size-3 shrink-0" /> <span className="truncate">{c.contactNumber}</span>
                         <CopyButton value={c.contactNumber} className="ml-auto" />
                       </p>
@@ -422,7 +422,7 @@ export default function ContactsPage() {
                 openEdit(contextMenu.contact);
                 setContextMenu(null);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-fill-2"
             >
               <Pencil className="size-3.5" /> Edit
             </button>
@@ -443,7 +443,7 @@ export default function ContactsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4"
             onClick={() => setDetail(null)}
           >
             <motion.div layoutId={`contact-${detail.id}`} onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
@@ -453,9 +453,9 @@ export default function ContactsPage() {
                     <h2 className="text-xl font-semibold">
                       {detail.familyName} {detail.givenName}
                     </h2>
-                    <p className="text-sm text-muted-foreground">{detail.affiliation}</p>
+                    <p className="text-sm text-text-secondary">{detail.affiliation}</p>
                   </div>
-                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-fill-1">
                     <X className="size-4" />
                   </button>
                 </div>

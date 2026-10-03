@@ -112,18 +112,18 @@ const yen = (value: number) => `¥${Math.round(value).toLocaleString("ja-JP")}`;
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
   return (
     <Card className="p-5">
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
       <p className="mt-1 text-xl font-semibold tracking-tight" style={{ color }}>
         {value}
       </p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-text-secondary">{sub}</p>}
     </Card>
   );
 }
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-col gap-1 text-xs text-muted-foreground", className)}>
+    <div className={cn("flex flex-col gap-1 text-xs text-text-secondary", className)}>
       {label}
       {children}
     </div>
@@ -531,7 +531,7 @@ export default function UtilityBillsPage() {
                 <li key={b.id} className="flex items-center gap-2">
                   <span className="size-1.5 rounded-full" style={{ backgroundColor: STATUS_COLOR[b.status] }} />
                   <span className="font-medium">{PROVIDER_LABEL[b.provider]}</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-text-secondary">
                     {b.billingYear}-{String(b.billingMonth).padStart(2, "0")} · {yen(b.amountJpy)} · {text}
                   </span>
                 </li>
@@ -622,7 +622,7 @@ export default function UtilityBillsPage() {
               </Field>
 
               <div className="sm:col-span-2">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Breakdown (optional)</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Breakdown (optional)</p>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                   <Field label={isWater ? "Water charge" : "Gas charge"}>
                     <Input type="number" value={form.draft.waterCharge} onChange={(e) => setField("waterCharge", e.target.value)} />
@@ -663,7 +663,7 @@ export default function UtilityBillsPage() {
             {form.mode === "edit" && form.billId && (
               <div className="flex flex-col gap-3 border-t border-border pt-4">
                 <p className="text-sm font-semibold">Receipts</p>
-                {docs.length === 0 && <p className="text-sm text-muted-foreground">No receipts attached yet.</p>}
+                {docs.length === 0 && <p className="text-sm text-text-secondary">No receipts attached yet.</p>}
                 {docs.map((doc) => (
                   <div key={doc.id} className="flex items-center gap-2 text-sm">
                     <span className="flex-1 truncate">{doc.fileName}</span>
@@ -676,7 +676,7 @@ export default function UtilityBillsPage() {
                   </div>
                 ))}
                 <FileDropZone onFile={(file) => void handleUpload(file)} disabled={uploading} className="inline-flex w-fit">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm cursor-pointer hover:bg-foreground/5">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm cursor-pointer hover:bg-fill-1">
                     {uploading ? <Spinner size={14} /> : <Upload className="size-3.5" />} {uploading ? "Uploading…" : "Upload receipt (photo or PDF)"}
                   </span>
                 </FileDropZone>
@@ -705,17 +705,17 @@ export default function UtilityBillsPage() {
           </div>
 
           {bills === null ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
               <Spinner size={16} /> Loading…
             </div>
           ) : visibleBills.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-text-secondary">
               {bills.length === 0 ? "No bills yet — add your first Tokyo Gas or Tokyo Water bill." : "No bills match these filters."}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
+                <thead className="text-left text-xs text-text-secondary">
                   <tr>
                     <th className="pb-2 font-medium">Provider</th>
                     <th className="pb-2 font-medium">Billing month</th>
@@ -723,7 +723,7 @@ export default function UtilityBillsPage() {
                     <th className="pb-2 font-medium">
                       <button
                         type="button"
-                        className="cursor-pointer hover:text-foreground"
+                        className="cursor-pointer hover:text-text-primary"
                         onClick={() => setSortAscending((v) => !v)}
                       >
                         Due date {sortAscending ? "↑" : "↓"}
@@ -748,7 +748,7 @@ export default function UtilityBillsPage() {
                       </td>
                       <td className="py-3 text-right font-medium tabular-nums">{yen(b.amountJpy)}</td>
                       <td className="py-3 tabular-nums">{b.dueDate}</td>
-                      <td className="py-3 tabular-nums text-muted-foreground">{b.paidDate ?? "—"}</td>
+                      <td className="py-3 tabular-nums text-text-secondary">{b.paidDate ?? "—"}</td>
                       <td className="py-3">
                         <Badge
                           variant="outline"
@@ -791,9 +791,9 @@ export default function UtilityBillsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="font-semibold">Monthly cost</h2>
-                <p className="text-xs text-muted-foreground">Last 12 months, stacked by provider</p>
+                <p className="text-xs text-text-secondary">Last 12 months, stacked by provider</p>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <Switch checked={spreadBimonthly} onCheckedChange={setSpreadBimonthly} />
                 Spread bimonthly water bills evenly
               </div>
@@ -816,7 +816,7 @@ export default function UtilityBillsPage() {
           <CardContent className="flex flex-col gap-4">
             <div>
               <h2 className="font-semibold">Usage trend (m³)</h2>
-              <p className="text-xs text-muted-foreground">Monthly usage per provider</p>
+              <p className="text-xs text-text-secondary">Monthly usage per provider</p>
             </div>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={usageRows}>
@@ -837,7 +837,7 @@ export default function UtilityBillsPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="font-semibold">Year over year</h2>
-                <p className="text-xs text-muted-foreground">Same billing month across years</p>
+                <p className="text-xs text-text-secondary">Same billing month across years</p>
               </div>
               <div className="w-40">
                 <AppleSelect value={String(yoyMonth)} onChange={(v) => setYoyMonth(Number(v))} options={MONTH_OPTIONS} />
@@ -863,7 +863,7 @@ export default function UtilityBillsPage() {
           <CardContent className="flex flex-col gap-4">
             <div>
               <h2 className="font-semibold">Provider settings</h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-text-secondary">
                 Your customer number and how you pay. Bills recorded before a payment-method change keep whatever method you set on them.
               </p>
             </div>

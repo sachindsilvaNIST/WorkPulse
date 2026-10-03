@@ -353,14 +353,14 @@ export default function ResourcesPage() {
       )}
 
       {dropUploads.length > 0 && (
-        <div className="fixed bottom-5 right-5 z-40 w-72 rounded-2xl border border-white/10 bg-popover/95 p-3 shadow-lg backdrop-blur-md">
+        <div className="fixed bottom-5 right-5 z-40 w-72 rounded-2xl border border-separator glass p-3 shadow-[var(--glass-shadow)] backdrop-blur-md">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-semibold">
               {dropUploads.every((u) => u.status === "done") ? "Upload complete" : "Uploading…"}
             </p>
             <button
               onClick={() => setDropUploads([])}
-              className="cursor-pointer rounded-full p-0.5 text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
+              className="cursor-pointer rounded-full p-0.5 text-text-secondary hover:bg-fill-1 hover:text-text-primary"
             >
               <X className="size-3.5" />
             </button>
@@ -400,7 +400,7 @@ export default function ResourcesPage() {
                 onClick={() => setSelectedTag(t)}
                 className={cn(
                   "rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all",
-                  active ? "border-primary/40 bg-primary/12 text-primary" : "border-border bg-background/50 text-muted-foreground hover:bg-foreground/5"
+                  active ? "border-primary/40 bg-primary/12 text-primary" : "border-border bg-background/50 text-text-secondary hover:bg-fill-1"
                 )}
               >
                 {t}
@@ -429,7 +429,7 @@ export default function ResourcesPage() {
                   onClick={() => setForm({ ...form, type: t })}
                   className={cn(
                     "flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                    form.type === t ? "border-transparent text-white" : "border-border text-muted-foreground hover:bg-foreground/5"
+                    form.type === t ? "border-transparent text-white" : "border-border text-text-secondary hover:bg-fill-1"
                   )}
                   style={form.type === t ? { backgroundColor: meta.color } : undefined}
                 >
@@ -472,7 +472,7 @@ export default function ResourcesPage() {
                 <FileDropZone
                   multiple
                   onFiles={addFiles}
-                  className="flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-input bg-background/50 px-4 text-center text-sm text-muted-foreground backdrop-blur-md hover:bg-foreground/5"
+                  className="flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-input bg-background/50 px-4 text-center text-sm text-text-secondary backdrop-blur-md hover:bg-fill-1"
                 >
                   <Upload className="size-8 shrink-0" />
                   <span>
@@ -485,10 +485,10 @@ export default function ResourcesPage() {
                   <div className="mt-3 flex flex-col gap-1.5">
                     {uploads.map((u) => (
                       <div key={u.id} className="flex items-center gap-3 rounded-xl border border-border bg-foreground/[0.03] px-3 py-2">
-                        <FileText className="size-4 shrink-0 text-muted-foreground" />
+                        <FileText className="size-4 shrink-0 text-text-secondary" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">{u.file.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate text-xs text-text-secondary">
                             {formatSize(u.file.size)}
                             {u.status === "error" && u.error ? ` — ${u.error}` : ""}
                           </p>
@@ -500,7 +500,7 @@ export default function ResourcesPage() {
                           <button
                             type="button"
                             onClick={() => removeUpload(u.id)}
-                            className="cursor-pointer rounded-full p-1 text-muted-foreground hover:bg-foreground/8 hover:text-foreground"
+                            className="cursor-pointer rounded-full p-1 text-text-secondary hover:bg-fill-1 hover:text-text-primary"
                             title="Remove"
                           >
                             <X className="size-3.5" />
@@ -529,7 +529,7 @@ export default function ResourcesPage() {
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={3}
-                className="w-full resize-none rounded-2xl border border-input bg-background/50 px-4 py-2.5 text-sm outline-none backdrop-blur-md placeholder:text-muted-foreground sm:col-span-2"
+                className="w-full resize-none rounded-2xl border border-input bg-background/50 px-4 py-2.5 text-sm outline-none backdrop-blur-md placeholder:text-text-secondary sm:col-span-2"
               />
             )}
             <TagInput value={form.tags} onValueChange={(tags) => setForm({ ...form, tags })} suggestions={allTags} placeholder="Tags — press Enter to add" />
@@ -552,9 +552,9 @@ export default function ResourcesPage() {
           </div>
       </FormModal>
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <Library className="size-10 opacity-40" />
           <p>No resources match — try Add Resource above.</p>
         </div>
@@ -584,7 +584,7 @@ export default function ResourcesPage() {
                 </span>
                 <div className="hidden shrink-0 items-center gap-1 group-hover:flex">
                   <button
-                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-primary"
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-text-secondary hover:text-primary"
                     onClick={(e) => {
                       e.stopPropagation();
                       openEdit(r);
@@ -593,7 +593,7 @@ export default function ResourcesPage() {
                     <Pencil className="size-3" />
                   </button>
                   <button
-                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-text-secondary hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
                       setConfirmDeleteId(r.id);
@@ -605,14 +605,14 @@ export default function ResourcesPage() {
               </div>
               <span className="mt-2 line-clamp-2 text-sm font-semibold">{r.title}</span>
               {r.notes && (
-                <span className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                <span className="mt-1 line-clamp-2 text-xs text-text-secondary">
                   {r.type === "File" ? stripHtml(r.notes) : r.notes}
                 </span>
               )}
               {tags.length > 0 && (
                 <div className="mt-auto flex flex-wrap gap-1 pt-2">
                   {tags.slice(0, 3).map((t) => (
-                    <span key={t} className="rounded-full bg-foreground/8 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <span key={t} className="rounded-full bg-fill-1 px-1.5 py-0.5 text-[10px] text-text-secondary">
                       {t}
                     </span>
                   ))}
@@ -629,7 +629,7 @@ export default function ResourcesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4"
             onClick={() => setDetail(null)}
           >
             <motion.div
@@ -651,7 +651,7 @@ export default function ResourcesPage() {
                       {TYPE_META[detail.type].label}
                     </span>
                   </div>
-                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-fill-1">
                     <X className="size-4" />
                   </button>
                 </div>
@@ -668,7 +668,7 @@ export default function ResourcesPage() {
                   {detail.type === "Note" ? (
                     detail.notes && (
                       <div className="flex min-h-0 flex-1 flex-col gap-1">
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <p className="flex items-center gap-1.5 text-xs text-text-secondary">
                           <Text className="size-3.5" /> Notes
                         </p>
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">{detail.notes}</p>
@@ -677,7 +677,7 @@ export default function ResourcesPage() {
                   ) : detail.type === "File" ? (
                     detail.notes && (
                       <div className="flex min-h-0 flex-1 flex-col gap-1">
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <p className="flex items-center gap-1.5 text-xs text-text-secondary">
                           <Text className="size-3.5" /> Notes
                         </p>
                         <div

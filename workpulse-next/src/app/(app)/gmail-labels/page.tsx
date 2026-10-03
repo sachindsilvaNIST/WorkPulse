@@ -203,7 +203,7 @@ export default function GmailLabelsPage() {
             <button type="button" disabled={busy} onClick={() => void confirmDelete(node)} className="cursor-pointer rounded-md bg-destructive px-2 py-1 text-xs font-medium text-white disabled:opacity-50">
               {busy ? "Deleting…" : "Delete"}
             </button>
-            <button type="button" onClick={() => setConfirmDeletePath(null)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium hover:bg-foreground/10">
+            <button type="button" onClick={() => setConfirmDeletePath(null)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium hover:bg-fill-2">
               Cancel
             </button>
           </div>
@@ -213,7 +213,7 @@ export default function GmailLabelsPage() {
 
     if (editingPath === node.fullPath) {
       return (
-        <div className="flex flex-col gap-1 rounded-lg bg-foreground/5 px-3 py-2" style={{ paddingLeft: 12 + depth * 16 }}>
+        <div className="flex flex-col gap-1 rounded-lg bg-fill-1 px-3 py-2" style={{ paddingLeft: 12 + depth * 16 }}>
           <div className="flex items-center gap-1">
             <input
               autoFocus
@@ -232,36 +232,36 @@ export default function GmailLabelsPage() {
             <button type="button" disabled={busy} onClick={() => void confirmRename(node)} className="cursor-pointer rounded-md p-1 text-primary hover:bg-primary/10 disabled:opacity-50" title="Save">
               <Check className="size-3.5" />
             </button>
-            <button type="button" onClick={() => setEditingPath(null)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10" title="Cancel">
+            <button type="button" onClick={() => setEditingPath(null)} className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2" title="Cancel">
               <X className="size-3.5" />
             </button>
           </div>
-          {hasChildren && <p className="px-1 text-xs text-muted-foreground">Renames all {affectedCount} nested label{affectedCount === 1 ? "" : "s"} too.</p>}
+          {hasChildren && <p className="px-1 text-xs text-text-secondary">Renames all {affectedCount} nested label{affectedCount === 1 ? "" : "s"} too.</p>}
           {editError && <p className="px-1 text-xs text-destructive">{editError}</p>}
         </div>
       );
     }
 
     return (
-      <div className="group flex items-center rounded-lg hover:bg-foreground/5" style={{ paddingLeft: 12 + depth * 16 }}>
+      <div className="group flex items-center rounded-lg hover:bg-fill-1" style={{ paddingLeft: 12 + depth * 16 }}>
         <div className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-sm">
           {node.label ? (
             <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
           ) : (
-            <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+            <Folder className="size-3.5 shrink-0 text-text-secondary" />
           )}
-          <span className={cn("truncate", !node.label && "text-muted-foreground")}>{displayName}</span>
-          {isSystem && <span className="shrink-0 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] text-muted-foreground">system</span>}
+          <span className={cn("truncate", !node.label && "text-text-secondary")}>{displayName}</span>
+          {isSystem && <span className="shrink-0 rounded-full bg-fill-2 px-1.5 py-0.5 text-[10px] text-text-secondary">system</span>}
         </div>
         {!isSystem && (
           <div className="hidden shrink-0 items-center gap-0.5 pr-2 group-hover:flex">
-            <button type="button" onClick={() => startCreate(node.fullPath)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary" title="Add label here">
+            <button type="button" onClick={() => startCreate(node.fullPath)} className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2 hover:text-primary" title="Add label here">
               <Plus className="size-3.5" />
             </button>
-            <button type="button" onClick={() => startEdit(node)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary" title="Rename">
+            <button type="button" onClick={() => startEdit(node)} className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2 hover:text-primary" title="Rename">
               <Pencil className="size-3.5" />
             </button>
-            <button type="button" onClick={() => setConfirmDeletePath(node.fullPath)} className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+            <button type="button" onClick={() => setConfirmDeletePath(node.fullPath)} className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-destructive/10 hover:text-destructive" title="Delete">
               <Trash2 className="size-3.5" />
             </button>
           </div>
@@ -298,7 +298,7 @@ export default function GmailLabelsPage() {
               <Mail className="size-6" />
             </div>
             <p className="font-medium">Connect your Gmail account to get started</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-sm text-sm text-text-secondary">
               Head to Settings to connect the Gmail account whose labels you want to search and manage.
             </p>
             <Button asChild className="mt-2">
@@ -313,7 +313,7 @@ export default function GmailLabelsPage() {
           <Card>
             <CardContent className="flex flex-col gap-1 py-3">
               <div className="mb-1 flex items-center justify-between px-1">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
                   {searchMatches ? `${searchMatches.length} match${searchMatches.length === 1 ? "" : "es"}` : "All labels"}
                 </h2>
                 {!creating ? (
@@ -324,7 +324,7 @@ export default function GmailLabelsPage() {
               </div>
 
               {creating && (
-                <div className="mb-1 flex flex-col gap-1 rounded-lg bg-foreground/5 px-3 py-2">
+                <div className="mb-1 flex flex-col gap-1 rounded-lg bg-fill-1 px-3 py-2">
                   <div className="flex items-center gap-1">
                     <input
                       autoFocus
@@ -352,28 +352,28 @@ export default function GmailLabelsPage() {
                         setNewName("");
                         setCreateError(null);
                       }}
-                      className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10"
+                      className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2"
                       title="Cancel"
                     >
                       <X className="size-3.5" />
                     </button>
                   </div>
-                  <p className="px-1 text-xs text-muted-foreground">Use &quot;/&quot; to nest, e.g. Clients/Acme Corp</p>
+                  <p className="px-1 text-xs text-text-secondary">Use &quot;/&quot; to nest, e.g. Clients/Acme Corp</p>
                   {createError && <p className="px-1 text-xs text-destructive">{createError}</p>}
                 </div>
               )}
 
               {error && <p className="px-1 py-2 text-sm text-destructive">{error}</p>}
               {!error && loading && !labels && (
-                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-text-secondary">
                   <Spinner size={16} /> Loading labels…
                 </div>
               )}
-              {!error && labels && labels.length === 0 && <p className="px-1 py-6 text-center text-sm text-muted-foreground">No labels found.</p>}
+              {!error && labels && labels.length === 0 && <p className="px-1 py-6 text-center text-sm text-text-secondary">No labels found.</p>}
 
               {searchMatches ? (
                 searchMatches.length === 0 ? (
-                  <p className="px-1 py-6 text-center text-sm text-muted-foreground">No labels match &quot;{query.trim()}&quot;.</p>
+                  <p className="px-1 py-6 text-center text-sm text-text-secondary">No labels match &quot;{query.trim()}&quot;.</p>
                 ) : (
                   searchMatches.map((l) => {
                     const slash = l.name.lastIndexOf("/");

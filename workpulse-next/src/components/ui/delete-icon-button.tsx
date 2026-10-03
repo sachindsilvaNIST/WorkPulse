@@ -27,7 +27,7 @@ export function DeleteIconButton({
           e.stopPropagation();
           setConfirming(true);
         }}
-        className={cn("shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-destructive", className)}
+        className={cn("shrink-0 cursor-pointer text-text-secondary transition-colors hover:text-destructive", className)}
       >
         <Trash2 className="size-4" />
       </button>

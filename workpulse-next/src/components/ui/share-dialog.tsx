@@ -108,13 +108,13 @@ export function ShareDialog({
   return (
     <FormModal open={open} onClose={onClose} title={`Share “${title}”`}>
       {loading || !config ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-secondary">
           <Spinner size={16} /> Loading…
         </div>
       ) : (
         <div className="flex flex-col gap-5">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">People with access</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">People with access</p>
             <div className="flex gap-1.5">
               <Input
                 type="email"
@@ -142,7 +142,7 @@ export function ShareDialog({
               </Button>
             </div>
 
-            <label className="mt-2 flex w-fit cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <label className="mt-2 flex w-fit cursor-pointer items-center gap-1.5 text-xs text-text-secondary">
               <input
                 type="checkbox"
                 checked={notify}
@@ -168,7 +168,7 @@ export function ShareDialog({
                     <button
                       type="button"
                       onClick={() => removePerson(g.email)}
-                      className="cursor-pointer rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      className="cursor-pointer rounded-full p-1 text-text-secondary hover:bg-destructive/10 hover:text-destructive"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -179,18 +179,18 @@ export function ShareDialog({
           </div>
 
           <div className="border-t border-border pt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">General access</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">General access</p>
             <button
               type="button"
               onClick={togglePublic}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-foreground/[0.03] px-3 py-2.5 text-left hover:bg-foreground/5"
+              className="flex w-full items-center gap-3 rounded-xl border border-border bg-foreground/[0.03] px-3 py-2.5 text-left hover:bg-fill-1"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/8">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fill-1">
                 {config.isPublic ? <Globe className="size-4" /> : <Lock className="size-4" />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{config.isPublic ? "Anyone with the link" : "Private"}</span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="block text-xs text-text-secondary">
                   {config.isPublic ? "No sign-in required" : "Only people added above can access it"}
                 </span>
               </span>
@@ -199,7 +199,7 @@ export function ShareDialog({
             {config.isPublic && (
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Can</span>
+                  <span className="text-xs text-text-secondary">Can</span>
                   <select
                     value={config.publicPermission}
                     onChange={(e) => updatePublicPermission(e.target.value as SharePermission)}
@@ -211,8 +211,8 @@ export function ShareDialog({
                 </div>
                 {publicUrl && (
                   <div className="flex items-center gap-2 rounded-xl border border-border bg-foreground/[0.03] px-3 py-2">
-                    <Link2 className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{publicUrl}</span>
+                    <Link2 className="size-3.5 shrink-0 text-text-secondary" />
+                    <span className="min-w-0 flex-1 truncate text-xs text-text-secondary">{publicUrl}</span>
                     <CopyButton value={publicUrl} />
                   </div>
                 )}
@@ -224,7 +224,7 @@ export function ShareDialog({
 
           <div className="flex items-center justify-between border-t border-border pt-4">
             {saving ? (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-xs text-text-secondary">
                 <Spinner size={12} /> Saving…
               </p>
             ) : (

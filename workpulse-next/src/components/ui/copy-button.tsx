@@ -29,7 +29,7 @@ export function CopyButton({ value, className }: { value: string; className?: st
       title={copied ? "Copied!" : "Copy"}
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-primary",
+        "inline-flex shrink-0 cursor-pointer items-center rounded-full p-0.5 text-text-secondary transition-colors hover:bg-fill-2 hover:text-primary",
         copied && "text-brand-green",
         className
       )}

@@ -55,7 +55,7 @@ export const RICH_TEXT_CONTENT_CLASSNAME = cn(
   "[&_strong]:font-semibold [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through",
   "[&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline",
   "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
-  "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
+  "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-text-secondary",
   "[&_pre]:m-0 [&_pre]:mb-1 [&_pre]:whitespace-pre-wrap [&_pre]:font-mono [&_pre]:text-[13px]"
 );
 
@@ -92,7 +92,7 @@ function ToolbarButton({
       // Prevent the button from stealing focus (and the current text selection) from the editor.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+      className="flex size-7 cursor-pointer items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-fill-2 hover:text-text-primary"
     >
       <Icon className="size-4" />
     </button>
@@ -100,7 +100,7 @@ function ToolbarButton({
 }
 
 function ToolbarDivider() {
-  return <div className="mx-1 h-4 w-px bg-white/10" />;
+  return <div className="mx-1 h-4 w-px bg-fill-1" />;
 }
 
 export function RichTextEditor({
@@ -711,9 +711,9 @@ export function RichTextEditor({
 
   return (
     <div className={cn("flex flex-1 flex-col overflow-hidden", className)}>
-      <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-white/10 pb-2">
+      <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-separator pb-2">
         <select
-          className="h-7 cursor-pointer rounded-md border-none bg-transparent px-1.5 text-xs text-muted-foreground outline-none hover:bg-foreground/10"
+          className="h-7 cursor-pointer rounded-md border-none bg-transparent px-1.5 text-xs text-text-secondary outline-none hover:bg-fill-2"
           defaultValue="P"
           onChange={(e) => exec("formatBlock", `<${e.target.value}>`)}
         >
@@ -735,18 +735,18 @@ export function RichTextEditor({
             onClick={() => setShowHighlightMenu((v) => !v)}
           />
           {showHighlightMenu && (
-            <div className="absolute left-0 top-full z-10 mt-1 flex items-center gap-1.5 rounded-full border border-white/10 bg-popover/95 p-1.5 shadow-lg backdrop-blur-md">
+            <div className="absolute left-0 top-full z-10 mt-1 flex items-center gap-1.5 rounded-full border border-separator glass p-1.5 shadow-[var(--glass-shadow)] backdrop-blur-md">
               <button
                 type="button"
                 title="None"
                 aria-label="Highlight None"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => applyHighlight(null)}
-                className="flex size-5 cursor-pointer items-center justify-center rounded-full text-muted-foreground ring-1 ring-inset ring-white/20 transition-transform hover:scale-110 hover:text-foreground"
+                className="flex size-5 cursor-pointer items-center justify-center rounded-full text-text-secondary ring-1 ring-inset ring-white/20 transition-transform hover:scale-110 hover:text-text-primary"
               >
                 <Ban className="size-3.5" />
               </button>
-              <div className="h-4 w-px bg-white/10" />
+              <div className="h-4 w-px bg-fill-1" />
               {HIGHLIGHT_COLORS.map((h) => (
                 <button
                   key={h.name}
@@ -789,7 +789,7 @@ export function RichTextEditor({
         className={cn(
           RICH_TEXT_CONTENT_CLASSNAME,
           "flex-1 overflow-y-auto outline-none",
-          "empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground"
+          "empty:before:content-[attr(data-placeholder)] empty:before:text-text-secondary"
         )}
       />
 
@@ -802,13 +802,13 @@ export function RichTextEditor({
           // instead of the viewport, landing the menu somewhere else on the page entirely.
           <div
             ref={contextMenuRef}
-            className="fixed z-50 min-w-36 rounded-xl border border-white/10 bg-popover/95 p-1 shadow-lg backdrop-blur-md"
+            className="fixed z-50 min-w-36 rounded-xl border border-separator glass p-1 shadow-[var(--glass-shadow)] backdrop-blur-md"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
               type="button"
               onClick={() => openLinkDialogWithContext(editingAnchorRef.current, savedRangeRef.current!)}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-fill-2"
             >
               <LinkIcon className="size-3.5" /> {contextMenu.isEdit ? "Edit Link" : "Link…"}
             </button>
@@ -846,16 +846,16 @@ export function RichTextEditor({
 
         return createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4"
             onMouseDown={(e) => {
               if (e.target === e.currentTarget) setShowLinkDialog(false);
             }}
           >
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-popover p-5 shadow-xl">
+            <div className="w-full max-w-sm rounded-2xl border border-separator bg-popover p-5 shadow-xl">
               <h3 className="mb-3 text-sm font-semibold">{linkDialogIsEdit ? "Edit Link" : "Add Link"}</h3>
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Text</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Text</label>
                   <Input
                     autoFocus
                     type="text"
@@ -866,7 +866,7 @@ export function RichTextEditor({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Link</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Link</label>
                   <Input
                     type="text"
                     placeholder="https://example.com"

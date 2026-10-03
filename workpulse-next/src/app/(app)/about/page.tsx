@@ -22,9 +22,9 @@ export default function AboutPage() {
 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
+          <p className="text-sm text-text-secondary">WorkPulse Web — Attendance, Reports, Trips, and more, all in one place.</p>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[11px] font-medium">v{APP_VERSION}</span>
+            <span className="rounded-full bg-fill-2 px-2 py-0.5 text-[11px] font-medium">v{APP_VERSION}</span>
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-[11px] font-medium",
@@ -33,16 +33,16 @@ export default function AboutPage() {
             >
               {APP_ENV}
             </span>
-            <span className="font-mono text-[11px] text-muted-foreground">{GIT_SHA}</span>
+            <span className="font-mono text-[11px] text-text-secondary">{GIT_SHA}</span>
           </div>
-          <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground hover:underline">
+          <div className="mt-1 flex gap-4 text-xs text-text-secondary">
+            <Link href="/privacy" className="hover:text-text-primary hover:underline">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-foreground hover:underline">
+            <Link href="/terms" className="hover:text-text-primary hover:underline">
               Terms of Service
             </Link>
-            <Link href="/history" className="hover:text-foreground hover:underline">
+            <Link href="/history" className="hover:text-text-primary hover:underline">
               Where WorkPulse Started
             </Link>
           </div>
@@ -56,9 +56,9 @@ export default function AboutPage() {
             <div key={entry.version} className="border-t border-border pt-3 first:border-t-0 first:pt-0">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-semibold">v{entry.version}</span>
-                <span className="text-xs text-muted-foreground">{entry.date}</span>
+                <span className="text-xs text-text-secondary">{entry.date}</span>
               </div>
-              <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-text-secondary">
                 {entry.highlights.map((h) => (
                   <li key={h}>{h}</li>
                 ))}

@@ -53,7 +53,7 @@ export function FormModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground"
+                className="cursor-pointer rounded-full p-1.5 text-text-secondary transition-colors hover:bg-fill-1 hover:text-text-primary"
               >
                 <X className="size-4" />
               </button>

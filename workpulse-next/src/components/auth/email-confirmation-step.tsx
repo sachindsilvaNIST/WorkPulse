@@ -54,12 +54,12 @@ export function EmailConfirmationStep({ email }: { email: string }) {
       className="w-full max-w-sm"
     >
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-lg shadow-blue-500/20">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-[var(--glass-shadow)] shadow-blue-500/20">
           <Mail className="size-7 text-white" strokeWidth={2.5} />
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Confirm your email</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-secondary">
             Enter the code we sent to <span className="font-medium text-foreground">{email}</span>
           </p>
         </div>
@@ -91,7 +91,7 @@ export function EmailConfirmationStep({ email }: { email: string }) {
               {loading ? <Spinner size={18} /> : "Confirm & Sign in"}
             </Button>
             {loading && slow && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="-mt-2 text-center text-xs text-muted-foreground">
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="-mt-2 text-center text-xs text-text-secondary">
                 Waking up the server — this can take up to a minute on the first request…
               </motion.p>
             )}

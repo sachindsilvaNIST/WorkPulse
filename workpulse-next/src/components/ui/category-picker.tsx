@@ -113,8 +113,8 @@ export function CategoryPicker({
         onClick={() => setOpen((v) => !v)}
         className="flex h-10 w-full cursor-pointer items-center justify-between rounded-full border border-input bg-background/50 px-4 text-sm backdrop-blur-md outline-none"
       >
-        <span className={cn("truncate", !value && "text-muted-foreground")}>{value || placeholder}</span>
-        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className={cn("truncate", !value && "text-text-secondary")}>{value || placeholder}</span>
+        <ChevronDown className="size-3.5 shrink-0 text-text-secondary" />
       </button>
       {open && (
         <div className="glass-panel absolute z-40 mt-1 max-h-64 w-full min-w-[240px] overflow-y-auto p-1.5">
@@ -123,7 +123,7 @@ export function CategoryPicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search or create…"
-            className="mb-1.5 w-full rounded-lg bg-foreground/5 px-3 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+            className="mb-1.5 w-full rounded-lg bg-fill-1 px-3 py-1.5 text-sm outline-none placeholder:text-text-secondary"
             onKeyDown={(e) => {
               if (e.key === "Enter" && canCreate) {
                 e.preventDefault();
@@ -147,7 +147,7 @@ export function CategoryPicker({
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(null)}
-                      className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium hover:bg-foreground/10"
+                      className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium hover:bg-fill-2"
                     >
                       Cancel
                     </button>
@@ -158,7 +158,7 @@ export function CategoryPicker({
 
             if (editingId === c.id) {
               return (
-                <div key={c.id} className="flex flex-col gap-1 rounded-lg bg-foreground/5 px-2 py-1.5">
+                <div key={c.id} className="flex flex-col gap-1 rounded-lg bg-fill-1 px-2 py-1.5">
                   <div className="flex items-center gap-1">
                     <input
                       autoFocus
@@ -187,7 +187,7 @@ export function CategoryPicker({
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10"
+                      className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2"
                       title="Cancel"
                     >
                       <X className="size-3.5" />
@@ -199,7 +199,7 @@ export function CategoryPicker({
             }
 
             return (
-              <div key={c.id} className="group flex w-full items-center rounded-lg hover:bg-foreground/10">
+              <div key={c.id} className="group flex w-full items-center rounded-lg hover:bg-fill-2">
                 <button type="button" onClick={() => select(c.name)} className="flex min-w-0 flex-1 cursor-pointer items-center justify-between px-3 py-1.5 text-left text-sm text-foreground">
                   <span className="truncate">{c.name}</span>
                   {value === c.name && <Check className="size-3.5 shrink-0 text-primary" />}
@@ -211,7 +211,7 @@ export function CategoryPicker({
                       e.stopPropagation();
                       startEdit(c);
                     }}
-                    className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-foreground/10 hover:text-primary"
+                    className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-fill-2 hover:text-primary"
                     title="Rename"
                   >
                     <Pencil className="size-3" />
@@ -222,7 +222,7 @@ export function CategoryPicker({
                       e.stopPropagation();
                       setConfirmDeleteId(c.id);
                     }}
-                    className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="cursor-pointer rounded-md p-1 text-text-secondary hover:bg-destructive/10 hover:text-destructive"
                     title="Delete"
                   >
                     <Trash2 className="size-3" />
@@ -232,7 +232,7 @@ export function CategoryPicker({
             );
           })}
           {filtered.length === 0 && !canCreate && (
-            <p className="px-3 py-1.5 text-xs text-muted-foreground">No categories yet — type one above to create it.</p>
+            <p className="px-3 py-1.5 text-xs text-text-secondary">No categories yet — type one above to create it.</p>
           )}
           {canCreate && (
             <button

@@ -27,9 +27,9 @@ export function ComingSoon({
           </div>
           <div>
             <h2 className="text-lg font-semibold">{title}</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1.5 text-sm text-text-secondary">{description}</p>
           </div>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-text-secondary/70">
             This module is being ported from the desktop app to the new web platform — coming in a follow-up update.
           </p>
         </CardContent>

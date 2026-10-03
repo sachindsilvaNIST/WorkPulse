@@ -58,7 +58,7 @@ export function PageToolbar({
         {icon}
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+          {description && <p className="mt-0.5 text-sm text-text-secondary">{description}</p>}
         </div>
       </div>
       {children && <div className="flex items-center gap-2">{children}</div>}

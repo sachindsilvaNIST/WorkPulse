@@ -26,7 +26,7 @@ export function SearchInput({
 }) {
   return (
     <div className={cn("relative", className)}>
-      <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground", small ? "size-3.5" : "size-4")} />
+      <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary", small ? "size-3.5" : "size-4")} />
       <Input
         placeholder={placeholder}
         value={value}
@@ -38,7 +38,7 @@ export function SearchInput({
           type="button"
           onClick={() => onValueChange("")}
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground",
+            "absolute top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-text-secondary hover:bg-fill-2 hover:text-text-primary",
             small ? "right-2" : "right-3"
           )}
           title="Clear search"

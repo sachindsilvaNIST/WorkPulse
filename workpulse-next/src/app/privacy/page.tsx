@@ -11,7 +11,7 @@ export default function PrivacyPage() {
         ← Back to WorkPulse
       </Link>
       <h1 className="mt-6 text-3xl font-semibold tracking-tight">Privacy Policy</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Last updated 2026-08-30</p>
+      <p className="mt-2 text-sm text-text-secondary">Last updated 2026-08-30</p>
 
       <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-foreground/90">
         <p>

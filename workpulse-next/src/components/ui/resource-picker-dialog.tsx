@@ -45,19 +45,19 @@ export function ResourcePickerDialog({
   return (
     <FormModal open={open} onClose={onClose} title="Link to a Resource">
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search your Resources…"
-          className="h-9 w-full rounded-full border border-input bg-background/50 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground"
+          className="h-9 w-full rounded-full border border-input bg-background/50 pl-9 pr-3 text-sm outline-none placeholder:text-text-secondary"
         />
       </div>
       <div className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
-        {resources === null && <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading…</p>}
+        {resources === null && <p className="px-2 py-6 text-center text-sm text-text-secondary">Loading…</p>}
         {resources !== null && filtered.length === 0 && (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">No matching resources.</p>
+          <p className="px-2 py-6 text-center text-sm text-text-secondary">No matching resources.</p>
         )}
         {filtered.map((r) => {
           const Icon = TYPE_ICON[r.type];
@@ -70,13 +70,13 @@ export function ResourcePickerDialog({
                 onClose();
               }}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm hover:bg-foreground/5"
+                "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm hover:bg-fill-1"
               )}
             >
-              <Icon className="size-4 shrink-0 text-muted-foreground" />
+              <Icon className="size-4 shrink-0 text-text-secondary" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{r.title}</span>
-                {(r.tags || r.notes) && <span className="block truncate text-xs text-muted-foreground">{r.tags || r.notes}</span>}
+                {(r.tags || r.notes) && <span className="block truncate text-xs text-text-secondary">{r.tags || r.notes}</span>}
               </span>
             </button>
           );

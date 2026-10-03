@@ -40,12 +40,12 @@ export function AppleSelect<T extends string>({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "flex h-9 w-full items-center justify-between gap-2 rounded-full border border-input bg-background/50 px-3.5 text-xs outline-none backdrop-blur-md transition-colors",
-          "hover:bg-foreground/5 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+          "hover:bg-fill-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
           disabled && "cursor-not-allowed opacity-60 hover:bg-background/50"
         )}
       >
         <span className="truncate">{current?.label ?? ""}</span>
-        <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("size-3.5 shrink-0 text-text-secondary transition-transform", open && "rotate-180")} />
       </button>
 
       {createPortal(
@@ -69,7 +69,7 @@ export function AppleSelect<T extends string>({
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-left text-xs hover:bg-foreground/8",
+                    "flex w-full cursor-pointer items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-left text-xs hover:bg-fill-1",
                     o.value === value && "font-medium text-primary"
                   )}
                 >

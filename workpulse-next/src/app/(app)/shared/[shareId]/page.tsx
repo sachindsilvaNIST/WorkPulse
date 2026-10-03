@@ -82,7 +82,7 @@ export default function SharedItemPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-2xl items-center gap-2 py-16 text-sm text-muted-foreground">
+      <div className="mx-auto flex max-w-2xl items-center gap-2 py-16 text-sm text-text-secondary">
         <Spinner size={16} /> Loading…
       </div>
     );
@@ -90,7 +90,7 @@ export default function SharedItemPage() {
 
   if (notFound || !resourceType || !data) {
     return (
-      <div className="mx-auto max-w-2xl py-16 text-center text-sm text-muted-foreground">
+      <div className="mx-auto max-w-2xl py-16 text-center text-sm text-text-secondary">
         This item isn&apos;t available anymore — it may have been unshared or deleted.
       </div>
     );
@@ -102,7 +102,7 @@ export default function SharedItemPage() {
     <div className="mx-auto max-w-2xl">
       <button
         onClick={() => router.push("/shared")}
-        className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="size-4" /> Shared with Me
       </button>
@@ -116,7 +116,7 @@ export default function SharedItemPage() {
 
           {fields.map((f) => (
             <div key={f.key} className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
+              <label className="text-xs font-medium text-text-secondary">{f.label}</label>
               {f.multiline ? (
                 <Textarea
                   value={String(data[f.key] ?? "")}

@@ -384,7 +384,7 @@ export default function TripsPage() {
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
-            <p className="text-xs text-muted-foreground sm:col-span-2">
+            <p className="text-xs text-text-secondary sm:col-span-2">
               Trip segments, budget, ticket requests and the settlement can all be filled in after creating the trip.
             </p>
             <div className="flex gap-2 sm:col-span-2">
@@ -400,8 +400,8 @@ export default function TripsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.6fr]">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
-          {!loading && trips.length === 0 && <p className="text-sm text-muted-foreground">No trips yet.</p>}
+          {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
+          {!loading && trips.length === 0 && <p className="text-sm text-text-secondary">No trips yet.</p>}
           {trips.map((t) => (
             <motion.div key={t.id} whileHover={{ y: -2 }}>
               <Card
@@ -413,17 +413,17 @@ export default function TripsPage() {
                     <Badge variant="secondary">{t.category}</Badge>
                     <span className="truncate font-semibold">{t.destination || "Untitled trip"}</span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
                     <span className="inline-flex items-center gap-1">
                       <span className="size-1.5 rounded-full" style={{ backgroundColor: STATUS_COLOR[t.status] }} />
                       {STATUS_LABEL[t.status]}
                     </span>
                     · {t.tripNumber}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.startDate} → {t.endDate}</p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">{t.purpose}</p>
+                  <p className="mt-1 text-xs text-text-secondary">{t.startDate} → {t.endDate}</p>
+                  <p className="mt-1 truncate text-sm text-text-secondary">{t.purpose}</p>
                   {t.documentCount > 0 && (
-                    <span className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs text-text-secondary">
                       <FileText className="size-3" /> {t.documentCount} document{t.documentCount === 1 ? "" : "s"}
                     </span>
                   )}
@@ -435,7 +435,7 @@ export default function TripsPage() {
 
         <Card className="min-h-[300px]">
           {!selected || !appForm ? (
-            <CardContent className="flex h-full min-h-[260px] flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+            <CardContent className="flex h-full min-h-[260px] flex-col items-center justify-center gap-3 text-center text-text-secondary">
               <Briefcase className="size-10 opacity-40" />
               <p>Select a trip to manage its application, settlement and documents.</p>
             </CardContent>
@@ -443,9 +443,9 @@ export default function TripsPage() {
             <CardContent className="flex flex-col gap-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-muted-foreground">{selected.tripNumber}</p>
+                  <p className="text-xs text-text-secondary">{selected.tripNumber}</p>
                   <h3 className="text-lg font-semibold">{selected.destination || "Untitled trip"}</h3>
-                  <p className="text-sm text-muted-foreground">{selected.purpose}</p>
+                  <p className="text-sm text-text-secondary">{selected.purpose}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <AppleSelect
@@ -465,11 +465,11 @@ export default function TripsPage() {
               </div>
 
               {/* ===== APPLICATION ===== */}
-              <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-background/30 p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Application</h4>
+              <section className="flex flex-col gap-3 rounded-2xl border border-separator bg-background/30 p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Application</h4>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Category
                     <AppleSelect
                       value={appForm.category}
@@ -479,7 +479,7 @@ export default function TripsPage() {
                       title="Category can't be changed after the trip is created — delete and recreate it if you picked the wrong one."
                     />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Department code
                     <Input
                       className="h-9 text-sm"
@@ -488,23 +488,23 @@ export default function TripsPage() {
                       onChange={(e) => setAppForm({ ...appForm, departmentCode: e.target.value.replace(/\D/g, "") })}
                     />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Destination
                     <Input className="h-9 text-sm" value={appForm.destination} onChange={(e) => setAppForm({ ...appForm, destination: e.target.value })} />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Purpose
                     <Input className="h-9 text-sm" value={appForm.purpose} onChange={(e) => setAppForm({ ...appForm, purpose: e.target.value })} />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Start date
                     <AppleDatePicker value={appForm.startDate} onChange={(v) => setAppForm({ ...appForm, startDate: v })} />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     End date
                     <AppleDatePicker value={appForm.endDate} onChange={(v) => setAppForm({ ...appForm, endDate: v })} />
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Scheduled departure
                     <div className="flex flex-col gap-1.5">
                       <AppleDatePicker
@@ -517,7 +517,7 @@ export default function TripsPage() {
                       />
                     </div>
                   </label>
-                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <label className="flex flex-col gap-1 text-xs text-text-secondary">
                     Scheduled return
                     <div className="flex flex-col gap-1.5">
                       <AppleDatePicker
@@ -531,7 +531,7 @@ export default function TripsPage() {
                     </div>
                   </label>
                 </div>
-                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                <label className="flex flex-col gap-1 text-xs text-text-secondary">
                   Notes
                   <Textarea className="text-sm" value={appForm.notes} onChange={(e) => setAppForm({ ...appForm, notes: e.target.value })} />
                 </label>
@@ -539,17 +539,17 @@ export default function TripsPage() {
                 {/* Trip Details / segments */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trip Details</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Trip Details</p>
                     <Button type="button" size="sm" variant="outline" onClick={addSegment}>
                       <Plus className="size-3.5" /> Add segment
                     </Button>
                   </div>
-                  {appForm.segments.length === 0 && <p className="text-xs text-muted-foreground">No segments — add one for each destination/leg of this trip.</p>}
+                  {appForm.segments.length === 0 && <p className="text-xs text-text-secondary">No segments — add one for each destination/leg of this trip.</p>}
                   {appForm.segments.length > 0 && (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[720px] border-collapse text-xs">
                         <thead>
-                          <tr className="text-left text-muted-foreground">
+                          <tr className="text-left text-text-secondary">
                             <th className="p-1">Purpose</th>
                             <th className="p-1">Content</th>
                             <th className="p-1">Project No.</th>
@@ -570,7 +570,7 @@ export default function TripsPage() {
                               <td className="p-1"><input className={inputCls()} value={s.placeName} onChange={(e) => updateSegment(s.id, { placeName: e.target.value })} /></td>
                               <td className="p-1"><AppleDatePicker size="sm" value={s.date1 ?? ""} onChange={(v) => updateSegment(s.id, { date1: v || null })} /></td>
                               <td className="p-1"><AppleDatePicker size="sm" value={s.date2 ?? ""} onChange={(v) => updateSegment(s.id, { date2: v || null })} /></td>
-                              <td className="p-1"><button type="button" onClick={() => removeSegment(s.id)} className="cursor-pointer text-muted-foreground hover:text-destructive"><X className="size-3.5" /></button></td>
+                              <td className="p-1"><button type="button" onClick={() => removeSegment(s.id)} className="cursor-pointer text-text-secondary hover:text-destructive"><X className="size-3.5" /></button></td>
                             </tr>
                           ))}
                         </tbody>
@@ -582,7 +582,7 @@ export default function TripsPage() {
                 {/* Budget */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Budget</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Budget</p>
                     <Button type="button" size="sm" variant="outline" onClick={addBudgetLine}>
                       <Plus className="size-3.5" /> Add line
                     </Button>
@@ -591,7 +591,7 @@ export default function TripsPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[420px] border-collapse text-xs">
                         <thead>
-                          <tr className="text-left text-muted-foreground">
+                          <tr className="text-left text-text-secondary">
                             <th className="p-1">Content</th>
                             <th className="p-1">Expense category</th>
                             <th className="p-1">Amount</th>
@@ -604,7 +604,7 @@ export default function TripsPage() {
                               <td className="p-1"><input className={inputCls()} value={b.content} onChange={(e) => updateBudgetLine(b.id, { content: e.target.value })} /></td>
                               <td className="p-1"><input className={inputCls()} value={b.expenseCategory} onChange={(e) => updateBudgetLine(b.id, { expenseCategory: e.target.value })} /></td>
                               <td className="p-1"><input type="number" className={inputCls("w-24")} value={b.amount} onChange={(e) => updateBudgetLine(b.id, { amount: Number(e.target.value) })} /></td>
-                              <td className="p-1"><button type="button" onClick={() => removeBudgetLine(b.id)} className="cursor-pointer text-muted-foreground hover:text-destructive"><X className="size-3.5" /></button></td>
+                              <td className="p-1"><button type="button" onClick={() => removeBudgetLine(b.id)} className="cursor-pointer text-text-secondary hover:text-destructive"><X className="size-3.5" /></button></td>
                             </tr>
                           ))}
                         </tbody>
@@ -614,7 +614,7 @@ export default function TripsPage() {
                   )}
                 </div>
 
-                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                <label className="flex flex-col gap-1 text-xs text-text-secondary">
                   Ticket arrangement request
                   <Textarea className="text-sm" value={appForm.ticketArrangementRequest} onChange={(e) => setAppForm({ ...appForm, ticketArrangementRequest: e.target.value })} />
                 </label>
@@ -629,39 +629,39 @@ export default function TripsPage() {
 
               {/* ===== SETTLEMENT ===== */}
               {settlement && (
-                <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-background/30 p-4">
-                  <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Settlement</h4>
+                <section className="flex flex-col gap-3 rounded-2xl border border-separator bg-background/30 p-4">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Settlement</h4>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Employee No.
                       <Input className="h-9 text-sm" value={settlement.employeeNo} onChange={(e) => setSettlement({ ...settlement, employeeNo: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Bank account number
                       <Input className="h-9 text-sm" value={settlement.bankAccountNumber} onChange={(e) => setSettlement({ ...settlement, bankAccountNumber: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Bank
                       <Input className="h-9 text-sm" value={settlement.bank} onChange={(e) => setSettlement({ ...settlement, bank: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Branch
                       <Input className="h-9 text-sm" value={settlement.branch} onChange={(e) => setSettlement({ ...settlement, branch: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Location at settlement
                       <Input className="h-9 text-sm" value={settlement.locationAtSettlement} onChange={(e) => setSettlement({ ...settlement, locationAtSettlement: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Region
                       <Input className="h-9 text-sm" value={settlement.region} onChange={(e) => setSettlement({ ...settlement, region: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Accounting code
                       <Input className="h-9 text-sm" value={settlement.accountingCode} onChange={(e) => setSettlement({ ...settlement, accountingCode: e.target.value })} />
                     </label>
-                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <label className="flex flex-col gap-1 text-xs text-text-secondary">
                       Source document No.
                       <Input className="h-9 text-sm" value={settlement.sourceDocumentNo} onChange={(e) => setSettlement({ ...settlement, sourceDocumentNo: e.target.value })} />
                     </label>
@@ -670,7 +670,7 @@ export default function TripsPage() {
                   {/* Transportation */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Travel &amp; Transportation Expenses</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Travel &amp; Transportation Expenses</p>
                       <Button type="button" size="sm" variant="outline" onClick={addTransportLine}>
                         <Plus className="size-3.5" /> Add row
                       </Button>
@@ -679,7 +679,7 @@ export default function TripsPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[1100px] border-collapse text-xs">
                           <thead>
-                            <tr className="text-left text-muted-foreground">
+                            <tr className="text-left text-text-secondary">
                               <th className="p-1">Date</th>
                               <th className="p-1">Content</th>
                               <th className="p-1">Destination</th>
@@ -712,7 +712,7 @@ export default function TripsPage() {
                                 <td className="p-1"><input type="number" className={inputCls("w-20")} value={l.transportationCost} onChange={(e) => updateTransportLine(l.id, { transportationCost: Number(e.target.value) })} /></td>
                                 <td className="p-1"><input type="number" className={inputCls("w-20")} value={l.lodgingCost} onChange={(e) => updateTransportLine(l.id, { lodgingCost: Number(e.target.value) })} /></td>
                                 <td className="p-1"><input type="number" className={inputCls("w-20")} value={l.dailyAllowance} onChange={(e) => updateTransportLine(l.id, { dailyAllowance: Number(e.target.value) })} /></td>
-                                <td className="p-1"><button type="button" onClick={() => removeTransportLine(l.id)} className="cursor-pointer text-muted-foreground hover:text-destructive"><X className="size-3.5" /></button></td>
+                                <td className="p-1"><button type="button" onClick={() => removeTransportLine(l.id)} className="cursor-pointer text-text-secondary hover:text-destructive"><X className="size-3.5" /></button></td>
                               </tr>
                             ))}
                           </tbody>
@@ -724,7 +724,7 @@ export default function TripsPage() {
                   {/* Other */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Other Settlement</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Other Settlement</p>
                       <Button type="button" size="sm" variant="outline" onClick={addOtherLine}>
                         <Plus className="size-3.5" /> Add row
                       </Button>
@@ -733,7 +733,7 @@ export default function TripsPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[760px] border-collapse text-xs">
                           <thead>
-                            <tr className="text-left text-muted-foreground">
+                            <tr className="text-left text-text-secondary">
                               <th className="p-1">Date</th>
                               <th className="p-1">Content</th>
                               <th className="p-1">Description</th>
@@ -752,7 +752,7 @@ export default function TripsPage() {
                                 <td className="p-1"><input inputMode="numeric" className={inputCls()} value={l.departmentCode} onChange={(e) => updateOtherLine(l.id, { departmentCode: e.target.value.replace(/\D/g, "") })} /></td>
                                 <td className="p-1"><input className={inputCls()} value={l.expenseCategoryTaxCode} onChange={(e) => updateOtherLine(l.id, { expenseCategoryTaxCode: e.target.value })} /></td>
                                 <td className="p-1"><input type="number" className={inputCls("w-24")} value={l.settlementAmount} onChange={(e) => updateOtherLine(l.id, { settlementAmount: Number(e.target.value) })} /></td>
-                                <td className="p-1"><button type="button" onClick={() => removeOtherLine(l.id)} className="cursor-pointer text-muted-foreground hover:text-destructive"><X className="size-3.5" /></button></td>
+                                <td className="p-1"><button type="button" onClick={() => removeOtherLine(l.id)} className="cursor-pointer text-text-secondary hover:text-destructive"><X className="size-3.5" /></button></td>
                               </tr>
                             ))}
                           </tbody>
@@ -772,9 +772,9 @@ export default function TripsPage() {
                   </div>
 
                   {/* Receipts / documents */}
-                  <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Receipts ({docs.length})</p>
-                    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-background/40 p-3">
+                  <div className="flex flex-col gap-2 border-t border-separator pt-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Receipts ({docs.length})</p>
+                    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-separator bg-background/40 p-3">
                       <CategoryPicker value={docCategory} onChange={setDocCategory} className="h-9 w-40" placeholder="Category" />
                       <AppleDatePicker value={docDate} onChange={setDocDate} className="w-36" placeholder="Document date" />
                       <Input placeholder="Label (optional)" value={docLabel} onChange={(e) => setDocLabel(e.target.value)} className="h-9 flex-1" />
@@ -784,7 +784,7 @@ export default function TripsPage() {
                         onFile={handleFile}
                         disabled={uploading || !docCategory}
                         className={cn(
-                          "inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-3 text-xs font-medium text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md hover:bg-white/15",
+                          "inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border border-separator bg-fill-1 px-3 text-xs font-medium text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md hover:bg-fill-1",
                           (uploading || !docCategory) && "pointer-events-none cursor-not-allowed opacity-50"
                         )}
                       >
@@ -800,15 +800,15 @@ export default function TripsPage() {
                     )}
 
                     <div className="flex flex-col gap-2">
-                      {docs.length === 0 && <p className="text-sm text-muted-foreground">No receipts yet.</p>}
+                      {docs.length === 0 && <p className="text-sm text-text-secondary">No receipts yet.</p>}
                       {docs.map((d) => (
-                        <div key={d.id} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-background/30 px-3 py-2">
+                        <div key={d.id} className="flex items-center justify-between gap-2 rounded-xl border border-separator bg-background/30 px-3 py-2">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge variant="secondary">{d.category}</Badge>
                               <span className="truncate text-sm font-medium">{d.fileName}</span>
                               {d.amount != null && (
-                                <span className="text-xs font-medium text-muted-foreground">
+                                <span className="text-xs font-medium text-text-secondary">
                                   {d.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {d.currency}
                                 </span>
                               )}
@@ -816,7 +816,7 @@ export default function TripsPage() {
                                 <ResourceLinkChip resource={{ id: d.resourceId, title: resourceTitles[d.resourceId] }} onRemove={() => handleUnlinkResource(d.id)} />
                               )}
                             </div>
-                            {d.label && <p className="text-xs text-muted-foreground">{d.label}</p>}
+                            {d.label && <p className="text-xs text-text-secondary">{d.label}</p>}
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
                             <Button size="icon" variant="ghost" onClick={() => setLinkingDocId(d.id)} title="Link to a Resource">

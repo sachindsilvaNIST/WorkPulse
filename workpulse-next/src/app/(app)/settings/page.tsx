@@ -110,9 +110,9 @@ function RowLink({ label, description, onClick }: { label: string; description: 
     <button type="button" onClick={onClick} className="flex w-full cursor-pointer items-center justify-between gap-3 py-3 text-left">
       <div>
         <p className="text-sm">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-text-secondary">{description}</p>
       </div>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+      <ChevronRight className="size-4 shrink-0 text-text-secondary" />
     </button>
   );
 }
@@ -128,7 +128,7 @@ function SubPageBack({ label, onBack }: { label: string; onBack: () => void }) {
       >
         <ChevronLeft className="size-4" /> Back
       </button>
-      <span className="text-sm text-muted-foreground">/ {label}</span>
+      <span className="text-sm text-text-secondary">/ {label}</span>
     </div>
   );
 }
@@ -545,14 +545,14 @@ export default function SettingsPage() {
 
       {mounted && recentEntries.length > 0 && (
         <div className="mb-6">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recently Viewed</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">Recently Viewed</p>
           <div className="flex gap-3 overflow-x-auto pb-1">
             {recentEntries.map((entry) => (
               <button
                 key={entry.id}
                 type="button"
                 onClick={() => selectSection(entry.id)}
-                className="flex w-40 shrink-0 cursor-pointer flex-col gap-2 rounded-2xl border border-border p-3 text-left transition-colors hover:bg-foreground/5"
+                className="flex w-40 shrink-0 cursor-pointer flex-col gap-2 rounded-2xl border border-border p-3 text-left transition-colors hover:bg-fill-1"
                 style={{ backgroundColor: `color-mix(in srgb, ${entry.color} 6%, var(--card))` }}
               >
                 <IconBadge icon={entry.icon} color={entry.color} color2={entry.color2} flat size="size-8" iconSize="size-4.5" />
@@ -566,13 +566,13 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <aside className="glass-panel w-full shrink-0 p-3 md:w-64">
           <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" />
             <input
               value={navQuery}
               onChange={(e) => setNavQuery(e.target.value)}
               placeholder="Find a setting…"
               className={cn(
-                "h-9 w-full rounded-full border border-input bg-background/50 pl-8 text-sm outline-none placeholder:text-muted-foreground",
+                "h-9 w-full rounded-full border border-input bg-background/50 pl-8 text-sm outline-none placeholder:text-text-secondary",
                 navQuery ? "pr-8" : "pr-3"
               )}
             />
@@ -580,7 +580,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setNavQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0.5 text-text-secondary hover:bg-fill-2 hover:text-text-primary"
                 title="Clear search"
               >
                 <X className="size-3.5" />
@@ -588,10 +588,10 @@ export default function SettingsPage() {
             )}
           </div>
           <nav className="flex flex-col gap-3">
-            {navGroups.length === 0 && <p className="px-2 py-4 text-center text-xs text-muted-foreground">No matches.</p>}
+            {navGroups.length === 0 && <p className="px-2 py-4 text-center text-xs text-text-secondary">No matches.</p>}
             {navGroups.map((group) => (
               <div key={group}>
-                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
+                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">{group}</p>
                 <div className="flex flex-col gap-0.5">
                   {filteredNav
                     .filter((n) => n.group === group)
@@ -604,7 +604,7 @@ export default function SettingsPage() {
                           onClick={() => selectSection(entry.id)}
                           className={cn(
                             "flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors",
-                            active ? "text-white" : "hover:bg-foreground/5"
+                            active ? "text-white" : "hover:bg-fill-1"
                           )}
                           style={active ? { backgroundColor: "var(--primary)" } : undefined}
                         >
@@ -612,7 +612,7 @@ export default function SettingsPage() {
                           <span className="min-w-0">
                             <span className="block truncate text-[13px] font-medium">{entry.label}</span>
                             {trimmedNavQuery && (
-                              <span className={cn("block truncate text-[11px]", active ? "text-white/80" : "text-muted-foreground")}>
+                              <span className={cn("block truncate text-[11px]", active ? "text-white/80" : "text-text-secondary")}>
                                 {entry.description}
                               </span>
                             )}
@@ -628,7 +628,7 @@ export default function SettingsPage() {
 
         <div className="min-w-0 flex-1">
         {activeEntry && (
-          <p className="mb-3 text-xs text-muted-foreground md:hidden">{activeEntry.description}</p>
+          <p className="mb-3 text-xs text-text-secondary md:hidden">{activeEntry.description}</p>
         )}
         {activeSection === "appearance" && (
         <div className="flex flex-col gap-4">
@@ -840,14 +840,14 @@ export default function SettingsPage() {
               <SectionIcon icon={WorkHoursGlyph} color="#64D2FF" color2="#0078D4" />
               <h2 className="font-semibold">Work Hours</h2>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-text-secondary">
               Standard hours used to calculate overtime on the Attendance tab.
             </p>
             {settings ? (
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs text-muted-foreground">Standard Login</label>
+                    <label className="mb-1 block text-xs text-text-secondary">Standard Login</label>
                     <Input
                       type="time"
                       value={settings.standardLoginTime.slice(0, 5)}
@@ -855,7 +855,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-muted-foreground">Standard Logout</label>
+                    <label className="mb-1 block text-xs text-text-secondary">Standard Logout</label>
                     <Input
                       type="time"
                       value={settings.standardLogoutTime.slice(0, 5)}
@@ -864,7 +864,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Overtime Break Deduction (minutes)</label>
+                  <label className="mb-1 block text-xs text-text-secondary">Overtime Break Deduction (minutes)</label>
                   <Input
                     type="number"
                     min={0}
@@ -874,7 +874,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Default Report Title</label>
+                  <label className="mb-1 block text-xs text-text-secondary">Default Report Title</label>
                   <Input value={settings.defaultTitle} onChange={(e) => setSettings({ ...settings, defaultTitle: e.target.value })} />
                 </div>
                 <Button size="sm" className="w-fit" onClick={handleSaveSettings}>
@@ -883,7 +883,7 @@ export default function SettingsPage() {
                 </Button>
               </>
             ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
+              <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>
             )}
           </CardContent>
         </Card>
@@ -903,10 +903,10 @@ export default function SettingsPage() {
                 <RowLink label="Auto Sign-out After Inactivity" description="Signs you out locally if you step away" onClick={() => setOpenRow("idle-timeout")} />
                 <div className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-2">
-                    <Bell className="size-3.5 text-muted-foreground" />
+                    <Bell className="size-3.5 text-text-secondary" />
                     <div>
                       <p className="text-sm">Notifications</p>
-                      <p className="text-xs text-muted-foreground">Reminders for empty daily reports and upcoming trips</p>
+                      <p className="text-xs text-text-secondary">Reminders for empty daily reports and upcoming trips</p>
                     </div>
                   </div>
                   <Switch
@@ -927,7 +927,7 @@ export default function SettingsPage() {
             {settings && openRow === "week-start" && (
               <div className="flex flex-col gap-3">
                 <SubPageBack label="Week Starts On" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Used when starting a new Weekly Report</p>
+                <p className="text-xs text-text-secondary">Used when starting a new Weekly Report</p>
                 <div className="flex flex-wrap gap-1">
                   {["Sunday", "Monday"].map((day) => (
                     <Button
@@ -946,7 +946,7 @@ export default function SettingsPage() {
             {settings && openRow === "landing-page" && (
               <div className="flex flex-col gap-3">
                 <SubPageBack label="Default Landing Page" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">What loads right after you sign in</p>
+                <p className="text-xs text-text-secondary">What loads right after you sign in</p>
                 <div className="relative w-fit">
                   <select
                     className="h-9 appearance-none rounded-full border border-input bg-background/50 py-1.5 pl-4 pr-9 text-sm backdrop-blur-md outline-none"
@@ -959,7 +959,7 @@ export default function SettingsPage() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" />
                 </div>
               </div>
             )}
@@ -967,7 +967,7 @@ export default function SettingsPage() {
             {settings && openRow === "idle-timeout" && (
               <div className="flex flex-col gap-3">
                 <SubPageBack label="Auto Sign-out After Inactivity" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Signs you out locally if you step away</p>
+                <p className="text-xs text-text-secondary">Signs you out locally if you step away</p>
                 <div className="flex flex-wrap gap-1">
                   {IDLE_TIMEOUT_OPTIONS.map((opt) => (
                     <Button
@@ -986,7 +986,7 @@ export default function SettingsPage() {
             {settings && openRow === "notification-channel" && (
               <div className="flex flex-col gap-3">
                 <SubPageBack label="Notification Channel" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">In-app always shows in the bell icon; Email also sends a copy</p>
+                <p className="text-xs text-text-secondary">In-app always shows in the bell icon; Email also sends a copy</p>
                 <div className="flex flex-wrap gap-1">
                   {["Email", "In-app"].map((channel) => (
                     <Button
@@ -1036,7 +1036,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-3">
                 <SubPageBack label="Two-Factor Authentication" onBack={() => setOpenRow(null)} />
                 <div className="flex items-start justify-between">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-text-secondary">
                     {currentUser?.twoFactorEnabled
                       ? "Enabled — a code is emailed to you at login"
                       : "Require an emailed code in addition to your password"}
@@ -1056,7 +1056,7 @@ export default function SettingsPage() {
 
                 {twoFactorStep === "enabling" && (
                   <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
-                    <p className="text-xs text-muted-foreground">Enter the code we emailed you to confirm.</p>
+                    <p className="text-xs text-text-secondary">Enter the code we emailed you to confirm.</p>
                     <div className="flex gap-2">
                       <Input
                         inputMode="numeric"
@@ -1083,7 +1083,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <SubPageBack label="Active Sessions" onBack={() => setOpenRow(null)} />
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Devices and browsers currently signed in to your account</p>
+                  <p className="text-xs text-text-secondary">Devices and browsers currently signed in to your account</p>
                   {sessions.length > 1 && (
                     <button
                       onClick={() => setConfirmRevokeAll(true)}
@@ -1093,29 +1093,29 @@ export default function SettingsPage() {
                     </button>
                   )}
                 </div>
-                {sessionsLoading && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner size={14} /> Loading…</div>}
+                {sessionsLoading && <div className="flex items-center gap-2 text-xs text-text-secondary"><Spinner size={14} /> Loading…</div>}
                 {!sessionsLoading && sessions.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No other active sessions.</p>
+                  <p className="text-xs text-text-secondary">No other active sessions.</p>
                 )}
                 <div className="flex flex-col gap-1.5">
                   {sessions.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between rounded-lg bg-foreground/5 px-3 py-2">
+                    <div key={s.id} className="flex items-center justify-between rounded-lg bg-fill-1 px-3 py-2">
                       <div className="flex items-center gap-2">
                         {s.deviceLabel.includes("iPhone") || s.deviceLabel.includes("Android") ? (
-                          <Smartphone className="size-3.5 text-muted-foreground" />
+                          <Smartphone className="size-3.5 text-text-secondary" />
                         ) : (
-                          <Laptop className="size-3.5 text-muted-foreground" />
+                          <Laptop className="size-3.5 text-text-secondary" />
                         )}
                         <div>
                           <p className="text-xs font-medium">{s.deviceLabel}</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[11px] text-text-secondary">
                             {s.ipAddress ?? "Unknown IP"} · Last active {timeAgo(s.lastUsedUtc)}
                           </p>
                         </div>
                       </div>
                       <button
                         onClick={() => revokeSession(s.id)}
-                        className="cursor-pointer rounded-full p-1 text-muted-foreground hover:text-destructive"
+                        className="cursor-pointer rounded-full p-1 text-text-secondary hover:text-destructive"
                         title="Revoke this session"
                       >
                         <X className="size-3.5" />
@@ -1137,14 +1137,14 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Google Drive</h2>
             </div>
             {driveStatus === null ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
+              <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>
             ) : !driveStatus.configured ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-secondary">
                 Google Drive isn&apos;t configured on the server yet — an admin needs to add OAuth credentials before this can be connected.
               </p>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-text-secondary">
                   {driveStatus.connected
                     ? "Reimbursement uploads are mirrored to a “WorkPulse Reimbursements” folder in your Drive, in addition to being saved here."
                     : "Connect your Google Drive so uploaded reimbursement documents are also backed up there automatically."}
@@ -1160,7 +1160,7 @@ export default function SettingsPage() {
                 )}
               </>
             )}
-            {driveMessage && <p className="text-xs text-muted-foreground">{driveMessage}</p>}
+            {driveMessage && <p className="text-xs text-text-secondary">{driveMessage}</p>}
           </CardContent>
         </Card>
         )}
@@ -1173,14 +1173,14 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Gmail</h2>
             </div>
             {gmailStatus === null ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
+              <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>
             ) : !gmailStatus.configured ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-secondary">
                 Gmail isn&apos;t configured on the server yet — an admin needs to add OAuth credentials before this can be connected.
               </p>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-text-secondary">
                   {gmailStatus.connected
                     ? `Connected as ${gmailStatus.emailAddress} — the Gmail Labels section stays synced with this account.`
                     : "Connect a Gmail account to search, browse and manage its labels from WorkPulse."}
@@ -1196,7 +1196,7 @@ export default function SettingsPage() {
                 )}
               </>
             )}
-            {gmailMessage && <p className="text-xs text-muted-foreground">{gmailMessage}</p>}
+            {gmailMessage && <p className="text-xs text-text-secondary">{gmailMessage}</p>}
           </CardContent>
         </Card>
         )}
@@ -1208,7 +1208,7 @@ export default function SettingsPage() {
               <SectionIcon icon={DownloadTrayGlyph} color="#5CE0D8" color2="#00C7BE" />
               <h2 className="font-semibold">Your Data</h2>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-secondary">
               Download a full backup — attendance, reports, trips and their documents, reimbursement, bookmarks, resources and their files, contacts, and settings — as one ZIP.
             </p>
             <Button variant="outline" className="w-fit" onClick={handleExport} disabled={exporting}>
@@ -1216,7 +1216,7 @@ export default function SettingsPage() {
             </Button>
 
             <div className="mt-2 border-t border-border pt-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-secondary">
                 Restore from a backup ZIP — merges in anything not already here (matched by item), never overwrites or removes existing data.
               </p>
               <input ref={restoreInputRef} type="file" accept=".zip" className="hidden" onChange={handleRestoreFile} />
@@ -1228,7 +1228,7 @@ export default function SettingsPage() {
               >
                 <Upload className="size-4" /> {restoring ? "Restoring…" : "Restore from Backup"}
               </Button>
-              {restoreResult && <p className="mt-2 text-xs text-muted-foreground">{restoreResult}</p>}
+              {restoreResult && <p className="mt-2 text-xs text-text-secondary">{restoreResult}</p>}
               {restoreError && <p className="mt-2 text-xs text-destructive">{restoreError}</p>}
             </div>
           </CardContent>
@@ -1244,7 +1244,7 @@ export default function SettingsPage() {
             </div>
             {!openRow && (
               <div className="flex flex-col divide-y divide-border">
-                <p className="py-3 text-sm text-muted-foreground first:pt-0">
+                <p className="py-3 text-sm text-text-secondary first:pt-0">
                   Signed in as <span className="font-medium text-foreground">{displayName}</span>
                 </p>
                 <RowLink label="Display Name" description="Change how your name appears across the app" onClick={() => setOpenRow("display-name")} />
@@ -1320,7 +1320,7 @@ export default function SettingsPage() {
               <SectionIcon icon={WarningGlyph} color="#FF6459" color2="#D70015" />
               <h2 className="font-semibold">Danger Zone</h2>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-secondary">
               Permanently delete your WorkPulse account and everything in it — attendance records, reports, trips,
               reimbursement documents, contacts, bookmarks, and connected integrations. This can&apos;t be undone.
             </p>
@@ -1331,7 +1331,7 @@ export default function SettingsPage() {
               </Button>
             ) : (
               <div className="flex flex-col gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
-                <p className="text-xs text-muted-foreground">Enter your password to confirm permanent deletion.</p>
+                <p className="text-xs text-text-secondary">Enter your password to confirm permanent deletion.</p>
                 <div className="flex gap-2">
                   <Input
                     type="password"
@@ -1379,10 +1379,10 @@ export default function SettingsPage() {
                 { keys: ["Esc"], description: "Close the open dropdown, dialog, or inline edit box" },
               ].map((shortcut, i) => (
                 <div key={i} className="flex items-center justify-between gap-3 py-3">
-                  <span className="text-sm text-muted-foreground">{shortcut.description}</span>
+                  <span className="text-sm text-text-secondary">{shortcut.description}</span>
                   <div className="flex shrink-0 gap-1">
                     {shortcut.keys.map((k, j) => (
-                      <kbd key={j} className="rounded-md border border-border bg-foreground/5 px-1.5 py-0.5 font-mono text-xs">
+                      <kbd key={j} className="rounded-md border border-border bg-fill-1 px-1.5 py-0.5 font-mono text-xs">
                         {k}
                       </kbd>
                     ))}

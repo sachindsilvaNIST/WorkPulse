@@ -325,11 +325,11 @@ export function NoteEditor<T extends NoteRecord>({
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 md:h-[calc(100vh-4rem)] md:grid-cols-[320px_1fr]">
       {/* Sidebar */}
-      <div className="glass-card flex flex-col overflow-hidden rounded-2xl border border-white/10">
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 p-4">
+      <div className="glass-card flex flex-col overflow-hidden rounded-2xl border border-separator">
+        <div className="flex items-center justify-between gap-2 border-b border-separator p-4">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">{heading}</h1>
-            <p className="text-xs text-muted-foreground">{subheading}</p>
+            <p className="text-xs text-text-secondary">{subheading}</p>
           </div>
           <div className="flex items-center gap-1.5">
             {onExport && (
@@ -347,9 +347,9 @@ export function NoteEditor<T extends NoteRecord>({
             </Button>
           </div>
         </div>
-        <div className="border-b border-white/10 p-3">
+        <div className="border-b border-separator p-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
             <Input
               placeholder="Search…"
               value={search}
@@ -359,9 +359,9 @@ export function NoteEditor<T extends NoteRecord>({
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          {loading && <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+          {loading && <div className="flex items-center gap-2 p-3 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
           {!loading && filtered.length === 0 && (
-            <p className="p-3 text-sm text-muted-foreground">No entries yet — click + to add one.</p>
+            <p className="p-3 text-sm text-text-secondary">No entries yet — click + to add one.</p>
           )}
           {filtered.map((r) => (
             <button
@@ -369,7 +369,7 @@ export function NoteEditor<T extends NoteRecord>({
               onClick={() => (selectMode ? toggleSelected(r.id) : selectRecord(r.id))}
               className={cn(
                 "group mb-1 flex w-full items-start gap-2 rounded-xl px-3 py-2.5 text-left transition-colors",
-                !selectMode && r.id === selectedId ? "bg-primary/15" : "hover:bg-foreground/5"
+                !selectMode && r.id === selectedId ? "bg-primary/15" : "hover:bg-fill-1"
               )}
             >
               {selectMode && (
@@ -386,7 +386,7 @@ export function NoteEditor<T extends NoteRecord>({
                   <span className="truncate text-sm font-medium">{r.title || "Untitled"}</span>
                   {!selectMode && (
                     <Trash2
-                      className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                      className="size-3.5 shrink-0 text-text-secondary opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();
                         setConfirmDeleteId(r.id);
@@ -394,14 +394,14 @@ export function NoteEditor<T extends NoteRecord>({
                     />
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">{String(r[dateField])}</span>
-                <span className="truncate text-xs text-muted-foreground/70">{stripHtml(r.body) || "No content"}</span>
+                <span className="text-xs text-text-secondary">{String(r[dateField])}</span>
+                <span className="truncate text-xs text-text-secondary/70">{stripHtml(r.body) || "No content"}</span>
               </div>
             </button>
           ))}
         </div>
         {selectMode && (
-          <div className="flex flex-col gap-2 border-t border-white/10 p-3">
+          <div className="flex flex-col gap-2 border-t border-separator p-3">
             <div className="flex gap-1">
               <Button
                 variant={exportFormat === "xlsx" ? "default" : "outline"}
@@ -438,10 +438,10 @@ export function NoteEditor<T extends NoteRecord>({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-card flex flex-col overflow-hidden rounded-2xl border border-white/10 p-6"
+        className="glass-card flex flex-col overflow-hidden rounded-2xl border border-separator p-6"
       >
         {!selected ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-text-secondary">
             <Icon className="size-10 opacity-40" />
             <p>Select an entry, or create a new one.</p>
           </div>
@@ -565,7 +565,7 @@ function EditorFields({
           className="h-auto flex-1 rounded-none border-none bg-transparent p-0 text-xl font-semibold leading-tight shadow-none focus-visible:rounded-none focus-visible:border-none focus-visible:bg-transparent focus-visible:ring-0"
         />
         <div className="flex items-center gap-2 pt-0.5">
-          <span className="text-xs text-muted-foreground">{dateLabel}</span>
+          <span className="text-xs text-text-secondary">{dateLabel}</span>
           <Input
             type="date"
             value={dateValue}

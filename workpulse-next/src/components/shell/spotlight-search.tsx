@@ -309,7 +309,7 @@ export function SpotlightSearch() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-[15vh] backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-[15vh] backdrop-blur-sm"
           onClick={() => setOpen(false)}
         >
           <motion.div
@@ -321,23 +321,23 @@ export function SpotlightSearch() {
             className="glass-panel w-full max-w-lg overflow-hidden"
           >
             <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-              <Search className="size-4.5 shrink-0 text-muted-foreground" />
+              <Search className="size-4.5 shrink-0 text-text-secondary" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search WorkPulse — anything, anywhere…"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-text-secondary"
               />
-              <kbd className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">Esc</kbd>
+              <kbd className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-text-secondary">Esc</kbd>
             </div>
 
             <div className="max-h-80 overflow-y-auto p-2">
-              {results.length === 0 && <p className="px-2 py-6 text-center text-sm text-muted-foreground">No matches.</p>}
+              {results.length === 0 && <p className="px-2 py-6 text-center text-sm text-text-secondary">No matches.</p>}
               {groups.map((group) => (
                 <div key={group} className="mb-1">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">{group}</p>
                   {results
                     .filter((r) => r.group === group)
                     .map((r) => {
@@ -351,7 +351,7 @@ export function SpotlightSearch() {
                           onMouseEnter={() => setHighlighted(index)}
                           className={cn(
                             "flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left",
-                            index === highlighted && "bg-foreground/8"
+                            index === highlighted && "bg-fill-1"
                           )}
                         >
                           {/* Mixed icon sources here — nav results use the original outline glyphs
@@ -367,7 +367,7 @@ export function SpotlightSearch() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium">{r.label}</span>
-                            {r.description && <span className="block truncate text-xs text-muted-foreground">{r.description}</span>}
+                            {r.description && <span className="block truncate text-xs text-text-secondary">{r.description}</span>}
                           </span>
                         </button>
                       );

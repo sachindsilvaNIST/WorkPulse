@@ -60,7 +60,7 @@ export default function PublicSharePage() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center p-6">
       <div className="w-full max-w-2xl">
-        <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="mb-6 flex items-center gap-2 text-sm text-text-secondary">
           <div className="flex size-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#0078D4] to-[#004f9e]">
             <Activity className="size-4 text-white" strokeWidth={2.5} />
           </div>
@@ -68,14 +68,14 @@ export default function PublicSharePage() {
         </div>
 
         {loading && (
-          <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 py-16 text-sm text-text-secondary">
             <Spinner size={16} /> Loading…
           </div>
         )}
 
         {!loading && (notFound || !resourceType || !data) && (
           <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            <CardContent className="py-10 text-center text-sm text-text-secondary">
               This link isn&apos;t valid anymore — it may have been unshared.
             </CardContent>
           </Card>
@@ -93,7 +93,7 @@ export default function PublicSharePage() {
 
               {SHARE_FIELDS[resourceType].map((f) => (
                 <div key={f.key} className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
+                  <label className="text-xs font-medium text-text-secondary">{f.label}</label>
                   {f.multiline ? (
                     <Textarea
                       value={String(data[f.key] ?? "")}
@@ -122,7 +122,7 @@ export default function PublicSharePage() {
           </Card>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-text-secondary">
           Want your own WorkPulse account?{" "}
           <Link href="/register" className="font-medium text-primary hover:underline">
             Sign up

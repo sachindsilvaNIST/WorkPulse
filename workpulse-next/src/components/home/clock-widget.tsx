@@ -27,7 +27,7 @@ export function ClockWidget() {
       }}
     >
       <div className="flex items-start justify-between">
-        <Clock className="size-7 drop-shadow-md" strokeWidth={1.75} />
+        <Clock className="size-7 drop-shadow-[var(--glass-shadow-sm)]" strokeWidth={1.75} />
       </div>
       <div>
         <p className="text-4xl font-bold leading-tight tabular-nums drop-shadow-sm">{time}</p>

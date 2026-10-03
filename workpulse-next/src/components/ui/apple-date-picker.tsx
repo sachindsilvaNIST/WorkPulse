@@ -109,12 +109,12 @@ export function AppleDatePicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex w-full items-center justify-between gap-1.5 border border-input bg-background/50 outline-none backdrop-blur-md transition-colors hover:bg-foreground/5 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+          "flex w-full items-center justify-between gap-1.5 border border-input bg-background/50 outline-none backdrop-blur-md transition-colors hover:bg-fill-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
           size === "sm" ? "h-8 rounded-lg px-2 text-xs" : "h-9 rounded-full px-3.5 text-xs"
         )}
       >
-        <span className={cn("truncate", !value && "text-muted-foreground")}>{value ? formatDisplay(value, size === "sm") : placeholder}</span>
-        <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className={cn("truncate", !value && "text-text-secondary")}>{value ? formatDisplay(value, size === "sm") : placeholder}</span>
+        <Calendar className="size-3.5 shrink-0 text-text-secondary" />
       </button>
 
       {createPortal(
@@ -130,15 +130,15 @@ export function AppleDatePicker({
             style={{ top: rect.bottom + 6, left: rect.left }}
           >
             <div className="mb-2 flex items-center justify-between">
-              <button type="button" onClick={() => changeMonth(-1)} className="cursor-pointer rounded-full p-1 hover:bg-foreground/8">
+              <button type="button" onClick={() => changeMonth(-1)} className="cursor-pointer rounded-full p-1 hover:bg-fill-1">
                 <ChevronLeft className="size-4" />
               </button>
               <span className="text-xs font-semibold">{MONTH_NAMES[viewMonth - 1]} {viewYear}</span>
-              <button type="button" onClick={() => changeMonth(1)} className="cursor-pointer rounded-full p-1 hover:bg-foreground/8">
+              <button type="button" onClick={() => changeMonth(1)} className="cursor-pointer rounded-full p-1 hover:bg-fill-1">
                 <ChevronRight className="size-4" />
               </button>
             </div>
-            <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-muted-foreground">
+            <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-text-secondary">
               {WEEKDAYS.map((w, i) => (
                 <div key={i} className="py-1">{w}</div>
               ))}
@@ -157,8 +157,8 @@ export function AppleDatePicker({
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex size-8 cursor-pointer items-center justify-center rounded-full text-xs transition-colors hover:bg-foreground/8",
-                      !c.inMonth && "text-muted-foreground/40",
+                      "flex size-8 cursor-pointer items-center justify-center rounded-full text-xs transition-colors hover:bg-fill-1",
+                      !c.inMonth && "text-text-secondary/40",
                       isToday && !isSelected && "font-semibold text-primary",
                       isSelected && "bg-primary text-primary-foreground hover:bg-primary"
                     )}
@@ -168,7 +168,7 @@ export function AppleDatePicker({
                 );
               })}
             </div>
-            <div className="mt-2 flex justify-between border-t border-white/10 pt-2">
+            <div className="mt-2 flex justify-between border-t border-separator pt-2">
               <Button type="button" size="sm" variant="ghost" onClick={() => { onChange(""); setOpen(false); }}>
                 Clear
               </Button>

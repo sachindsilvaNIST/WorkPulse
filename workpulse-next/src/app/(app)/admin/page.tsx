@@ -273,9 +273,9 @@ export default function AdminPage() {
         </Card>
       )}
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
       {!loading && users.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <Users className="size-10 opacity-40" />
           <p>No user accounts found.</p>
         </div>
@@ -286,7 +286,7 @@ export default function AdminPage() {
           <CardContent className="overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-xs text-muted-foreground">
+                <tr className="border-b border-separator text-left text-xs text-text-secondary">
                   <th className="px-4 py-2 font-medium">User</th>
                   <th className="px-4 py-2 font-medium">Role</th>
                   <th className="px-4 py-2 font-medium">Status</th>
@@ -295,10 +295,10 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-white/5 hover:bg-foreground/5">
+                  <tr key={u.id} className="border-b border-separator hover:bg-fill-1">
                     <td className="px-4 py-2">
                       <p className="font-medium">{u.displayName || "—"}</p>
-                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                      <p className="text-xs text-text-secondary">{u.email}</p>
                     </td>
                     <td className="px-4 py-2">
                       {u.isAdmin ? (
@@ -321,14 +321,14 @@ export default function AdminPage() {
                         <button
                           title="Edit"
                           onClick={() => openEdit(u)}
-                          className="cursor-pointer text-muted-foreground hover:text-primary"
+                          className="cursor-pointer text-text-secondary hover:text-primary"
                         >
                           <Pencil className="size-3.5" />
                         </button>
                         <button
                           title="Manage features"
                           onClick={() => openFeatures(u)}
-                          className="cursor-pointer text-muted-foreground hover:text-primary"
+                          className="cursor-pointer text-text-secondary hover:text-primary"
                         >
                           <SlidersHorizontal className="size-3.5" />
                         </button>
@@ -339,7 +339,7 @@ export default function AdminPage() {
                             setNewPassword("");
                             setResetError(null);
                           }}
-                          className="cursor-pointer text-muted-foreground hover:text-primary"
+                          className="cursor-pointer text-text-secondary hover:text-primary"
                         >
                           <KeyRound className="size-3.5" />
                         </button>
@@ -347,7 +347,7 @@ export default function AdminPage() {
                           <button
                             title="Re-enable account"
                             onClick={() => handleReEnable(u)}
-                            className="cursor-pointer text-muted-foreground hover:text-brand-green"
+                            className="cursor-pointer text-text-secondary hover:text-brand-green"
                           >
                             <CheckCircle2 className="size-3.5" />
                           </button>
@@ -355,7 +355,7 @@ export default function AdminPage() {
                           <button
                             title="Disable account"
                             onClick={() => setDisableTarget(u)}
-                            className="cursor-pointer text-muted-foreground hover:text-destructive"
+                            className="cursor-pointer text-text-secondary hover:text-destructive"
                           >
                             <Ban className="size-3.5" />
                           </button>
@@ -390,15 +390,15 @@ export default function AdminPage() {
 
       {resetPasswordFor &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4">
             <Card className="w-full max-w-sm p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Reset Password</h2>
-                <button onClick={() => setResetPasswordFor(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                <button onClick={() => setResetPasswordFor(null)} className="rounded-full p-1 hover:bg-fill-1">
                   <X className="size-4" />
                 </button>
               </div>
-              <p className="mb-3 text-sm text-muted-foreground">
+              <p className="mb-3 text-sm text-text-secondary">
                 Setting a new password for <span className="font-medium text-foreground">{resetPasswordFor.email}</span>
               </p>
               <Input
@@ -421,26 +421,26 @@ export default function AdminPage() {
 
       {featuresFor &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4">
             <Card className="w-full max-w-sm p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Manage Features</h2>
-                <button onClick={() => setFeaturesFor(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                <button onClick={() => setFeaturesFor(null)} className="rounded-full p-1 hover:bg-fill-1">
                   <X className="size-4" />
                 </button>
               </div>
-              <p className="mb-3 text-sm text-muted-foreground">
+              <p className="mb-3 text-sm text-text-secondary">
                 Toggle which optional sections{" "}
                 <span className="font-medium text-foreground">{featuresFor.displayName || featuresFor.email}</span> can access.
               </p>
               {featuresLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>
+                <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {featureCatalog.map((key) => {
                     const enabled = !featureDisabled.has(key);
                     return (
-                      <label key={key} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-foreground/5">
+                      <label key={key} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-fill-1">
                         <span className="text-sm">{FEATURE_LABELS[key] ?? key}</span>
                         <input
                           type="checkbox"

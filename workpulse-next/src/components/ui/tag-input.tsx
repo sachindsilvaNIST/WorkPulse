@@ -65,9 +65,9 @@ export function TagInput({
     <div ref={containerRef} className={cn("relative", className)}>
       <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-2xl border border-input bg-background/50 px-3 py-1.5 backdrop-blur-md">
         {value.map((tag) => (
-          <span key={tag} className="flex items-center gap-1 rounded-full bg-foreground/8 px-2 py-0.5 text-xs font-medium">
+          <span key={tag} className="flex items-center gap-1 rounded-full bg-fill-1 px-2 py-0.5 text-xs font-medium">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="cursor-pointer text-muted-foreground hover:text-foreground">
+            <button type="button" onClick={() => removeTag(tag)} className="cursor-pointer text-text-secondary hover:text-text-primary">
               <X className="size-3" />
             </button>
           </span>
@@ -81,7 +81,7 @@ export function TagInput({
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={value.length === 0 ? placeholder : undefined}
-          className="min-w-20 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="min-w-20 flex-1 bg-transparent text-sm outline-none placeholder:text-text-secondary"
         />
       </div>
       {open && filtered.length > 0 && (
@@ -94,7 +94,7 @@ export function TagInput({
                 e.preventDefault();
                 addTag(s);
               }}
-              className="block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10"
+              className="block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-fill-2"
             >
               {s}
             </button>

@@ -123,11 +123,11 @@ export function AttendanceEntryDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4">
       <Card className="w-full max-w-lg max-h-[85vh] overflow-y-auto p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Attendance Entry</h2>
-          <button onClick={onCancel} className="rounded-full p-1 hover:bg-foreground/5">
+          <button onClick={onCancel} className="rounded-full p-1 hover:bg-fill-1">
             <X className="size-4" />
           </button>
         </div>
@@ -135,13 +135,13 @@ export function AttendanceEntryDialog({
         <div className="flex flex-col gap-4">
           {dayType !== "BusinessTrip" && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Date</label>
+              <label className="mb-1 block text-xs font-medium text-text-secondary">Date</label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label className="mb-1 block text-xs font-medium text-text-secondary">
               Day Type <span className="text-destructive">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
@@ -164,7 +164,7 @@ export function AttendanceEntryDialog({
 
           {dayType === "HourlyLeave" && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label className="mb-1 block text-xs font-medium text-text-secondary">
                 Duration <span className="text-destructive">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -177,7 +177,7 @@ export function AttendanceEntryDialog({
                     onChange={(e) => setLeaveHours(Math.max(0, Number(e.target.value)))}
                     className="pr-10"
                   />
-                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-text-secondary">
                     hrs
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export function AttendanceEntryDialog({
                     onChange={(e) => setLeaveMinutes(Math.max(0, Math.min(59, Number(e.target.value))))}
                     className="pr-10"
                   />
-                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-text-secondary">
                     min
                   </span>
                 </div>
@@ -216,23 +216,23 @@ export function AttendanceEntryDialog({
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Login</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Login</label>
                   <Input type="time" value={loginTime} onChange={(e) => setLoginTime(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Logout</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Logout</label>
                   <Input type="time" value={logoutTime} onChange={(e) => setLogoutTime(e.target.value)} />
                 </div>
               </div>
               {dayType === "WorkDay" && (
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Overtime?</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Overtime?</label>
                   <div className="flex items-center gap-2">
                     <Switch checked={overtimeOn} onCheckedChange={setOvertimeOn} />
-                    <span className="text-sm text-muted-foreground">{overtimeOn ? "On" : "Off"}</span>
+                    <span className="text-sm text-text-secondary">{overtimeOn ? "On" : "Off"}</span>
                   </div>
                   {overtimeOn && (
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-2 text-xs text-text-secondary">
                       {overtime.isOvertime
                         ? `Overtime: ${overtime.hours} Hr ${overtime.minutes} Min`
                         : "Logout time is within standard hours (no OT)."}
@@ -247,16 +247,16 @@ export function AttendanceEntryDialog({
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Departure</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Departure</label>
                   <Input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Return</label>
+                  <label className="mb-1 block text-xs font-medium text-text-secondary">Return</label>
                   <Input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Trip Type</label>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">Trip Type</label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -283,7 +283,7 @@ export function AttendanceEntryDialog({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
                   {tripCategory === "Domestic" ? "Prefecture" : "Country"}
                 </label>
                 <div className="relative">
@@ -299,7 +299,7 @@ export function AttendanceEntryDialog({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" />
                 </div>
               </div>
               <Input placeholder="Location / notes (optional)" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />

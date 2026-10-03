@@ -96,8 +96,8 @@ export function AutocompleteInput({
                 selectSuggestion(s);
               }}
               className={cn(
-                "block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10",
-                i === highlighted && "bg-foreground/10"
+                "block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-fill-2",
+                i === highlighted && "bg-fill-2"
               )}
             >
               {s}

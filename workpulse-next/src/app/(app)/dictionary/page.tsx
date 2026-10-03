@@ -82,9 +82,9 @@ export default function DictionaryPage() {
         </Card>
       )}
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
       {!loading && sorted.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <BookOpen className="size-10 opacity-40" />
           <p>No entries yet.</p>
         </div>
@@ -97,12 +97,12 @@ export default function DictionaryPage() {
               <div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-lg font-semibold">{e.japanese}</span>
-                  {e.reading && <span className="text-sm text-muted-foreground">{e.reading}</span>}
+                  {e.reading && <span className="text-sm text-text-secondary">{e.reading}</span>}
                   {e.jlptLevel && <Badge variant="secondary">{e.jlptLevel}</Badge>}
                 </div>
                 <p className="mt-1 text-sm">{e.meaning}</p>
-                {e.exampleJp && <p className="mt-2 text-xs text-muted-foreground">{e.exampleJp}</p>}
-                {e.exampleEn && <p className="text-xs text-muted-foreground/70">{e.exampleEn}</p>}
+                {e.exampleJp && <p className="mt-2 text-xs text-text-secondary">{e.exampleJp}</p>}
+                {e.exampleEn && <p className="text-xs text-text-secondary/70">{e.exampleEn}</p>}
               </div>
               <DeleteIconButton
                 onDelete={() => handleDelete(e.id)}

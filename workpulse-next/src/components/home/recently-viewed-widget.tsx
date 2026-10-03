@@ -36,7 +36,7 @@ export function RecentlyViewedWidget() {
 
   return (
     <div className="glass-panel p-4">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground/80">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-body">
         <Clock3 className="size-4" />
         Recently Viewed
       </div>
@@ -48,7 +48,7 @@ export function RecentlyViewedWidget() {
             <Link
               key={`${entry.type}-${entry.id}`}
               href={entry.href}
-              className="flex min-w-40 shrink-0 flex-col gap-1.5 rounded-xl border border-border p-3 transition-colors hover:bg-foreground/5"
+              className="flex min-w-40 shrink-0 flex-col gap-1.5 rounded-xl border border-border p-3 transition-colors hover:bg-fill-1"
             >
               <span
                 className="flex size-7 items-center justify-center rounded-[22%] text-white"
@@ -57,7 +57,7 @@ export function RecentlyViewedWidget() {
                 <Icon className="size-4.5" {...APPLE_ICON_GLYPH_PROPS} style={APPLE_ICON_GLYPH_STYLE} />
               </span>
               <span className="truncate text-sm font-medium">{entry.label}</span>
-              <span className="truncate text-xs text-muted-foreground">{entry.description || relativeTime(entry.viewedAt)}</span>
+              <span className="truncate text-xs text-text-secondary">{entry.description || relativeTime(entry.viewedAt)}</span>
             </Link>
           );
         })}

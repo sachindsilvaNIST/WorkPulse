@@ -40,13 +40,13 @@ export default function HistoryPage() {
           {ORIGIN_STORY.map((item) => (
             <div key={item.era} className="border-t border-border pt-3 first:border-t-0 first:pt-0">
               <p className="text-sm font-semibold">{item.era}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+              <p className="mt-1 text-sm text-text-secondary">{item.description}</p>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-text-secondary">
         <Link href="/about" className="font-medium text-primary hover:underline">
           ← Back to About
         </Link>

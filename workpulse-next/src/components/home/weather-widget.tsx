@@ -80,7 +80,7 @@ export function WeatherWidget() {
         <span className="flex items-center gap-1 text-xs font-medium text-white/90 drop-shadow-sm">
           <MapPin className="size-3" /> Your location
         </span>
-        {status === "ready" && <Icon className="size-7 drop-shadow-md" strokeWidth={1.75} />}
+        {status === "ready" && <Icon className="size-7 drop-shadow-[var(--glass-shadow-sm)]" strokeWidth={1.75} />}
       </div>
 
       {status === "loading" && (

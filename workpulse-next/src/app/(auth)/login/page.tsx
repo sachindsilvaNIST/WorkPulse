@@ -87,12 +87,12 @@ export default function LoginPage() {
         className="w-full max-w-sm"
       >
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-lg shadow-blue-500/20">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-[var(--glass-shadow)] shadow-blue-500/20">
             <ShieldCheck className="size-7 text-white" strokeWidth={2.5} />
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-secondary">
               Enter the code we sent to <span className="font-medium text-foreground">{pendingTwoFactorEmail}</span>
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function LoginPage() {
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="-mt-2 text-center text-xs text-muted-foreground"
+                  className="-mt-2 text-center text-xs text-text-secondary"
                 >
                   Waking up the server — this can take up to a minute on the first request…
                 </motion.p>
@@ -150,12 +150,12 @@ export default function LoginPage() {
       className="w-full max-w-sm"
     >
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-lg shadow-blue-500/20">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-[var(--glass-shadow)] shadow-blue-500/20">
           <Activity className="size-7 text-white" strokeWidth={2.5} />
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to WorkPulse</p>
+          <p className="text-sm text-text-secondary">Sign in to WorkPulse</p>
         </div>
       </div>
 
@@ -216,7 +216,7 @@ export default function LoginPage() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="-mt-2 text-center text-xs text-muted-foreground"
+                className="-mt-2 text-center text-xs text-text-secondary"
               >
                 Waking up the server — this can take up to a minute on the first request…
               </motion.p>
@@ -225,26 +225,26 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="my-6 flex items-center gap-3 text-xs text-text-secondary">
         <div className="h-px flex-1 bg-border" />
         or
         <div className="h-px flex-1 bg-border" />
       </div>
       <GoogleSignInButton onCredential={handleGoogleCredential} />
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-text-secondary">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-medium text-primary hover:underline">
           Create one
         </Link>
       </p>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
+      <p className="mt-3 text-center text-xs text-text-secondary">
         By continuing, you agree to WorkPulse&apos;s{" "}
-        <Link href="/terms" className="hover:text-foreground hover:underline">
+        <Link href="/terms" className="hover:text-text-primary hover:underline">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="hover:text-foreground hover:underline">
+        <Link href="/privacy" className="hover:text-text-primary hover:underline">
           Privacy Policy
         </Link>
         .

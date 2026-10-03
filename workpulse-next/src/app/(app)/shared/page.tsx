@@ -33,12 +33,12 @@ export default function SharedWithMePage() {
       <PageToolbar title="Shared with Me" description="Items other people have shared with you" />
 
       {items === null && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Spinner size={16} /> Loading…
         </div>
       )}
       {items !== null && items.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing&apos;s been shared with you yet.</p>
+        <p className="text-sm text-text-secondary">Nothing&apos;s been shared with you yet.</p>
       )}
 
       <div className="flex flex-col gap-2">
@@ -47,7 +47,7 @@ export default function SharedWithMePage() {
           const Icon = meta.icon;
           return (
             <Link key={item.shareId} href={`/shared/${item.shareId}`}>
-              <Card className="flex flex-row items-center gap-3 p-3.5 transition-colors hover:bg-foreground/5">
+              <Card className="flex flex-row items-center gap-3 p-3.5 transition-colors hover:bg-fill-1">
                 <span
                   className="flex size-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ backgroundColor: `color-mix(in srgb, ${meta.color} 15%, transparent)`, color: meta.color }}
@@ -56,7 +56,7 @@ export default function SharedWithMePage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-text-secondary">
                     {meta.label} · Shared by {item.ownerDisplayName}
                   </p>
                 </div>

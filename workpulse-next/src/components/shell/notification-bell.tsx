@@ -100,7 +100,7 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
         ref={buttonRef}
         type="button"
         onClick={toggleOpen}
-        className="relative cursor-pointer rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/8 hover:text-foreground"
+        className="relative cursor-pointer rounded-lg p-1.5 text-text-body transition-colors hover:bg-fill-1 hover:text-text-primary"
         title="Notifications"
       >
         <Bell className="size-4" />
@@ -125,7 +125,7 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
                 style={{ top: position.top, left: position.left }}
               >
                 <div className="flex items-center justify-between px-2 py-1.5">
-                  <span className="text-xs font-semibold text-muted-foreground">Notifications</span>
+                  <span className="text-xs font-semibold text-text-secondary">Notifications</span>
                   <div className="flex items-center gap-3">
                     {unreadCount > 0 && (
                       <button
@@ -140,7 +140,7 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
                       <button
                         type="button"
                         onClick={handleClearAll}
-                        className="flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-destructive"
+                        className="flex cursor-pointer items-center gap-1 text-xs font-medium text-text-secondary hover:text-destructive"
                       >
                         <Trash2 className="size-3" /> Clear
                       </button>
@@ -149,7 +149,7 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 && (
-                    <p className="px-2 py-6 text-center text-xs text-muted-foreground">You&apos;re all caught up.</p>
+                    <p className="px-2 py-6 text-center text-xs text-text-secondary">You&apos;re all caught up.</p>
                   )}
                   {notifications.map((n) => (
                     <button
@@ -157,7 +157,7 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
                       type="button"
                       onClick={() => handleSelect(n)}
                       className={cn(
-                        "flex w-full cursor-pointer flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-foreground/6",
+                        "flex w-full cursor-pointer flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-fill-1",
                         !n.readUtc && "bg-primary/5"
                       )}
                     >
@@ -165,8 +165,8 @@ export function NotificationBell({ align = "right" }: { align?: "left" | "right"
                         {!n.readUtc && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}
                         {n.title}
                       </span>
-                      <span className="text-xs text-muted-foreground">{n.message}</span>
-                      <span className="text-[10px] text-muted-foreground/70">{relativeTime(n.createdUtc)}</span>
+                      <span className="text-xs text-text-secondary">{n.message}</span>
+                      <span className="text-[10px] text-text-secondary/70">{relativeTime(n.createdUtc)}</span>
                     </button>
                   ))}
                 </div>

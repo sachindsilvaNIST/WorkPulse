@@ -326,7 +326,7 @@ export default function BookmarksPage() {
         </div>
       </PageToolbar>
 
-      {importMessage && <p className="mb-4 text-sm text-muted-foreground">{importMessage}</p>}
+      {importMessage && <p className="mb-4 text-sm text-text-secondary">{importMessage}</p>}
 
       {selectMode && (
         <div className="glass-panel mb-4 flex flex-wrap items-center gap-2 p-3">
@@ -437,9 +437,9 @@ export default function BookmarksPage() {
         </div>
       </FormModal>
 
-      {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
       {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <Bookmark className="size-10 opacity-40" />
           <p>No bookmarks match — try Add Bookmark above.</p>
         </div>
@@ -487,7 +487,7 @@ export default function BookmarksPage() {
                 )}
               </div>
               <span className="mt-2 line-clamp-2 text-sm font-semibold">{link.label}</span>
-              <span className="mt-auto truncate text-xs text-muted-foreground">{link.url}</span>
+              <span className="mt-auto truncate text-xs text-text-secondary">{link.url}</span>
               {selectMode ? (
                 <div className="absolute right-2 top-2">
                   <input
@@ -501,7 +501,7 @@ export default function BookmarksPage() {
               ) : (
                 <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
                   <button
-                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-primary"
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-text-secondary hover:text-primary"
                     onClick={(e) => {
                       e.preventDefault();
                       openEdit(link);
@@ -510,7 +510,7 @@ export default function BookmarksPage() {
                     <Pencil className="size-3" />
                   </button>
                   <button
-                    className="relative z-10 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
+                    className="relative z-10 rounded-full bg-background/80 p-1 text-text-secondary hover:text-destructive"
                     onClick={(e) => {
                       e.preventDefault();
                       setConfirmDeleteId(link.id);
@@ -538,7 +538,7 @@ export default function BookmarksPage() {
                 openEdit(contextMenu.link);
                 setContextMenu(null);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-foreground/10"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-foreground hover:bg-fill-2"
             >
               <Pencil className="size-3.5" /> Edit Bookmark
             </button>
@@ -559,7 +559,7 @@ export default function BookmarksPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4"
             onClick={() => setDetail(null)}
           >
             <motion.div
@@ -574,9 +574,9 @@ export default function BookmarksPage() {
                 <div className="mb-4 flex items-start justify-between">
                   <div>
                     <h2 className="text-xl font-semibold">{detail.label}</h2>
-                    {detail.category && <p className="text-sm text-muted-foreground">{detail.category}</p>}
+                    {detail.category && <p className="text-sm text-text-secondary">{detail.category}</p>}
                   </div>
-                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-foreground/5">
+                  <button onClick={() => setDetail(null)} className="rounded-full p-1 hover:bg-fill-1">
                     <X className="size-4" />
                   </button>
                 </div>

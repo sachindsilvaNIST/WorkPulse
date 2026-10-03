@@ -109,8 +109,8 @@ async function fetchWidgetStats(): Promise<Record<string, WidgetStat>> {
 function StatSkeleton() {
   return (
     <div className="mt-1 flex flex-col gap-2">
-      <div className="h-6 w-20 animate-pulse rounded bg-white/20" />
-      <div className="h-3.5 w-28 animate-pulse rounded bg-white/15" />
+      <div className="h-6 w-20 animate-pulse rounded bg-fill-1" />
+      <div className="h-3.5 w-28 animate-pulse rounded bg-fill-1" />
     </div>
   );
 }
@@ -141,11 +141,11 @@ export default function HomePage() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-4 flex w-full max-w-md cursor-pointer items-center gap-2.5 rounded-full border border-input bg-background/50 px-4 py-2.5 text-left text-sm text-muted-foreground backdrop-blur-md transition-colors hover:bg-foreground/5"
+          className="mt-4 flex w-full max-w-md cursor-pointer items-center gap-2.5 rounded-full border border-input bg-background/50 px-4 py-2.5 text-left text-sm text-text-secondary backdrop-blur-md transition-colors hover:bg-fill-1"
         >
           <Search className="size-4 shrink-0" />
           <span className="flex-1">Search WorkPulse…</span>
-          <kbd className="rounded-md border border-border bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium">
+          <kbd className="rounded-md border border-border bg-fill-1 px-1.5 py-0.5 text-[10px] font-medium">
             {isMac ? "⌘" : "Ctrl"} K
           </kbd>
         </button>
@@ -180,7 +180,7 @@ export default function HomePage() {
                 }}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex size-11 items-center justify-center rounded-[22%] bg-white/15">
+                  <div className="flex size-11 items-center justify-center rounded-[22%] bg-fill-1">
                     <Icon className="size-5.5" />
                   </div>
                   <ArrowUpRight className="size-5 opacity-0 transition-opacity duration-200 group-hover:opacity-80" />
