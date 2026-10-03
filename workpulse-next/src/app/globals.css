@@ -189,6 +189,8 @@
   --color-fill-2: var(--fill-2);
   --color-fill-raised: var(--fill-raised);
   --color-separator: var(--separator);
+  --color-fill-glass-button: var(--fill-glass-button);
+  --shadow-focus-ring: var(--focus-ring);
   --color-link: var(--link);
   --color-status-success-bg: var(--status-success-bg);
   --color-status-success-fg: var(--status-success-fg);
@@ -305,6 +307,12 @@
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-bottom: 1px solid var(--separator);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Apple/iOS-style activity indicator — bars fade in sequence around the circle. */
