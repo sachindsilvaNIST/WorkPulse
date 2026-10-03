@@ -19,7 +19,6 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
@@ -445,13 +444,13 @@ export default function BookmarksPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {filtered.map((link) => {
           const accent = categoryColor(link.category);
           return (
             <Card
               key={link.id}
-              className="group relative flex min-h-28 flex-col p-3 pb-3.5"
+              className="group relative flex min-h-32 flex-col rounded-tile p-[18px]"
               style={accentCardStyle(accent)}
               onContextMenu={(e) => (selectMode ? undefined : handleCardContextMenu(e, link))}
             >

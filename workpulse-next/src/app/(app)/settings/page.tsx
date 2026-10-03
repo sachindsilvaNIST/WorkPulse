@@ -1063,7 +1063,7 @@ export default function SettingsPage() {
                         placeholder="123456"
                         value={twoFactorCode}
                         onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        className="w-32"
+                        className="h-11 w-40 text-center font-semibold tabular-nums tracking-[0.3em]"
                       />
                       <Button size="sm" onClick={confirmEnableTwoFactor} disabled={twoFactorBusy || twoFactorCode.length < 6}>
                         Confirm
@@ -1099,7 +1099,7 @@ export default function SettingsPage() {
                 )}
                 <div className="flex flex-col gap-1.5">
                   {sessions.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between rounded-lg bg-fill-1 px-3 py-2">
+                    <div key={s.id} className="flex items-center justify-between gap-2 rounded-item bg-fill-1 px-3.5 py-3">
                       <div className="flex items-center gap-2">
                         {s.deviceLabel.includes("iPhone") || s.deviceLabel.includes("Android") ? (
                           <Smartphone className="size-3.5 text-text-secondary" />

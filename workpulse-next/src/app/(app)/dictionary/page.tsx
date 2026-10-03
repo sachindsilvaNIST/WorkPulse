@@ -61,7 +61,7 @@ export default function DictionaryPage() {
         </Button>
       </PageToolbar>
 
-      <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-6 max-w-md" />
+      <SearchInput placeholder="Search Japanese or English…" value={search} onValueChange={setSearch} className="mb-6 max-w-2xl [&_input]:h-11 [&_input]:text-[15px]" />
 
       {showForm && (
         <Card className="mb-6">
@@ -90,17 +90,17 @@ export default function DictionaryPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {sorted.map((e) => (
-          <Card key={e.id} className="p-4">
+          <Card key={e.id} className="p-5">
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-semibold">{e.japanese}</span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[22px] font-bold tracking-[-0.02em] text-text-primary">{e.japanese}</span>
                   {e.reading && <span className="text-sm text-text-secondary">{e.reading}</span>}
-                  {e.jlptLevel && <Badge variant="secondary">{e.jlptLevel}</Badge>}
+                  {e.jlptLevel && <Badge variant="info">{e.jlptLevel}</Badge>}
                 </div>
-                <p className="mt-1 text-sm">{e.meaning}</p>
+                <p className="mt-2 text-[15px] text-text-body">{e.meaning}</p>
                 {e.exampleJp && <p className="mt-2 text-xs text-text-secondary">{e.exampleJp}</p>}
                 {e.exampleEn && <p className="text-xs text-text-secondary/70">{e.exampleEn}</p>}
               </div>

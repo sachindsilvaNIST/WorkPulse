@@ -369,7 +369,7 @@ export function NoteEditor<T extends NoteRecord>({
               onClick={() => (selectMode ? toggleSelected(r.id) : selectRecord(r.id))}
               className={cn(
                 "group mb-1 flex w-full items-start gap-2 rounded-xl px-3 py-2.5 text-left transition-colors",
-                !selectMode && r.id === selectedId ? "bg-primary/15" : "hover:bg-fill-1"
+                !selectMode && r.id === selectedId ? "bg-fill-raised font-semibold shadow-[var(--fill-raised-shadow)]" : "hover:bg-fill-1"
               )}
             >
               {selectMode && (
@@ -438,7 +438,7 @@ export function NoteEditor<T extends NoteRecord>({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-card flex flex-col overflow-hidden rounded-2xl border border-separator p-6"
+        className="glass flex flex-col overflow-hidden rounded-panel p-8"
       >
         {!selected ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-text-secondary">

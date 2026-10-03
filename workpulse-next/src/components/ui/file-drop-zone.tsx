@@ -43,7 +43,7 @@ export function FileDropZone({
       className={cn(
         className,
         "transition-colors",
-        dragging && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+        dragging && "border-primary bg-primary/10"
       )}
       onDragOver={(e) => {
         e.preventDefault();

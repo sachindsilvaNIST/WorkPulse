@@ -56,8 +56,13 @@ function emptySettlement(tripReportId: string): TripSettlement {
 }
 
 const STATUS_LABEL: Record<TripStatus, string> = { Draft: "Draft", Submitted: "Submitted", Approved: "Approved", Settled: "Settled" };
-const STATUS_COLOR: Record<TripStatus, string> = { Draft: "#8E8E93", Submitted: "#0A84FF", Approved: "#34C759", Settled: "#8B5CF6" };
 const STATUS_OPTIONS = (Object.keys(STATUS_LABEL) as TripStatus[]).map((s) => ({ value: s, label: STATUS_LABEL[s] }));
+const TRIP_STATUS_VARIANT: Record<TripStatus, "neutral" | "info" | "success" | "warning"> = {
+  Draft: "neutral",
+  Submitted: "warning",
+  Approved: "success",
+  Settled: "info",
+};
 const CATEGORY_OPTIONS: { value: TripCategory; label: string }[] = [
   { value: "Domestic", label: "Domestic" },
   { value: "Overseas", label: "Overseas" },
@@ -410,16 +415,15 @@ export default function TripsPage() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{t.category}</Badge>
-                    <span className="truncate font-semibold">{t.destination || "Untitled trip"}</span>
+                    <Badge variant="outline">{t.category}</Badge>
+                    <span className="truncate text-[15px] font-semibold">{t.destination || "Untitled trip"}</span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="size-1.5 rounded-full" style={{ backgroundColor: STATUS_COLOR[t.status] }} />
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                    <Badge variant={TRIP_STATUS_VARIANT[t.status]} dot={t.status === "Submitted"}>
                       {STATUS_LABEL[t.status]}
-                    </span>
-                    · {t.tripNumber}
-                  </p>
+                    </Badge>
+                    <span>{t.tripNumber}</span>
+                  </div>
                   <p className="mt-1 text-xs text-text-secondary">{t.startDate} → {t.endDate}</p>
                   <p className="mt-1 truncate text-sm text-text-secondary">{t.purpose}</p>
                   {t.documentCount > 0 && (

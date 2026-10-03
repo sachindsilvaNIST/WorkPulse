@@ -27,10 +27,10 @@ export function ConfirmDialog({
   // instead of the viewport, so it wouldn't actually cover the screen.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-[4px] p-4"
       onClick={(e) => e.stopPropagation()}
     >
-      <Card className="w-full max-w-sm p-6">
+      <Card role="alertdialog" aria-modal="true" aria-label={title} className="w-full max-w-sm rounded-panel p-6">
         <h2 className="text-lg font-semibold">{title}</h2>
         {description && <p className="mt-2 text-sm text-text-secondary">{description}</p>}
         <div className="mt-5 flex justify-end gap-2">

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
@@ -292,20 +293,16 @@ export default function GmailLabelsPage() {
       </PageToolbar>
 
       {!status?.connected ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-[#EA4335]/10 text-[#EA4335]">
-              <Mail className="size-6" />
-            </div>
-            <p className="font-medium">Connect your Gmail account to get started</p>
-            <p className="max-w-sm text-sm text-text-secondary">
-              Head to Settings to connect the Gmail account whose labels you want to search and manage.
-            </p>
+        <EmptyState
+          icon={Mail}
+          title="Connect your Gmail account to get started"
+          description="Head to Settings to connect the Gmail account whose labels you want to search and manage."
+          action={
             <Button asChild className="mt-2">
               <Link href="/settings">Go to Settings</Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="flex flex-col gap-4">
           <SearchInput placeholder="Search labels…" value={query} onValueChange={setQuery} />

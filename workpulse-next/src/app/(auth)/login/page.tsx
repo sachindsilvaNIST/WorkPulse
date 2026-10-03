@@ -84,21 +84,21 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm"
+        className="w-full max-w-[400px]"
       >
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-[var(--glass-shadow)] shadow-blue-500/20">
-            <ShieldCheck className="size-7 text-white" strokeWidth={2.5} />
+          <div className="flex size-14 items-center justify-center rounded-icon bg-primary text-primary-foreground shadow-[var(--glass-shadow-sm)]">
+            <ShieldCheck className="size-7 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
             <p className="text-sm text-text-secondary">
-              Enter the code we sent to <span className="font-medium text-foreground">{pendingTwoFactorEmail}</span>
+              Enter the code we sent to <span className="font-medium text-text-primary">{pendingTwoFactorEmail}</span>
             </p>
           </div>
         </div>
 
-        <Card>
+        <Card className="p-8">
           <CardContent>
             <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
@@ -147,11 +147,11 @@ export default function LoginPage() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full max-w-sm"
+      className="w-full max-w-[400px]"
     >
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0078D4] to-[#004f9e] shadow-[var(--glass-shadow)] shadow-blue-500/20">
-          <Activity className="size-7 text-white" strokeWidth={2.5} />
+        <div className="flex size-14 items-center justify-center rounded-icon bg-primary text-primary-foreground shadow-[var(--glass-shadow-sm)]">
+          <Activity className="size-7 text-primary-foreground" strokeWidth={2.5} />
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
@@ -159,7 +159,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="p-8">
         <CardHeader className="sr-only">
           <h2>Login</h2>
         </CardHeader>

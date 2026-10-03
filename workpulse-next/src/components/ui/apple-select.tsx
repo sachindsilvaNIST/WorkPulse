@@ -39,9 +39,9 @@ export function AppleSelect<T extends string>({
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex h-9 w-full items-center justify-between gap-2 rounded-full border border-input bg-background/50 px-3.5 text-xs outline-none backdrop-blur-md transition-colors",
-          "hover:bg-fill-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
-          disabled && "cursor-not-allowed opacity-60 hover:bg-background/50"
+          "flex h-11 w-full items-center justify-between gap-2 rounded-pill bg-fill-1 px-4 text-[15px] text-text-primary outline-none transition-[background-color,box-shadow] duration-[160ms] ease-glass",
+          "hover:bg-fill-2 focus-visible:shadow-focus-ring",
+          disabled && "cursor-not-allowed opacity-60 hover:bg-fill-1"
         )}
       >
         <span className="truncate">{current?.label ?? ""}</span>
@@ -57,7 +57,7 @@ export function AppleSelect<T extends string>({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.12 }}
-              className="glass-panel fixed z-50 overflow-hidden p-1"
+              className="glass fixed z-50 overflow-hidden rounded-inner p-1.5"
               style={{ top: rect.bottom + 6, left: rect.left, minWidth: rect.width }}
             >
               {options.map((o) => (

@@ -560,7 +560,7 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r) => {
           const meta = TYPE_META[r.type];
           const Icon = meta.icon;
@@ -568,7 +568,7 @@ export default function ResourcesPage() {
           return (
             <Card
               key={r.id}
-              className="group relative flex min-h-32 cursor-pointer flex-col overflow-hidden border-l-4 p-3 pb-3.5"
+              className="group relative flex min-h-32 cursor-pointer flex-col overflow-hidden rounded-tile border-l-4 p-[18px]"
               style={{ ...accentCardStyle(meta.color), borderLeftColor: meta.color }}
               onClick={() => {
                 setDetail(r);

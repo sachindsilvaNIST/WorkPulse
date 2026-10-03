@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.0.0",
+    date: "2026-10-03",
+    highlights: [
+      "New Liquid Glass design across the whole app: floating glass panels over a soft wallpaper, pill controls, and one accent colour",
+      "Sidebar is a floating panel with plain stroke icons, grouped into Workspace and Manage; below 1024px it opens as a sheet",
+      "Attendance dashboard reworked around today's status, a progress ring, and a cleaner log table",
+      "Settings › Appearance shows live previews for theme, accent, text size, and Liquid Glass transparency",
+      "Layouts adapt to phones, including iPhone 17 and larger screens",
+    ],
+  },
+  {
     version: "1.13.1",
     date: "2026-10-03",
     highlights: [

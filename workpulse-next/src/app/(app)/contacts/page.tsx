@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, Mail, MessageSquare, Pencil, Phone, Plus, StickyNote, Trash2, Users, X } from "lucide-react";
 import { SearchInput } from "@/components/ui/search-input";
-import { Input } from "@/components/ui/input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
@@ -369,11 +368,19 @@ export default function ContactsPage() {
                     onContextMenu={(e) => handleCardContextMenu(e, c)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold">
-                          {c.familyName} {c.givenName}
-                        </p>
-                        <p className="text-xs text-text-secondary">{c.affiliation}</p>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          aria-hidden
+                          className="flex size-[34px] shrink-0 items-center justify-center rounded-pill bg-primary/15 text-[13px] font-semibold text-primary"
+                        >
+                          {(c.familyName || c.givenName || "?").charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {c.familyName} {c.givenName}
+                          </p>
+                          <p className="truncate text-xs text-text-secondary">{c.affiliation}</p>
+                        </div>
                       </div>
                       <DeleteIconButton
                         onDelete={() => handleDelete(c.id)}
