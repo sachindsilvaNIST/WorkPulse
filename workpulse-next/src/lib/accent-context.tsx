@@ -12,7 +12,7 @@ export type AccentId = "blue" | "purple" | "teal" | "orange" | "rose" | "green";
  * accent doesn't read as muddy against the darker surfaces). */
 export const ACCENT_PRESETS: Record<AccentId, { label: string; light: string; dark: string }> = {
   blue: { label: "Blue", light: "#0078d4", dark: "#007aff" },
-  purple: { label: "Purple", light: "#8b5cf6", dark: "#a78bfa" },
+  purple: { label: "Purple", light: "#7a3fd1", dark: "#a78bfa" },
   teal: { label: "Teal", light: "#00c7be", dark: "#26d9ce" },
   orange: { label: "Orange", light: "#ff9500", dark: "#ffb340" },
   rose: { label: "Rose", light: "#ff2d55", dark: "#ff375f" },
@@ -20,6 +20,20 @@ export const ACCENT_PRESETS: Record<AccentId, { label: string; light: string; da
 };
 
 const STORAGE_KEY = "workpulse.accentColor";
+
+function relativeLuminance(hex: string): number {
+  const n = parseInt(hex.replace("#", ""), 16);
+  const channel = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+}
+
+function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
 
 const AccentContext = createContext<{ accent: AccentId; setAccent: (a: AccentId) => void } | null>(null);
 
@@ -45,8 +59,9 @@ export function AccentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const preset = ACCENT_PRESETS[accent];
     const color = resolvedTheme === "dark" ? preset.dark : preset.light;
-    document.documentElement.style.setProperty("--primary", color);
-    document.documentElement.style.setProperty("--ring", color);
+    const foreground = contrastRatio(color, "#ffffff") >= contrastRatio(color, "#1d1d1f") ? "#ffffff" : "#1d1d1f";
+    document.documentElement.style.setProperty("--accent", color);
+    document.documentElement.style.setProperty("--accent-foreground", foreground);
   }, [accent, resolvedTheme]);
 
   function setAccent(next: AccentId) {

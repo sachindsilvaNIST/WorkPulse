@@ -699,17 +699,17 @@ export default function SettingsPage() {
                   min={0}
                   max={100}
                   step={1}
-                  value={glassIntensity}
-                  onChange={(e) => handleGlassIntensityPreview(Number(e.target.value))}
-                  onMouseUp={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
-                  onTouchEnd={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
-                  onKeyUp={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
+                  value={100 - glassIntensity}
+                  onChange={(e) => handleGlassIntensityPreview(100 - Number(e.target.value))}
+                  onMouseUp={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
+                  onTouchEnd={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
+                  onKeyUp={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
                   className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[var(--primary)]"
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>Clear</span>
-                  <span>Medium</span>
                   <span>Tinted</span>
+                  <span>Medium</span>
+                  <span>Clear</span>
                 </div>
               </div>
             )}

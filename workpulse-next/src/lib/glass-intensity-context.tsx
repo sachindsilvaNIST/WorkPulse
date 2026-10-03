@@ -25,8 +25,10 @@ export function GlassIntensityProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // The stored/backend value keeps its original direction (higher = more tinted), so existing saved
+  // values keep their look. The design tokens use the brief's direction (0 = tinted, 1 = clear).
   useEffect(() => {
-    document.documentElement.style.setProperty("--glass-intensity", String(glassIntensity));
+    document.documentElement.style.setProperty("--glass-intensity", String((100 - glassIntensity) / 100));
   }, [glassIntensity]);
 
   function setGlassIntensity(next: number) {

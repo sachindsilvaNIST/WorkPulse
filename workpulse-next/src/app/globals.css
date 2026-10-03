@@ -3,21 +3,76 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Liquid Glass design tokens (v2.0 brief §2). Hex values live only in this file. */
 :root {
   --radius: 1rem;
 
-  /* macOS 27 "Golden Gate" Liquid Glass intensity — a single 0–100 value the user controls from
-     Settings (see GlassIntensityProvider), driving every glass surface app-wide at once (sidebar,
-     cards, popovers, toolbars), matching how the real macOS 27 slider works. 65 is the default:
-     more opaque/contrasty than Tahoe's original 70%-transparent Liquid Glass, in the direction
-     Golden Gate corrected toward, but still short of fully opaque. */
-  --glass-intensity: 65;
-  --glass-opacity: calc(45% + (var(--glass-intensity) * 0.45%));
-  --glass-blur: calc(16px + (var(--glass-intensity) * 0.16px));
-  --glass-saturate: 150%;
-  --glass-edge-contrast: rgba(0, 0, 0, calc(var(--glass-intensity) * 0.003));
+  /* Radii */
+  --radius-panel: 28px;
+  --radius-tile: 24px;
+  --radius-inner: 20px;
+  --radius-thumb: 14px;
+  --radius-item: 12px;
+  --radius-icon: 10px;
+  --radius-pill: 999px;
 
-  /* WorkPulse brand accents — mirrors the desktop/Blazor palette */
+  --shell-gap: 16px;
+  --panel-pad: 20px;
+
+  --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+
+  /* 0 = tinted/solid, 1 = clear. Set live from the Liquid Glass setting (GlassIntensityProvider). */
+  --glass-intensity: 0.6;
+
+  --wallpaper-base: #E8ECF3;
+  --wallpaper:
+    radial-gradient(ellipse 55% 45% at 10% 6%, rgba(118, 168, 255, 0.6), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 92% 14%, rgba(255, 182, 138, 0.55), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 68% 98%, rgba(176, 146, 255, 0.45), transparent 70%);
+
+  --glass-alpha: calc(0.85 - var(--glass-intensity) * 0.45);
+  --glass-bg: rgb(255 255 255 / var(--glass-alpha));
+  --glass-blur: calc(12px + var(--glass-intensity) * 30px);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 12px 36px rgba(30, 41, 59, 0.09);
+  --glass-shadow-sm: 0 6px 20px rgba(30, 41, 59, 0.08);
+  --glass-saturate: 180%;
+
+  --text-primary: #1d1d1f;
+  --text-body: #3a3a3f;
+  --text-secondary: #5f5f66;
+  --text-tertiary: #6e6e73;
+
+  --fill-1: rgba(118, 118, 128, 0.12);
+  --fill-2: rgba(118, 118, 128, 0.16);
+  --fill-raised: rgba(255, 255, 255, 0.9);
+  --fill-raised-shadow: 0 1px 3px rgba(30, 41, 59, 0.1), inset 0 1px 0 #fff;
+  --fill-glass-button: rgba(255, 255, 255, 0.7);
+  --separator: rgba(60, 60, 67, 0.1);
+
+  /* Accent — overwritten live by AccentProvider from the accent setting. */
+  --accent: #0066e0;
+  --accent-foreground: #ffffff;
+  --accent-glow: 0 8px 20px color-mix(in srgb, var(--accent) 28%, transparent);
+  --link: color-mix(in srgb, var(--accent) 88%, black);
+
+  --status-success-bg: rgba(52, 199, 89, 0.16);
+  --status-success-fg: #1a5f2e;
+  --status-warning-bg: rgba(255, 149, 0, 0.18);
+  --status-warning-fg: #7a4200;
+  --status-neutral-bg: rgba(118, 118, 128, 0.14);
+  --status-neutral-fg: #48484d;
+  --status-info-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --status-info-fg: color-mix(in srgb, var(--accent) 70%, black);
+  --status-danger-bg: rgba(255, 59, 48, 0.14);
+  --status-danger-fg: #a1221a;
+
+  --focus-ring: 0 0 0 2px var(--wallpaper-base), 0 0 0 4px var(--accent);
+
+  /* WorkPulse brand accents — used by the sidebar icon palette and the note editor. */
   --brand-blue: #0078d4;
   --brand-blue-2: #007aff;
   --brand-purple: #8b5cf6;
@@ -26,49 +81,81 @@
   --brand-rose: #ff2d55;
   --brand-green: #34c759;
 
-  --background: #f5f5f7;
-  --foreground: #1d1d1f;
-  --card: #ffffff;
-  --card-foreground: #1d1d1f;
-  --popover: #ffffff;
-  --popover-foreground: #1d1d1f;
-  --primary: var(--brand-blue);
-  --primary-foreground: #ffffff;
-  --secondary: #eef0f4;
-  --secondary-foreground: #1d1d1f;
-  --muted: #eef0f4;
-  --muted-foreground: #6e6e73;
-  --accent: #eef0f4;
-  --accent-foreground: #1d1d1f;
-  --destructive: #ff3b30;
-  --border: rgba(0, 0, 0, 0.08);
-  --input: rgba(0, 0, 0, 0.1);
-  --ring: var(--brand-blue);
+  /* shadcn variables, mapped onto the tokens above so untouched components inherit the look. */
+  --background: var(--wallpaper-base);
+  --foreground: var(--text-primary);
+  --card: var(--glass-bg);
+  --card-foreground: var(--text-primary);
+  --popover: var(--glass-bg);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--accent-foreground);
+  --secondary: var(--fill-1);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--fill-1);
+  --muted-foreground: var(--text-secondary);
+  --destructive: var(--status-danger-fg);
+  --border: var(--separator);
+  --input: var(--fill-1);
+  --ring: var(--accent);
 }
 
 .dark {
-  /* Dark mode darkens with a light-rgba edge instead of a dark one — same legibility purpose
-     (separating glass from what's behind it), opposite direction. */
-  --glass-edge-contrast: rgba(255, 255, 255, calc(var(--glass-intensity) * 0.0022));
+  --glass-alpha: calc(0.86 - var(--glass-intensity) * 0.66);
+  --glass-bg: rgb(36 38 48 / var(--glass-alpha));
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 14px 44px rgba(0, 0, 0, 0.38);
+  --glass-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --glass-saturate: 170%;
 
-  --background: #0b0b0d;
-  --foreground: #f2f2f7;
-  --card: #17171a;
-  --card-foreground: #f2f2f7;
-  --popover: #17171a;
-  --popover-foreground: #f2f2f7;
-  --primary: var(--brand-blue-2);
-  --primary-foreground: #ffffff;
-  --secondary: #1f1f23;
-  --secondary-foreground: #f2f2f7;
-  --muted: #1f1f23;
-  --muted-foreground: #9a9aa2;
-  --accent: #1f1f23;
-  --accent-foreground: #f2f2f7;
-  --destructive: #ff453a;
-  --border: rgba(255, 255, 255, 0.09);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: var(--brand-blue-2);
+  --wallpaper-base: #0d0f15;
+  --wallpaper:
+    radial-gradient(ellipse 55% 45% at 12% 8%, rgba(40, 96, 230, 0.55), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 90% 20%, rgba(160, 70, 210, 0.42), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 60% 100%, rgba(255, 120, 70, 0.25), transparent 70%);
+
+  --text-primary: #f5f5f7;
+  --text-body: #d1d1d6;
+  --text-secondary: #a1a1a6;
+  --text-tertiary: #8e8e93;
+
+  --fill-1: rgba(118, 118, 128, 0.24);
+  --fill-2: rgba(255, 255, 255, 0.12);
+  --fill-raised: rgba(255, 255, 255, 0.14);
+  --fill-raised-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --fill-glass-button: rgba(255, 255, 255, 0.1);
+  --separator: rgba(255, 255, 255, 0.08);
+
+  --link: color-mix(in srgb, var(--accent) 60%, white);
+
+  --status-success-bg: rgba(48, 209, 88, 0.2);
+  --status-success-fg: #7ee2a0;
+  --status-warning-bg: rgba(255, 159, 10, 0.22);
+  --status-warning-fg: #ffc66b;
+  --status-neutral-bg: rgba(142, 142, 147, 0.24);
+  --status-neutral-fg: #d1d1d6;
+  --status-info-bg: color-mix(in srgb, var(--accent) 24%, transparent);
+  --status-info-fg: color-mix(in srgb, var(--accent) 55%, white);
+  --status-danger-bg: rgba(255, 69, 58, 0.22);
+  --status-danger-fg: #ff9a93;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-alpha: 0.96;
+    --glass-blur: 0px;
+  }
+  .dark {
+    --glass-alpha: 0.96;
+    --glass-blur: 0px;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-alpha: 0.94;
+  }
 }
 
 @theme inline {
@@ -84,12 +171,36 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  /* shadcn's "accent" utility is its neutral hover fill; the brand accent is `primary`. */
+  --color-accent: var(--fill-1);
+  --color-accent-foreground: var(--text-primary);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-glass: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-text-primary: var(--text-primary);
+  --color-text-body: var(--text-body);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-fill-1: var(--fill-1);
+  --color-fill-2: var(--fill-2);
+  --color-fill-raised: var(--fill-raised);
+  --color-separator: var(--separator);
+  --color-link: var(--link);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-fg: var(--status-success-fg);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-warning-fg: var(--status-warning-fg);
+  --color-status-neutral-bg: var(--status-neutral-bg);
+  --color-status-neutral-fg: var(--status-neutral-fg);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-fg: var(--status-info-fg);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-danger-fg: var(--status-danger-fg);
+
   --color-brand-blue: var(--brand-blue);
   --color-brand-purple: var(--brand-purple);
   --color-brand-teal: var(--brand-teal);
@@ -102,10 +213,38 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 6px);
 
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* System font stack per brief §2.1 — no web font download. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@theme {
+  --radius-panel: 28px;
+  --radius-tile: 24px;
+  --radius-inner: 20px;
+  --radius-thumb: 14px;
+  --radius-item: 12px;
+  --radius-icon: 10px;
+  --radius-pill: 999px;
+}
+
+@utility glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+@utility glass-sm {
+  background: var(--glass-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.8)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.8)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-sm);
 }
 
 @layer base {
@@ -129,45 +268,46 @@
   }
 
   body {
-    background:
-      radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--brand-blue) 10%, transparent), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--brand-purple) 8%, transparent), transparent 55%),
-      radial-gradient(800px 500px at 50% 110%, color-mix(in srgb, var(--brand-teal) 6%, transparent), transparent 60%),
-      var(--background);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background-color: var(--wallpaper-base);
+    background-image: var(--wallpaper);
     background-attachment: fixed;
-    background-size: 160% 160%, 160% 160%, 160% 160%, auto;
-    animation: aurora-drift 40s ease-in-out infinite alternate;
-    color: var(--foreground);
-  }
-
-  .dark body {
-    background:
-      radial-gradient(1200px 600px at 8% -10%, color-mix(in srgb, var(--brand-blue-2) 18%, transparent), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--brand-purple) 14%, transparent), transparent 55%),
-      radial-gradient(800px 500px at 50% 110%, color-mix(in srgb, var(--brand-teal) 10%, transparent), transparent 60%),
-      var(--background);
-    background-attachment: fixed;
-    background-size: 160% 160%, 160% 160%, 160% 160%, auto;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body {
-      animation: none;
-    }
+    min-height: 100dvh;
   }
 }
 
-@keyframes aurora-drift {
-  0% {
-    background-position: 0% 0%, 100% 0%, 50% 100%, 0 0;
-  }
-  100% {
-    background-position: 10% 15%, 90% 10%, 55% 90%, 0 0;
-  }
+/* Panel surfaces, kept as component classes so existing pages restyle through the tokens. */
+.glass-panel {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
-/* Apple/iOS-style activity indicator — bars don't rotate, each just fades in sequence around the
-   circle, which is what actually reads as "Apple style" rather than a generic spinning ring. */
+.glass-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.sidebar-panel {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-right: 1px solid var(--separator);
+}
+
+.toolbar-solid {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--separator);
+}
+
+/* Apple/iOS-style activity indicator — bars fade in sequence around the circle. */
 @keyframes apple-spinner-fade {
   0% {
     opacity: 1;
@@ -177,8 +317,7 @@
   }
 }
 
-/* Liquid Glass tiles (Home widgets) — a slow-moving specular highlight sweeping across the
-   surface, the thing that actually reads as "glass catching light" rather than a static gradient. */
+/* Liquid Glass tiles (Home widgets) — slow specular sheen across the surface. */
 @keyframes liquid-sheen {
   0%,
   100% {
@@ -194,7 +333,6 @@
   animation: liquid-sheen 9s ease-in-out infinite;
 }
 
-/* Gentle float for widget icons/glyphs — delight without being distracting. */
 @keyframes widget-float {
   0%,
   100% {
@@ -215,57 +353,7 @@
   }
 }
 
-/* Frosted glass surface, for floating panels (dropdowns, modals, popovers) over the aurora
-   background — macOS 27 "Golden Gate" Liquid Glass, intensity-driven (see --glass-intensity at
-   the top of this file / GlassIntensityProvider). The inset edge highlight uses
-   --glass-edge-contrast rather than a fixed rgba so it darkens/lightens (light/dark mode
-   respectively) as intensity rises, the actual mechanism Golden Gate uses to keep text legible
-   at higher opacity instead of just being "more of the same" transparency. */
-.glass-panel {
-  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: inset 0 1px 0 var(--glass-edge-contrast), 0 8px 24px -12px rgba(0, 0, 0, 0.25);
-}
-
-/* Same glass material as .glass-panel, but without an opinionated radius/shadow — for
-   components (Card) that need to keep composing with a caller's own radius/shadow overrides. */
-.glass-card {
-  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-/* Main app sidebar — macOS 27 "Golden Gate" made sidebars edge-to-edge (flush to the window
-   edge, no floating gap, no shadow) AND part of the same intensity-driven Liquid Glass every
-   other surface uses (the old Tahoe-era decision here was to keep the sidebar flat/opaque like
-   Tahoe's own System Settings sidebar — Golden Gate's unified slider explicitly includes
-   sidebars, so that's reversed here). A right border replaces the old shadow as the separator
-   from content, since there's no gap left to imply depth with a shadow. */
-.sidebar-panel {
-  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-right: 1px solid var(--border);
-}
-
-/* Page toolbar (see PageToolbar) — starts fully transparent at the top of a page's scroll
-   container, and only picks up the shared Liquid Glass treatment plus a bottom border once
-   content has scrolled beneath it, matching Golden Gate's "toolbar reads as a discrete bar only
-   once needed" behavior instead of always floating a shaded bar over content. */
-.toolbar-solid {
-  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-bottom: 1px solid var(--border);
-}
-
-/* Apple Notes-style checklist inside the rich text note editor. Purely CSS-driven (the checkbox
-   is a ::before pseudo-element, the checked state just a class on the <li>) so that pressing Enter
-   to continue the list — native browser <li> behavior — automatically renders a checkbox on the
-   new line too, with no per-item DOM surgery or extra keydown handling required. */
+/* Apple Notes-style checklist inside the rich text note editor. */
 .note-rich-text .note-checklist {
   list-style: none;
   padding-left: 0;
@@ -305,9 +393,7 @@
   transform: rotate(45deg);
 }
 
-/* Background/border color is set per-instance via inline style (see RichTextEditor's
-   applyHighlight) since each highlighted span can have its own chosen color. Kept translucent
-   there rather than opaque so the app's existing (white) text color stays legible on top. */
+/* Highlight colour is set per span inline (see RichTextEditor's applyHighlight). */
 .note-rich-text mark.note-highlight {
   border-radius: 0.15em;
   padding: 0.02em 0;
