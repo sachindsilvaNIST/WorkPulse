@@ -34,6 +34,14 @@ import type {
   ShareableResourceType,
   SharePermission,
   SharedWithMeItem,
+  UtilityBill,
+  UtilityBillDocumentMeta,
+  UtilityBillMonthlyChartPoint,
+  UtilityBillSummary,
+  UtilityBillUsageChartPoint,
+  UtilityPaymentMethod,
+  UtilityProviderSettings,
+  UtilityProvider,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5050";
@@ -283,6 +291,68 @@ export const tripReportsApi = {
   getSettlement: (tripId: string) => request<TripSettlement>(`/api/tripreports/${tripId}/settlement`),
   saveSettlement: (tripId: string, record: TripSettlement) =>
     request<TripSettlement>(`/api/tripreports/${tripId}/settlement`, { method: "PUT", body: JSON.stringify(record) }),
+};
+
+export interface UtilityBillFilters {
+  provider?: UtilityProvider;
+  year?: number;
+  status?: string;
+}
+
+export const utilityBillsApi = {
+  getAll: (filters: UtilityBillFilters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.provider) params.set("provider", filters.provider);
+    if (filters.year) params.set("year", String(filters.year));
+    if (filters.status) params.set("status", filters.status);
+    const qs = params.toString();
+    return request<UtilityBill[]>(`/api/utilitybills${qs ? `?${qs}` : ""}`);
+  },
+  create: (record: Partial<UtilityBill>) =>
+    request<UtilityBill>("/api/utilitybills", { method: "POST", body: JSON.stringify(record) }),
+  update: (id: string, record: Partial<UtilityBill>) =>
+    request<UtilityBill>(`/api/utilitybills/${id}`, { method: "PUT", body: JSON.stringify(record) }),
+  delete: (id: string) => request<void>(`/api/utilitybills/${id}`, { method: "DELETE" }),
+  markPaid: (id: string, paidDate: string, paymentMethod?: UtilityPaymentMethod | null) =>
+    request<UtilityBill>(`/api/utilitybills/${id}/mark-paid`, {
+      method: "POST",
+      body: JSON.stringify({ paidDate, paymentMethod: paymentMethod ?? null }),
+    }),
+
+  getDocuments: (billId: string) => request<UtilityBillDocumentMeta[]>(`/api/utilitybills/${billId}/documents`),
+  uploadDocument: async (billId: string, file: File) => {
+    const token = getToken();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/utilitybills/${billId}/documents`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return (await res.json()) as UtilityBillDocumentMeta;
+  },
+  downloadDocument: (billId: string, docId: string) =>
+    requestBlob(`/api/utilitybills/${billId}/documents/${docId}`),
+  deleteDocument: (billId: string, docId: string) =>
+    request<void>(`/api/utilitybills/${billId}/documents/${docId}`, { method: "DELETE" }),
+
+  getSummary: () => request<UtilityBillSummary>("/api/utilitybills/summary"),
+  getMonthlyChart: (months: number, spreadBimonthly: boolean) =>
+    request<UtilityBillMonthlyChartPoint[]>(
+      `/api/utilitybills/charts/monthly?months=${months}&spreadBimonthly=${spreadBimonthly}`
+    ),
+  getUsageChart: (months: number) =>
+    request<UtilityBillUsageChartPoint[]>(`/api/utilitybills/charts/usage?months=${months}`),
+  getYearOverYear: (month: number) =>
+    request<UtilityBillMonthlyChartPoint[]>(`/api/utilitybills/charts/yoy?month=${month}`),
+
+  getProviderSettings: () => request<UtilityProviderSettings[]>("/api/utilitybills/provider-settings"),
+  saveProviderSettings: (provider: UtilityProvider, settings: UtilityProviderSettings) =>
+    request<UtilityProviderSettings>(`/api/utilitybills/provider-settings/${provider}`, {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    }),
 };
 
 export const reimbursementApi = {

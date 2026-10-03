@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.13.0",
+    date: "2026-10-03",
+    highlights: [
+      "New Utility Bills page: record each Tokyo Gas and Tokyo Water bill, mark it paid in one click, and see overdue status in Tokyo time",
+      "Utility Bills charts: monthly cost by provider (with an option to spread bimonthly water bills evenly across their two months), usage trend, and year-over-year comparison",
+      "Utility Bills: attach receipt photos or PDFs, store your customer number and payment method per provider, and get a reminder for bills due within 3 days or overdue",
+      "Utility Bills are included in full data export, account deletion, and sharing",
+      "Settings: new Liquid Glass intensity slider controls how transparent the sidebar, cards, and toolbars look",
+      "Redesigned the app's surfaces to the macOS 27 \"Golden Gate\" look: edge-to-edge sidebar, a scroll-aware page toolbar on every page, and glass that responds to the intensity slider",
+    ],
+  },
+  {
     version: "1.12.0",
     date: "2026-09-15",
     highlights: [

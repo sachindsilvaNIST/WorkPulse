@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { gmailApi, ApiError } from "@/lib/api/client";
@@ -282,17 +283,13 @@ export default function GmailLabelsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Gmail Labels</h1>
-          <p className="mt-1 text-muted-foreground">Pattern-search and manage your Gmail label tree</p>
-        </div>
+      <PageToolbar title="Gmail Labels" description="Pattern-search and manage your Gmail label tree">
         {status?.connected && (
           <Button variant="outline" onClick={() => void loadLabels()} disabled={loading}>
             {loading ? <Spinner size={16} /> : <RefreshCw className="size-4" />} {loading ? "Syncing…" : "Sync now"}
           </Button>
         )}
-      </div>
+      </PageToolbar>
 
       {!status?.connected ? (
         <Card>

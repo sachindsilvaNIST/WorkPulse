@@ -6,6 +6,17 @@
 :root {
   --radius: 1rem;
 
+  /* macOS 27 "Golden Gate" Liquid Glass intensity — a single 0–100 value the user controls from
+     Settings (see GlassIntensityProvider), driving every glass surface app-wide at once (sidebar,
+     cards, popovers, toolbars), matching how the real macOS 27 slider works. 65 is the default:
+     more opaque/contrasty than Tahoe's original 70%-transparent Liquid Glass, in the direction
+     Golden Gate corrected toward, but still short of fully opaque. */
+  --glass-intensity: 65;
+  --glass-opacity: calc(45% + (var(--glass-intensity) * 0.45%));
+  --glass-blur: calc(16px + (var(--glass-intensity) * 0.16px));
+  --glass-saturate: 150%;
+  --glass-edge-contrast: rgba(0, 0, 0, calc(var(--glass-intensity) * 0.003));
+
   /* WorkPulse brand accents — mirrors the desktop/Blazor palette */
   --brand-blue: #0078d4;
   --brand-blue-2: #007aff;
@@ -36,6 +47,10 @@
 }
 
 .dark {
+  /* Dark mode darkens with a light-rgba edge instead of a dark one — same legibility purpose
+     (separating glass from what's behind it), opposite direction. */
+  --glass-edge-contrast: rgba(255, 255, 255, calc(var(--glass-intensity) * 0.0022));
+
   --background: #0b0b0d;
   --foreground: #f2f2f7;
   --card: #17171a;
@@ -201,23 +216,50 @@
 }
 
 /* Frosted glass surface, for floating panels (dropdowns, modals, popovers) over the aurora
-   background */
+   background — macOS 27 "Golden Gate" Liquid Glass, intensity-driven (see --glass-intensity at
+   the top of this file / GlassIntensityProvider). The inset edge highlight uses
+   --glass-edge-contrast rather than a fixed rgba so it darkens/lightens (light/dark mode
+   respectively) as intensity rises, the actual mechanism Golden Gate uses to keep text legible
+   at higher opacity instead of just being "more of the same" transparency. */
 .glass-panel {
-  background-color: color-mix(in srgb, var(--card) 70%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
+  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 0 var(--glass-edge-contrast), 0 8px 24px -12px rgba(0, 0, 0, 0.25);
 }
 
-/* Flat, opaque surface for the main app sidebar — deliberately NOT translucent/blurred like
-   .glass-panel. macOS System Settings' own sidebar is a solid flat panel, not frosted glass; this
-   mirrors that instead of the Liquid Glass treatment used elsewhere in this app. */
+/* Same glass material as .glass-panel, but without an opinionated radius/shadow — for
+   components (Card) that need to keep composing with a caller's own radius/shadow overrides. */
+.glass-card {
+  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* Main app sidebar — macOS 27 "Golden Gate" made sidebars edge-to-edge (flush to the window
+   edge, no floating gap, no shadow) AND part of the same intensity-driven Liquid Glass every
+   other surface uses (the old Tahoe-era decision here was to keep the sidebar flat/opaque like
+   Tahoe's own System Settings sidebar — Golden Gate's unified slider explicitly includes
+   sidebars, so that's reversed here). A right border replaces the old shadow as the separator
+   from content, since there's no gap left to imply depth with a shadow. */
 .sidebar-panel {
-  background-color: var(--card);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-right: 1px solid var(--border);
+}
+
+/* Page toolbar (see PageToolbar) — starts fully transparent at the top of a page's scroll
+   container, and only picks up the shared Liquid Glass treatment plus a bottom border once
+   content has scrolled beneath it, matching Golden Gate's "toolbar reads as a discrete bar only
+   once needed" behavior instead of always floating a shaded bar over content. */
+.toolbar-solid {
+  background-color: color-mix(in srgb, var(--card) var(--glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--border);
 }
 
 /* Apple Notes-style checklist inside the rich text note editor. Purely CSS-driven (the checkbox

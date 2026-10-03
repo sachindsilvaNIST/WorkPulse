@@ -1,47 +1,54 @@
-# Personalized Attendance Management System
+# WorkPulse
 
-A cross-platform desktop application for managing daily attendance records, overtime tracking and Excel based reporting. 
+A personal attendance and productivity suite that started as a single desktop app (originally the "NIST Attendance Management System") and has since grown into four related codebases in this repo. Active development is concentrated in the ASP.NET Core API and the Next.js web app; the original Avalonia desktop app and the Blazor web app are earlier generations kept for reference.
+
+## Architecture
+
+- **`WorkPulse/`** — the original Avalonia (.axaml) cross-platform desktop app (Linux/Windows/macOS). Local-only, stores attendance data as JSON files.
+- **`WorkPulse.Api/`** — ASP.NET Core Web API backend. Data is stored in **MongoDB Atlas**, auth via ASP.NET Core Identity (JWT), deployed as an AWS Lambda container image.
+- **`WorkPulse.Shared/`** — DTOs/models shared across the .NET projects.
+- **`WorkPulse.Web/`** — an earlier Blazor WebAssembly web client, predates `workpulse-next`.
+- **`workpulse-next/`** — the current Next.js / React / TypeScript web app (Tailwind v4, shadcn-style components), deployed on Vercel. This is where new features land first.
 
 ## Implemented Features
 
-### Attendance Tracking 
+### Attendance Tracking
 
-- Recording daily login and logout times
-- Automatic day-of-week detection from selected date
-- Supporting multiple day types
- 
-### Overtime Management
+- Daily login/logout time recording with automatic day-of-week detection and overtime calculation
+- Monthly attendance dashboard with settlement-period summaries (work days, overtime count/duration), including custom settlement period overrides
+- Excel import (auto-detects month sections, work days, holidays, weekends, overtime) and formatted Excel export
 
-- Overtime calculation 
-- Overtime end time picker for precise duration calculation
+### Business Trips & Reimbursement
+
+- Trip applications, settlements, and document/receipt management (domestic trips; overseas support in progress)
+- Reimbursement categories and document upload, with optional Google Drive mirroring of uploaded files
+
+### Reports, Contacts & Reference Tools
+
+- Daily and weekly work reports (note-style editor)
+- Contact Book with department/email directory search
+- Bookmark library with Chrome-bookmark import/export
+- Japanese dictionary with JLPT-level tagging
+- Resources library for saved guides, links, and files
+- Gmail label browsing/sync (optional, requires connecting a Gmail account)
+
+### Sharing & Collaboration
+
+- Share trips, reports, contacts, bookmarks, and resources with other users via read/edit permission grants
+
+### Accounts & Settings
+
+- Admin dashboard for managing user accounts and access
+- Two-factor authentication (email code), active session management, and full data export
+- Theming: light/dark/system, accent color, adjustable font size, and (new) a macOS-27-style "Liquid Glass" intensity slider controlling the transparency of the sidebar, cards, and toolbars app-wide
+
+### Platform
+
+- MongoDB Atlas as the primary datastore (GridFS for file content), AWS Lambda hosting for the API
+- Account deletion purges all user data across every collection and file store
 
 
-### Edit Mode
-
-- Toggle between `View Mode` and `Edit Mode`
-- **CRUD** Operations on buttons involving New Entry (Create), Update / Modify, Delete : Hidden in `View Mode` and visible only in `Edit Mode`
-- Save button persiss all changes to disk and exits `Edit Mode`
-- Unsaved changes warning on close with 3 options: `Save & Close`, `Go Back`, `Discard & Close`
-
-
-### Excel Import / Export
-
-- **Import**: Load an exisiting data records (exisiting Excel files : `.xlsx`)
-    - Auto detections of month sections, work days, holidays, weekends and overtime flags
-
-- **Export**: Generate formatted Excel reports with:
-    - Month labels, weekly grouping and summary rows
-    - Color coded overtime labels
-    - Overtime count and total duration summary
-
-
-### Monthly Navigation 
-
-- Browse attendance data records by month using navigation (left / right) arrows
-- Summary panel showing: `Work Days Count`, `Overtime Count`, `Total Overtime Duration`
-
-
-## `Setup Guide - Run on Local Machine [Ubuntu / Windows]`
+## Desktop App (`WorkPulse/`) — Setup Guide - Run on Local Machine [Ubuntu / Windows]
 
 **Prerequisties for Building from Source**
 

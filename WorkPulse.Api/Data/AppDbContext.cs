@@ -27,6 +27,9 @@ public class AppDbContext : DbContext
     public DbSet<ResourceEntity> Resources => Set<ResourceEntity>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<ShareEntity> Shares => Set<ShareEntity>();
+    public DbSet<UtilityBillEntity> UtilityBills => Set<UtilityBillEntity>();
+    public DbSet<UtilityBillDocumentEntity> UtilityBillDocuments => Set<UtilityBillDocumentEntity>();
+    public DbSet<UtilityProviderSettingsEntity> UtilityProviderSettings => Set<UtilityProviderSettingsEntity>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -160,6 +163,26 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.ResourceType, x.ResourceId, x.OwnerUserId }).IsUnique();
             e.HasIndex(x => x.PublicToken).IsUnique();
             e.OwnsMany(x => x.Grants, g => g.HasElementName("grants"));
+        });
+
+        builder.Entity<UtilityBillEntity>(e =>
+        {
+            e.ToCollection("utility_bills");
+            e.HasIndex(x => new { x.UserId, x.BillingYear, x.BillingMonth });
+            e.OwnsOne(x => x.Breakdown, b => b.HasElementName("breakdown"));
+        });
+
+        builder.Entity<UtilityBillDocumentEntity>(e =>
+        {
+            e.ToCollection("utility_bill_documents");
+            e.HasIndex(x => x.UtilityBillId);
+            e.HasIndex(x => x.UserId);
+        });
+
+        builder.Entity<UtilityProviderSettingsEntity>(e =>
+        {
+            e.ToCollection("utility_provider_settings");
+            e.HasIndex(x => new { x.UserId, x.Provider }).IsUnique();
         });
     }
 }

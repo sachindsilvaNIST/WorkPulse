@@ -5,6 +5,7 @@ import { BookOpen, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
@@ -54,15 +55,11 @@ export default function DictionaryPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">JP Dictionary</h1>
-          <p className="mt-1 text-muted-foreground">Store and search Japanese words and phrases</p>
-        </div>
+      <PageToolbar title="JP Dictionary" description="Store and search Japanese words and phrases">
         <Button onClick={() => setShowForm((v) => !v)}>
           <Plus className="size-4" /> Add Entry
         </Button>
-      </div>
+      </PageToolbar>
 
       <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-6 max-w-md" />
 

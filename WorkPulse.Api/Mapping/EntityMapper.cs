@@ -1,4 +1,5 @@
 using WorkPulse.Api.Data.Entities;
+using WorkPulse.Api.Services;
 using WorkPulse.Models;
 
 namespace WorkPulse.Api.Mapping;
@@ -452,6 +453,127 @@ public static class EntityMapper
         return new ReimbursementCategory { Id = entity.Id, Name = entity.Name };
     }
 
+    // --- UtilityBill <-> UtilityBillEntity ---
+    // Status is never stored — computed from PaidDate/DueDate on every read, so it can't go stale.
+
+    public static UtilityBill ToUtilityBill(this UtilityBillEntity entity)
+    {
+        return new UtilityBill
+        {
+            Id = entity.Id,
+            Provider = Enum.TryParse<UtilityProvider>(entity.Provider, out var p) ? p : UtilityProvider.TokyoGas,
+            BillingYear = entity.BillingYear,
+            BillingMonth = entity.BillingMonth,
+            PeriodStart = entity.PeriodStart,
+            PeriodEnd = entity.PeriodEnd,
+            MeterReadingDate = entity.MeterReadingDate,
+            UsageAmount = entity.UsageAmount,
+            UsageUnit = entity.UsageUnit,
+            SewerUsageAmount = entity.SewerUsageAmount,
+            AmountJpy = entity.AmountJpy,
+            Breakdown = entity.Breakdown?.ToUtilityBillBreakdown(),
+            DueDate = entity.DueDate,
+            PaidDate = entity.PaidDate,
+            PaymentMethod = Enum.TryParse<UtilityPaymentMethod>(entity.PaymentMethod, out var pm) ? pm : null,
+            Status = UtilityBillStatusCalculator.Compute(entity.PaidDate, entity.DueDate),
+            ReceiptRef = entity.ReceiptRef,
+            Notes = entity.Notes,
+            LastModifiedUtc = entity.LastModifiedUtc
+        };
+    }
+
+    public static UtilityBillEntity ToEntity(this UtilityBill record, string userId)
+    {
+        return new UtilityBillEntity
+        {
+            Id = string.IsNullOrEmpty(record.Id) ? Guid.NewGuid().ToString() : record.Id,
+            UserId = userId,
+            Provider = record.Provider.ToString(),
+            BillingYear = record.BillingYear,
+            BillingMonth = record.BillingMonth,
+            PeriodStart = record.PeriodStart,
+            PeriodEnd = record.PeriodEnd,
+            MeterReadingDate = record.MeterReadingDate,
+            UsageAmount = record.UsageAmount,
+            UsageUnit = string.IsNullOrWhiteSpace(record.UsageUnit) ? "m³" : record.UsageUnit,
+            SewerUsageAmount = record.SewerUsageAmount,
+            AmountJpy = record.AmountJpy,
+            Breakdown = record.Breakdown?.ToEntity(),
+            DueDate = record.DueDate,
+            PaidDate = record.PaidDate,
+            PaymentMethod = record.PaymentMethod?.ToString(),
+            ReceiptRef = record.ReceiptRef,
+            Notes = record.Notes,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+    }
+
+    public static UtilityBillBreakdown ToUtilityBillBreakdown(this UtilityBillBreakdownEntity entity)
+    {
+        return new UtilityBillBreakdown
+        {
+            WaterCharge = entity.WaterCharge,
+            SewerCharge = entity.SewerCharge,
+            ConsumptionTax = entity.ConsumptionTax,
+            SlipIssuingFee = entity.SlipIssuingFee,
+            LateInterest = entity.LateInterest
+        };
+    }
+
+    public static UtilityBillBreakdownEntity ToEntity(this UtilityBillBreakdown record)
+    {
+        return new UtilityBillBreakdownEntity
+        {
+            WaterCharge = record.WaterCharge,
+            SewerCharge = record.SewerCharge,
+            ConsumptionTax = record.ConsumptionTax,
+            SlipIssuingFee = record.SlipIssuingFee,
+            LateInterest = record.LateInterest
+        };
+    }
+
+    // --- UtilityBillDocumentMeta <-> UtilityBillDocumentEntity ---
+
+    public static UtilityBillDocumentMeta ToMeta(this UtilityBillDocumentEntity entity)
+    {
+        return new UtilityBillDocumentMeta
+        {
+            Id = entity.Id,
+            UtilityBillId = entity.UtilityBillId,
+            FileName = entity.FileName,
+            ContentType = entity.ContentType,
+            SizeBytes = entity.SizeBytes,
+            UploadedUtc = entity.UploadedUtc,
+            DriveFileId = entity.DriveFileId,
+            DriveWebViewLink = entity.DriveWebViewLink
+        };
+    }
+
+    // --- UtilityProviderSettings <-> UtilityProviderSettingsEntity ---
+
+    public static UtilityProviderSettings ToUtilityProviderSettings(this UtilityProviderSettingsEntity entity)
+    {
+        return new UtilityProviderSettings
+        {
+            Provider = Enum.TryParse<UtilityProvider>(entity.Provider, out var p) ? p : UtilityProvider.TokyoGas,
+            CustomerNumber = entity.CustomerNumber,
+            CurrentPaymentMethod = Enum.TryParse<UtilityPaymentMethod>(entity.CurrentPaymentMethod, out var pm) ? pm : null,
+            PaymentMethodChangedDate = entity.PaymentMethodChangedDate
+        };
+    }
+
+    public static UtilityProviderSettingsEntity ToEntity(this UtilityProviderSettings record, string userId)
+    {
+        return new UtilityProviderSettingsEntity
+        {
+            UserId = userId,
+            Provider = record.Provider.ToString(),
+            CustomerNumber = record.CustomerNumber,
+            CurrentPaymentMethod = record.CurrentPaymentMethod?.ToString(),
+            PaymentMethodChangedDate = record.PaymentMethodChangedDate
+        };
+    }
+
     // --- UserSettings <-> AppSettings ---
 
     public static AppSettings ToAppSettings(this UserSettingsEntity entity)
@@ -471,7 +593,8 @@ public static class EntityMapper
             IdleTimeoutMinutes = entity.IdleTimeoutMinutes,
             NotificationsEnabled = entity.NotificationsEnabled,
             NotificationChannel = entity.NotificationChannel,
-            AccentColor = entity.AccentColor
+            AccentColor = entity.AccentColor,
+            GlassIntensity = entity.GlassIntensity
         };
     }
 
@@ -493,7 +616,8 @@ public static class EntityMapper
             IdleTimeoutMinutes = settings.IdleTimeoutMinutes,
             NotificationsEnabled = settings.NotificationsEnabled,
             NotificationChannel = settings.NotificationChannel,
-            AccentColor = settings.AccentColor
+            AccentColor = settings.AccentColor,
+            GlassIntensity = settings.GlassIntensity
         };
     }
 

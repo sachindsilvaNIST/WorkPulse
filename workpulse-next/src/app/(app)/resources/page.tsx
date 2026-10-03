@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -381,15 +382,11 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Resources</h1>
-          <p className="mt-1 text-muted-foreground">Every saved guide, link, and file — found by keyword</p>
-        </div>
+      <PageToolbar title="Resources" description="Every saved guide, link, and file — found by keyword">
         <Button onClick={openNew}>
           <Plus className="size-4" /> Add Resource
         </Button>
-      </div>
+      </PageToolbar>
 
       <SearchInput placeholder='Search — try "taiwan", "visa", a tag…' value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 

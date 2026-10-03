@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
@@ -295,11 +296,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Bookmark Library</h1>
-          <p className="mt-1 text-muted-foreground">Find any saved link by name, synonym, or category</p>
-        </div>
+      <PageToolbar title="Bookmark Library" description="Find any saved link by name, synonym, or category">
         <div className="flex flex-wrap gap-2">
           <Button variant={selectMode ? "default" : "outline"} onClick={toggleSelectMode}>
             <CheckSquare className="size-4" /> {selectMode ? "Cancel" : "Select"}
@@ -327,7 +324,7 @@ export default function BookmarksPage() {
             <Plus className="size-4" /> Add Bookmark
           </Button>
         </div>
-      </div>
+      </PageToolbar>
 
       {importMessage && <p className="mb-4 text-sm text-muted-foreground">{importMessage}</p>}
 

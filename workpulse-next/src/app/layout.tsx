@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/auth-context";
 import { AccentProvider } from "@/lib/accent-context";
+import { GlassIntensityProvider } from "@/lib/glass-intensity-context";
 import { FONT_SIZE_SCALE, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import "./globals.css";
 
@@ -51,7 +52,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AccentProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <GlassIntensityProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </GlassIntensityProvider>
           </AccentProvider>
         </ThemeProvider>
       </body>

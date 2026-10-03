@@ -42,6 +42,7 @@ public class ShareAccessService
         "Contact" => (await _db.Contacts.FindAsync(resourceId))?.ToContactRecord(),
         "QuickLink" => (await _db.QuickLinks.FindAsync(resourceId))?.ToQuickLink(),
         "Resource" => (await _db.Resources.FindAsync(resourceId))?.ToMeta(),
+        "UtilityBill" => (await _db.UtilityBills.FindAsync(resourceId))?.ToUtilityBill(),
         _ => null,
     };
 }

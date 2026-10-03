@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { InfoGlyph } from "@/components/ui/settings-glyphs";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
 import { CHANGELOG } from "@/lib/changelog";
 import { cn } from "@/lib/utils";
@@ -13,13 +14,11 @@ import { cn } from "@/lib/utils";
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-6 flex items-center gap-3">
-        <IconBadge icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" flat size="size-11" iconSize="size-6" />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">About</h1>
-          <p className="mt-1 text-muted-foreground">Version info and what&apos;s changed recently</p>
-        </div>
-      </div>
+      <PageToolbar
+        title="About"
+        description="Version info and what's changed recently"
+        icon={<IconBadge icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" flat size="size-11" iconSize="size-6" />}
+      />
 
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-2">

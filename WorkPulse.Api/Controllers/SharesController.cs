@@ -34,7 +34,7 @@ public class SharesController : ApiControllerBase
     }
 
     private static readonly string[] ResourceTypes =
-        { "TripReport", "TripDocument", "DailyReport", "WeeklyReport", "Contact", "QuickLink", "Resource" };
+        { "TripReport", "TripDocument", "DailyReport", "WeeklyReport", "Contact", "QuickLink", "Resource", "UtilityBill" };
 
     private async Task<bool> OwnsResourceAsync(string resourceType, string resourceId) => resourceType switch
     {
@@ -45,6 +45,7 @@ public class SharesController : ApiControllerBase
         "Contact" => await _db.Contacts.AnyAsync(x => x.Id == resourceId && x.UserId == UserId),
         "QuickLink" => await _db.QuickLinks.AnyAsync(x => x.Id == resourceId && x.UserId == UserId),
         "Resource" => await _db.Resources.AnyAsync(x => x.Id == resourceId && x.UserId == UserId),
+        "UtilityBill" => await _db.UtilityBills.AnyAsync(x => x.Id == resourceId && x.UserId == UserId),
         _ => false,
     };
 
@@ -59,6 +60,7 @@ public class SharesController : ApiControllerBase
         "Contact" => (await _db.Contacts.FindAsync(resourceId)) is { } c ? $"{c.FamilyName} {c.GivenName}".Trim() : null,
         "QuickLink" => (await _db.QuickLinks.FindAsync(resourceId))?.Label,
         "Resource" => (await _db.Resources.FindAsync(resourceId))?.Title,
+        "UtilityBill" => (await _db.UtilityBills.FindAsync(resourceId)) is { } b ? $"{b.Provider} {b.BillingYear}-{b.BillingMonth:D2}" : null,
         _ => null,
     };
 

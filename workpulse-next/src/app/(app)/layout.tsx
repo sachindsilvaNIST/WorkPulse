@@ -18,11 +18,13 @@ import { SidebarDensityProvider } from "@/lib/sidebar-density-context";
 import { settingsApi } from "@/lib/api/client";
 import { applyFontSize, FONT_SIZE_STORAGE_KEY } from "@/lib/font-size";
 import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
+import { useGlassIntensity } from "@/lib/glass-intensity-context";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const { setTheme } = useTheme();
   const { setAccent } = useAccent();
+  const { setGlassIntensity } = useGlassIntensity();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
@@ -52,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const savedTheme = s.themeVariant?.toLowerCase();
         if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") setTheme(savedTheme);
         if (s.accentColor && s.accentColor in ACCENT_PRESETS) setAccent(s.accentColor as AccentId);
+        if (typeof s.glassIntensity === "number") setGlassIntensity(s.glassIntensity);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,8 +74,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarDensityProvider>
     <SpotlightProvider>
     <div className="flex h-screen w-full overflow-hidden">
-      {/* Desktop sidebar */}
-      <div className="hidden shrink-0 p-3 md:block">
+      {/* Desktop sidebar — edge-to-edge (macOS 27 "Golden Gate"), flush against the window's left
+          edge with no floating gap, unlike the mobile drawer below which stays an overlay. */}
+      <div className="hidden shrink-0 md:block">
         <Sidebar />
       </div>
 

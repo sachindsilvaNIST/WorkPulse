@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { InfoGlyph } from "@/components/ui/settings-glyphs";
 
@@ -28,13 +29,11 @@ const ORIGIN_STORY: { era: string; description: string }[] = [
 export default function HistoryPage() {
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-6 flex items-center gap-3">
-        <IconBadge icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" flat size="size-11" iconSize="size-6" />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Where WorkPulse Started</h1>
-          <p className="mt-1 text-muted-foreground">From a desktop attendance tracker to this web app</p>
-        </div>
-      </div>
+      <PageToolbar
+        title="Where WorkPulse Started"
+        description="From a desktop attendance tracker to this web app"
+        icon={<IconBadge icon={InfoGlyph} color="#AEAEB2" color2="#6E6E73" flat size="size-11" iconSize="size-6" />}
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-4">

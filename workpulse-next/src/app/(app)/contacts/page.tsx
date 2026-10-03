@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Input } from "@/components/ui/input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
@@ -221,15 +222,11 @@ export default function ContactsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Contact Book</h1>
-          <p className="mt-1 text-muted-foreground">Search contacts, departments and email directory</p>
-        </div>
+      <PageToolbar title="Contact Book" description="Search contacts, departments and email directory">
         <Button onClick={() => (showForm ? setShowForm(false) : openNew())}>
           <Plus className="size-4" /> Add Contact
         </Button>
-      </div>
+      </PageToolbar>
 
       <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
 

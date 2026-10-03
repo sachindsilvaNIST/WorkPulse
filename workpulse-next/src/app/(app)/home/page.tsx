@@ -7,6 +7,7 @@ import { NAV_ITEMS, resolveNavColor } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { attendanceApi, dailyReportsApi, tripReportsApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { WeatherWidget } from "@/components/home/weather-widget";
 import { ClockWidget } from "@/components/home/clock-widget";
 import { RecentlyViewedWidget } from "@/components/home/recently-viewed-widget";
@@ -132,10 +133,10 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Welcome back{displayName ? `, ${displayName.split(" ")[0]}` : ""}
-        </h1>
-        <p className="mt-1 text-muted-foreground">Here&apos;s where things stand today</p>
+        <PageToolbar
+          title={`Welcome back${displayName ? `, ${displayName.split(" ")[0]}` : ""}`}
+          description="Here's where things stand today"
+        />
 
         <button
           type="button"

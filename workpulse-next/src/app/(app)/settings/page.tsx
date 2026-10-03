@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
+import { useGlassIntensity } from "@/lib/glass-intensity-context";
 import { ShieldGlyph, EnvelopeGlyph, PeopleGlyph } from "@/components/ui/nav-glyphs";
 import {
   PaletteGlyph,
@@ -33,6 +34,7 @@ import {
   WarningGlyph,
 } from "@/components/ui/settings-glyphs";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -131,6 +133,7 @@ function timeAgo(iso: string): string {
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { accent, setAccent } = useAccent();
+  const { glassIntensity, setGlassIntensity } = useGlassIntensity();
   const { displayName, logout, updateDisplayName } = useAuth();
   const { density: sidebarDensity, setDensity: setSidebarDensity } = useSidebarDensity();
   const [mounted, setMounted] = useState(false);
@@ -296,6 +299,16 @@ export default function SettingsPage() {
     updatePreference("accentColor", next);
   }
 
+  // Glass intensity previews continuously while dragging (setGlassIntensity applies it live via
+  // the CSS variable) but only persists to the backend once the drag ends, same reasoning as a
+  // native slider bound to a "commit" event rather than firing a save on every pixel of movement.
+  function handleGlassIntensityPreview(next: number) {
+    setGlassIntensity(next);
+  }
+  function handleGlassIntensityCommit(next: number) {
+    updatePreference("glassIntensity", next);
+  }
+
   // Reset to Defaults — Appearance only (theme, accent, font size, sidebar size, date format),
   // not the whole Settings page. Matches each field's own documented default.
   function handleResetAppearance() {
@@ -303,6 +316,8 @@ export default function SettingsPage() {
     handleAccentChange("blue");
     handleFontSizeChange("Medium");
     setSidebarDensity("regular");
+    handleGlassIntensityPreview(65);
+    handleGlassIntensityCommit(65);
     if (settings) updatePreference("dateFormat", "MM/dd/yyyy");
   }
 
@@ -512,7 +527,7 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Settings</h1>
+      <PageToolbar title="Settings" />
 
       {mounted && recentEntries.length > 0 && (
         <div className="mb-6">
@@ -618,6 +633,7 @@ export default function SettingsPage() {
               <div className="flex flex-col divide-y divide-border">
                 <RowLink label="Theme" description="Light, dark, or match your system setting" onClick={() => setOpenRow("theme")} />
                 <RowLink label="Accent Color" description="Applies to selected rows, buttons, and links across the app" onClick={() => setOpenRow("accent")} />
+                <RowLink label="Liquid Glass Intensity" description="How transparent the sidebar, cards, and toolbars are" onClick={() => setOpenRow("glass")} />
                 {settings && <RowLink label="Font Size" description="Adjust text size across the app" onClick={() => setOpenRow("font-size")} />}
                 <RowLink label="Sidebar Size" description="How compact the nav sidebar and its icons are" onClick={() => setOpenRow("sidebar-size")} />
                 {settings && <RowLink label="Date Format" description="Applies to dates shown in Attendance" onClick={() => setOpenRow("date-format")} />}
@@ -665,6 +681,35 @@ export default function SettingsPage() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {openRow === "glass" && (
+              <div className="flex flex-col gap-3">
+                <SubPageBack label="Liquid Glass Intensity" onBack={() => setOpenRow(null)} />
+                <p className="text-xs text-muted-foreground">How transparent the sidebar, cards, and toolbars are</p>
+                <div
+                  className="glass-card flex h-16 items-center justify-center rounded-xl border border-white/10 text-xs font-medium text-muted-foreground"
+                >
+                  Preview
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={glassIntensity}
+                  onChange={(e) => handleGlassIntensityPreview(Number(e.target.value))}
+                  onMouseUp={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
+                  onTouchEnd={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
+                  onKeyUp={(e) => handleGlassIntensityCommit(Number(e.currentTarget.value))}
+                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[var(--primary)]"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>Clear</span>
+                  <span>Medium</span>
+                  <span>Tinted</span>
                 </div>
               </div>
             )}

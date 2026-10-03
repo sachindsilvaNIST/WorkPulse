@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Briefcase, Download, FileText, Link2, Plus, Save, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -345,15 +346,11 @@ export default function TripsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Business Trips</h1>
-          <p className="mt-1 text-muted-foreground">Applications, settlements, receipts and tickets</p>
-        </div>
+      <PageToolbar title="Business Trips" description="Applications, settlements, receipts and tickets">
         <Button onClick={() => setShowForm((v) => !v)}>
           <Plus className="size-4" /> New Trip
         </Button>
-      </div>
+      </PageToolbar>
 
       {showForm && (
         <Card className="mb-6">

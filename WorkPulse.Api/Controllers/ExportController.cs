@@ -42,6 +42,9 @@ public class ExportController : ApiControllerBase
         var resources = await _db.Resources.Where(r => r.UserId == UserId).ToListAsync();
         var contacts = await _db.Contacts.Where(c => c.UserId == UserId).ToListAsync();
         var settings = await _db.UserSettings.FirstOrDefaultAsync(s => s.UserId == UserId);
+        var utilityBills = await _db.UtilityBills.Where(b => b.UserId == UserId).ToListAsync();
+        var utilityDocs = await _db.UtilityBillDocuments.Where(d => d.UserId == UserId).ToListAsync();
+        var utilitySettings = await _db.UtilityProviderSettings.Where(s => s.UserId == UserId).ToListAsync();
 
         var data = new
         {
@@ -55,6 +58,9 @@ public class ExportController : ApiControllerBase
             Bookmarks = bookmarks.Select(l => l.ToQuickLink()),
             Resources = resources.Select(r => r.ToMeta()),
             Contacts = contacts.Select(c => c.ToContactRecord()),
+            UtilityBills = utilityBills.Select(b => b.ToUtilityBill()),
+            UtilityBillDocuments = utilityDocs.Select(d => d.ToMeta()),
+            UtilityProviderSettings = utilitySettings.Select(s => s.ToUtilityProviderSettings()),
             Settings = settings?.ToAppSettings()
         };
 
@@ -87,6 +93,15 @@ public class ExportController : ApiControllerBase
             {
                 var entry = archive.CreateEntry($"resources/{res.Id}-{SanitizePathSegment(res.FileName)}", CompressionLevel.Optimal);
                 var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(res.ContentGridFsId!));
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(bytes);
+            }
+
+            foreach (var doc in utilityDocs)
+            {
+                if (doc.ContentGridFsId == null) continue;
+                var entry = archive.CreateEntry($"utility-bills/{doc.Id}-{SanitizePathSegment(doc.FileName)}", CompressionLevel.Optimal);
+                var bytes = await _gridFs.DownloadAsBytesAsync(ObjectId.Parse(doc.ContentGridFsId));
                 await using var entryStream = entry.Open();
                 await entryStream.WriteAsync(bytes);
             }
@@ -209,6 +224,51 @@ public class ExportController : ApiControllerBase
             summary.Restored++;
         }
 
+        foreach (var bill in bundle.UtilityBills)
+        {
+            if (await _db.UtilityBills.AnyAsync(b => b.Id == bill.Id && b.UserId == UserId)) { summary.Skipped++; continue; }
+            _db.UtilityBills.Add(bill.ToEntity(UserId));
+            summary.Restored++;
+        }
+
+        foreach (var setting in bundle.UtilityProviderSettings)
+        {
+            var providerName = setting.Provider.ToString();
+            if (await _db.UtilityProviderSettings.AnyAsync(s => s.UserId == UserId && s.Provider == providerName)) { summary.Skipped++; continue; }
+            _db.UtilityProviderSettings.Add(setting.ToEntity(UserId));
+            summary.Restored++;
+        }
+
+        var knownBillIds = new HashSet<string>((await _db.UtilityBills.Where(b => b.UserId == UserId).ToListAsync()).Select(b => b.Id));
+        foreach (var e in _db.ChangeTracker.Entries<UtilityBillEntity>())
+            if (e.State == EntityState.Added) knownBillIds.Add(e.Entity.Id);
+
+        foreach (var doc in bundle.UtilityBillDocuments)
+        {
+            if (await _db.UtilityBillDocuments.AnyAsync(d => d.Id == doc.Id && d.UserId == UserId)) { summary.Skipped++; continue; }
+            if (!knownBillIds.Contains(doc.UtilityBillId)) { summary.Skipped++; continue; }
+
+            string? gridFsId = null;
+            var docBytes = ReadZipFile(archive, "utility-bills/", doc.Id);
+            if (docBytes != null)
+                gridFsId = (await _gridFs.UploadFromBytesAsync(doc.FileName, docBytes)).ToString();
+
+            _db.UtilityBillDocuments.Add(new UtilityBillDocumentEntity
+            {
+                Id = doc.Id,
+                UtilityBillId = doc.UtilityBillId,
+                UserId = UserId,
+                FileName = doc.FileName,
+                ContentType = doc.ContentType,
+                SizeBytes = doc.SizeBytes,
+                ContentGridFsId = gridFsId,
+                UploadedUtc = doc.UploadedUtc,
+                DriveFileId = doc.DriveFileId,
+                DriveWebViewLink = doc.DriveWebViewLink
+            });
+            summary.Restored++;
+        }
+
         // Trip documents need their parent trip to exist first (either already there, or just
         // added above in this same request) — TripReports is saved before this runs via the
         // SaveChanges below only applying once, so check against what's now tracked in-memory too.
@@ -321,6 +381,9 @@ public class ExportBundle
     public List<QuickLink> Bookmarks { get; set; } = new();
     public List<ResourceMeta> Resources { get; set; } = new();
     public List<ContactRecord> Contacts { get; set; } = new();
+    public List<UtilityBill> UtilityBills { get; set; } = new();
+    public List<UtilityBillDocumentMeta> UtilityBillDocuments { get; set; } = new();
+    public List<UtilityProviderSettings> UtilityProviderSettings { get; set; } = new();
     public AppSettings? Settings { get; set; }
 }
 

@@ -237,3 +237,25 @@ export function PulseGlyph(props: GlyphProps) {
     </svg>
   );
 }
+
+/** Utility Bills' design: a translucent glass receipt — same fill/edge-stroke as PageGlyph, but
+ * with a zigzag tear along the bottom edge so it reads as a paper slip rather than a document —
+ * with a title bar, two line bars, and an amber coin accent for the amount. Hand-drawn primitives
+ * only, no icon library path data. */
+export function UtilityBillsGlyph(props: GlyphProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...props}>
+      <path
+        d="M3 2.5Q3 1.5 4 1.5H20Q21 1.5 21 2.5V20.4L19 21.5L17 20.4L15 21.5L13 20.4L11 21.5L9 20.4L7 21.5L5 20.4L3 21.5Z"
+        fill="rgba(255,255,255,0.28)"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="0.6"
+        strokeLinejoin="round"
+      />
+      <rect x="6" y="5" width="9" height="1.8" rx="0.9" fill="#FFFFFF" />
+      <rect x="6" y="8.6" width="12" height="1.4" rx="0.7" fill="rgba(255,255,255,0.85)" />
+      <rect x="6" y="11.6" width="8" height="1.4" rx="0.7" fill="rgba(255,255,255,0.7)" />
+      <circle cx="16.5" cy="15.6" r="2.3" fill="#FFE08A" stroke="rgba(255,255,255,0.6)" strokeWidth="0.4" />
+    </svg>
+  );
+}

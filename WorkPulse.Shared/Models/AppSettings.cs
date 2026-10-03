@@ -31,6 +31,11 @@ public class AppSettings
     /// web app's ACCENT_PRESETS keys; other clients can ignore this field.</summary>
     public string AccentColor { get; set; } = "blue";
 
+    /// <summary>Liquid Glass intensity, 0 (clear) - 100 (fully tinted) — the web app's macOS-27-style
+    /// glass-surface transparency slider (sidebar, cards, popovers, toolbars). Other clients can
+    /// ignore this field.</summary>
+    public double GlassIntensity { get; set; } = 65;
+
     // Sync settings (desktop only, not synced to server)
     public bool SyncEnabled { get; set; }
     public string SyncServerUrl { get; set; } = "";

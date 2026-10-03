@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { CalendarClock, ChevronDown, Clock, Download, Pencil, Plus, Settings2, Trash2, TrendingUp, Umbrella } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
@@ -399,23 +400,19 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-6 flex flex-wrap items-center justify-between gap-3"
-      >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Attendance Dashboard</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
+      <PageToolbar
+        title="Attendance Dashboard"
+        description={
+          <span className="flex flex-wrap items-center gap-2">
             {period
               ? `${period.label} Settlement · ${formatShortDate(period.periodStart)} – ${formatShortDate(period.periodEnd)}, ${period.year}`
               : "Track login, logout, overtime and monthly trends"}
             {endMonthData?.customSettlementStart && endMonthData?.customSettlementEnd && (
               <Badge variant="secondary" className="text-[10px]">Custom period</Badge>
             )}
-          </p>
-        </div>
+          </span>
+        }
+      >
         <div className="flex flex-wrap items-center gap-2">
           {settlementOptions.length > 0 && selected && (
             <div className="relative">
@@ -575,7 +572,7 @@ export default function DashboardPage() {
             <Pencil className="size-3.5" /> {editMode ? "Done" : "Edit"}
           </Button>
         </div>
-      </motion.div>
+      </PageToolbar>
 
       {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={16} /> Loading…</div>}
       {error && !loading && <p className="text-sm text-muted-foreground">{error}</p>}

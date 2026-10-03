@@ -10,6 +10,7 @@ import {
   EnvelopeGlyph,
   BooksGlyph,
   GearGlyph,
+  UtilityBillsGlyph,
 } from "@/components/ui/nav-glyphs";
 import { InfoGlyph } from "@/components/ui/settings-glyphs";
 
@@ -124,6 +125,15 @@ export const NAV_ITEMS: NavItem[] = [
     flat: true,
     description: "Pattern-search and manage your Gmail label tree",
     disabled: true,
+  },
+  {
+    href: "/utility-bills",
+    label: "Utility Bills",
+    icon: UtilityBillsGlyph,
+    color: "#FFB340",
+    color2: "#FF9500",
+    flat: true,
+    description: "Track Tokyo Gas & Water bills, payments and usage",
   },
   {
     href: "/shared",

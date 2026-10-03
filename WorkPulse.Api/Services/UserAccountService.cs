@@ -44,8 +44,18 @@ public class UserAccountService
             catch (Exception ex) { _logger.LogWarning(ex, "GridFS delete failed for document {DocId}", d.Id); }
         }
 
+        var utilityDocs = await _db.UtilityBillDocuments.Where(d => d.UserId == userId).ToListAsync();
+        foreach (var d in utilityDocs.Where(d => d.ContentGridFsId != null))
+        {
+            try { await _gridFs.DeleteAsync(ObjectId.Parse(d.ContentGridFsId!)); }
+            catch (Exception ex) { _logger.LogWarning(ex, "GridFS delete failed for utility bill document {DocId}", d.Id); }
+        }
+
         _db.Resources.RemoveRange(resources);
         _db.TripDocuments.RemoveRange(tripDocs);
+        _db.UtilityBillDocuments.RemoveRange(utilityDocs);
+        _db.UtilityBills.RemoveRange(await _db.UtilityBills.Where(x => x.UserId == userId).ToListAsync());
+        _db.UtilityProviderSettings.RemoveRange(await _db.UtilityProviderSettings.Where(x => x.UserId == userId).ToListAsync());
         _db.AttendanceMonths.RemoveRange(await _db.AttendanceMonths.Where(x => x.UserId == userId).ToListAsync());
         _db.Contacts.RemoveRange(await _db.Contacts.Where(x => x.UserId == userId).ToListAsync());
         _db.UserSettings.RemoveRange(await _db.UserSettings.Where(x => x.UserId == userId).ToListAsync());

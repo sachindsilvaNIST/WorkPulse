@@ -325,7 +325,7 @@ export function NoteEditor<T extends NoteRecord>({
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 md:h-[calc(100vh-4rem)] md:grid-cols-[320px_1fr]">
       {/* Sidebar */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-xl">
+      <div className="glass-card flex flex-col overflow-hidden rounded-2xl border border-white/10">
         <div className="flex items-center justify-between gap-2 border-b border-white/10 p-4">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">{heading}</h1>
@@ -438,7 +438,7 @@ export function NoteEditor<T extends NoteRecord>({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-xl p-6"
+        className="glass-card flex flex-col overflow-hidden rounded-2xl border border-white/10 p-6"
       >
         {!selected ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-muted-foreground">

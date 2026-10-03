@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Briefcase, FileText, Library, Receipt, Ribbon, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PageToolbar } from "@/components/shell/page-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { shareApi } from "@/lib/api/client";
@@ -17,6 +18,7 @@ const TYPE_META: Record<ShareableResourceType, { label: string; icon: typeof Bri
   Contact: { label: "Contact", icon: Users, color: "#7ED957" },
   QuickLink: { label: "Bookmark", icon: Ribbon, color: "#FF6482" },
   Resource: { label: "Resource", icon: Library, color: "#5AC8FA" },
+  UtilityBill: { label: "Utility Bill", icon: Receipt, color: "#FF9500" },
 };
 
 export default function SharedWithMePage() {
@@ -28,10 +30,7 @@ export default function SharedWithMePage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Shared with Me</h1>
-        <p className="mt-1 text-muted-foreground">Items other people have shared with you</p>
-      </div>
+      <PageToolbar title="Shared with Me" description="Items other people have shared with you" />
 
       {items === null && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

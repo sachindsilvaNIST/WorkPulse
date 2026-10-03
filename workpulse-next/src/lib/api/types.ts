@@ -301,6 +301,89 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   notificationChannel: string; // "Email" | "In-app"
   accentColor: string; // AccentId — "blue" | "purple" | "teal" | "orange" | "rose" | "green"
+  glassIntensity: number; // 0 (clear) - 100 (fully tinted)
+}
+
+export type UtilityProvider = "TokyoGas" | "TokyoWater";
+export type UtilityPaymentMethod =
+  | "PaperSlipConvenienceStore"
+  | "PaperSlipBank"
+  | "SmartphoneApp"
+  | "CreditCard"
+  | "WaterworksApp"
+  | "DirectDebit";
+export type UtilityBillStatus = "Unpaid" | "Paid" | "Overdue";
+
+export interface UtilityBillBreakdown {
+  waterCharge?: number | null;
+  sewerCharge?: number | null;
+  consumptionTax?: number | null;
+  slipIssuingFee?: number | null;
+  lateInterest?: number | null;
+}
+
+export interface UtilityBill {
+  id: string;
+  provider: UtilityProvider;
+  billingYear: number;
+  billingMonth: number;
+  periodStart?: string | null; // "YYYY-MM-DD"
+  periodEnd?: string | null;
+  meterReadingDate?: string | null;
+  usageAmount?: number | null;
+  usageUnit: string;
+  sewerUsageAmount?: number | null;
+  amountJpy: number;
+  breakdown?: UtilityBillBreakdown | null;
+  dueDate: string;
+  paidDate?: string | null;
+  paymentMethod?: UtilityPaymentMethod | null;
+  status: UtilityBillStatus; // computed server-side (Asia/Tokyo), never stored
+  receiptRef?: string | null;
+  notes: string;
+  lastModifiedUtc?: string;
+  documentCount: number;
+}
+
+export interface UtilityBillDocumentMeta {
+  id: string;
+  utilityBillId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedUtc: string;
+  driveFileId?: string | null;
+  driveWebViewLink?: string | null;
+}
+
+export interface UtilityProviderSettings {
+  provider: UtilityProvider;
+  customerNumber: string;
+  currentPaymentMethod?: UtilityPaymentMethod | null;
+  paymentMethodChangedDate?: string | null;
+}
+
+export interface UtilityBillSummary {
+  totalThisMonth: number;
+  yearToDate: number;
+  monthlyAverage: number;
+  unpaidCount: number;
+  overdueCount: number;
+  nextDueBill?: UtilityBill | null;
+}
+
+export interface UtilityBillMonthlyChartPoint {
+  year: number;
+  month: number;
+  provider: UtilityProvider;
+  amount: number;
+}
+
+export interface UtilityBillUsageChartPoint {
+  year: number;
+  month: number;
+  provider: UtilityProvider;
+  usage: number;
 }
 
 export interface AdminUser {
@@ -346,7 +429,7 @@ export interface DictEntryDto {
 export type SharePermission = "Read" | "Edit";
 /** Matches the shared item's own entity name — SharesController/ShareAccessService dispatch on
  * this exact string. */
-export type ShareableResourceType = "TripReport" | "TripDocument" | "DailyReport" | "WeeklyReport" | "Contact" | "QuickLink" | "Resource";
+export type ShareableResourceType = "TripReport" | "TripDocument" | "DailyReport" | "WeeklyReport" | "Contact" | "QuickLink" | "Resource" | "UtilityBill";
 
 export interface ShareGrant {
   email: string;

@@ -43,4 +43,7 @@ export const SHARE_FIELDS: Record<ShareableResourceType, ShareField[]> = {
     { key: "title", label: "Title" },
     { key: "notes", label: "Notes", multiline: true },
   ],
+  // Read-only in the shared viewer: bills are edited through the Utility Bills page, and the
+  // generic shared-viewer save path doesn't cover amount/date/provider fields.
+  UtilityBill: [],
 };

@@ -18,4 +18,5 @@ public class UserSettingsEntity
     public bool NotificationsEnabled { get; set; } = true;
     public string NotificationChannel { get; set; } = "Email";
     public string AccentColor { get; set; } = "blue";
+    public double GlassIntensity { get; set; } = 65;
 }
