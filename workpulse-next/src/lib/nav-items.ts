@@ -1,18 +1,21 @@
-import type { ComponentType, SVGProps } from "react";
 import {
-  HomeGlyph,
-  ClockGlyph,
-  PageGlyph,
-  BriefcaseGlyph,
-  RibbonGlyph,
-  PeopleGlyph,
-  ShareGlyph,
-  EnvelopeGlyph,
-  BooksGlyph,
-  GearGlyph,
-  UtilityBillsGlyph,
-} from "@/components/ui/nav-glyphs";
-import { InfoGlyph } from "@/components/ui/settings-glyphs";
+  Bookmark,
+  BookOpen,
+  Briefcase,
+  Clock,
+  FileText,
+  House,
+  Info,
+  Library,
+  Mail,
+  Receipt,
+  Settings,
+  Share2,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { ComponentType, SVGProps } from "react";
 
 export type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -26,7 +29,7 @@ export function resolveNavColor(color: string): string {
 export interface NavItem {
   href: string;
   label: string;
-  icon: Icon;
+  icon: LucideIcon;
   color: string; // tailwind text/bg color token suffix, matches brand palette
   /** Second hue for the tile's two-tone Liquid Glass gradient (Apple app-icon style — e.g. orange
    * into pink rather than one flat tint). Falls back to `color` itself when omitted. */
@@ -45,7 +48,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/home",
     label: "Home",
-    icon: HomeGlyph,
+    icon: House,
     color: "#FFD60A",
     color2: "#FF5500",
     flat: true,
@@ -54,7 +57,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/dashboard",
     label: "Attendance",
-    icon: ClockGlyph,
+    icon: Clock,
     color: "#C9A7FF",
     color2: "#7B42F6",
     flat: true,
@@ -63,7 +66,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/reports/daily",
     label: "Daily Reports",
-    icon: PageGlyph,
+    icon: FileText,
     color: "#FF375F",
     color2: "#BF5AF2",
     flat: true,
@@ -72,7 +75,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/reports/weekly",
     label: "Weekly Reports",
-    icon: PageGlyph,
+    icon: FileText,
     color: "#FF375F",
     color2: "#BF5AF2",
     flat: true,
@@ -82,7 +85,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/trips",
     label: "Business Trips",
-    icon: BriefcaseGlyph,
+    icon: Briefcase,
     color: "#5E5CE6",
     color2: "#0A84FF",
     flat: true,
@@ -91,7 +94,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/bookmarks",
     label: "Bookmarks",
-    icon: RibbonGlyph,
+    icon: Bookmark,
     color: "#FF6482",
     color2: "#FF3B30",
     flat: true,
@@ -100,7 +103,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/contacts",
     label: "Contacts",
-    icon: PeopleGlyph,
+    icon: Users,
     color: "#7ED957",
     color2: "#248A3D",
     flat: true,
@@ -109,7 +112,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/dictionary",
     label: "JP Dictionary",
-    icon: BooksGlyph,
+    icon: BookOpen,
     color: "#5AC8FA",
     color2: "#0A84FF",
     flat: true,
@@ -119,7 +122,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/gmail-labels",
     label: "Gmail Labels",
-    icon: EnvelopeGlyph,
+    icon: Mail,
     color: "#FF6459",
     color2: "#D93025",
     flat: true,
@@ -129,7 +132,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/utility-bills",
     label: "Utility Bills",
-    icon: UtilityBillsGlyph,
+    icon: Receipt,
     color: "#FFB340",
     color2: "#FF9500",
     flat: true,
@@ -138,7 +141,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/shared",
     label: "Shared with Me",
-    icon: ShareGlyph,
+    icon: Share2,
     color: "#64D2FF",
     color2: "#0A84FF",
     flat: true,
@@ -147,7 +150,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/resources",
     label: "Resources",
-    icon: BooksGlyph,
+    icon: Library,
     color: "#5AC8FA",
     color2: "#0A84FF",
     flat: true,
@@ -156,7 +159,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/settings",
     label: "Settings",
-    icon: GearGlyph,
+    icon: Settings,
     color: "#D1D1D6",
     color2: "#98989D",
     flat: true,
@@ -165,7 +168,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/about",
     label: "About",
-    icon: InfoGlyph,
+    icon: Info,
     color: "#AEAEB2",
     color2: "#6E6E73",
     flat: true,

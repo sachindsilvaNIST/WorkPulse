@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
-import { PulseGlyph } from "@/components/ui/nav-glyphs";
 import { Sidebar } from "@/components/shell/sidebar";
 import { SpotlightSearch } from "@/components/shell/spotlight-search";
 import { NotificationBell } from "@/components/shell/notification-bell";
-import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
 import { Spinner } from "@/components/ui/spinner";
+import { IconButton } from "@/components/ui/icon-button";
+import { Sheet } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/auth-context";
 import { useIdleLogout } from "@/hooks/use-idle-logout";
@@ -27,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { setGlassIntensity } = useGlassIntensity();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
 
   useEffect(() => {
@@ -72,68 +72,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarDensityProvider>
-    <SpotlightProvider>
-    <div className="flex h-screen w-full overflow-hidden">
-      {/* Desktop sidebar — edge-to-edge (macOS 27 "Golden Gate"), flush against the window's left
-          edge with no floating gap, unlike the mobile drawer below which stays an overlay. */}
-      <div className="hidden shrink-0 md:block">
-        <Sidebar />
-      </div>
-
-      {/* Mobile top bar */}
-      <div className="glass-panel fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 py-3 md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 hover:bg-foreground/5">
-          <Menu className="size-5" />
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-[22%]" style={liquidGlassIconStyle("#8E8E93", "#636366")}>
-            <div className="liquid-sheen pointer-events-none absolute inset-0" />
-            <PulseGlyph className="relative size-4 text-white" style={APPLE_ICON_GLYPH_STYLE} />
+      <SpotlightProvider>
+        <div className="flex h-dvh w-full overflow-hidden lg:gap-4 lg:p-4">
+          <div className="hidden shrink-0 lg:block">
+            <Sidebar />
           </div>
-          <span className="text-sm font-semibold">WorkPulse</span>
+
+          <header className="glass-sm fixed inset-x-3 top-3 z-40 flex h-14 items-center gap-2 rounded-pill px-2 lg:hidden">
+            <IconButton aria-label="Open menu" onClick={() => setMobileOpen(true)}>
+              <Menu />
+            </IconButton>
+            <span className="text-[15px] font-[650] tracking-[-0.01em]">WorkPulse</span>
+            <div className="ml-auto">
+              <NotificationBell />
+            </div>
+          </header>
+
+          <Sheet open={mobileOpen} onClose={closeMobile} label="Navigation">
+            <div className="glass h-full rounded-panel p-3.5">
+              <Sidebar onNavigate={closeMobile} />
+            </div>
+          </Sheet>
+
+          <main className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-20 [-webkit-overflow-scrolling:touch] lg:px-6 lg:pt-6">
+            {children}
+          </main>
+
+          <SpotlightSearch />
         </div>
-        <div className="ml-auto">
-          <NotificationBell />
-        </div>
-      </div>
-
-      {/* Mobile drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm md:hidden"
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="fixed inset-y-0 left-0 z-50 p-3 md:hidden"
-            >
-              <div className="relative h-full">
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  className="absolute -right-10 top-2 rounded-full bg-black/40 p-1.5 text-white"
-                >
-                  <X className="size-4" />
-                </button>
-                <Sidebar onNavigate={() => setMobileOpen(false)} />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      <main className="flex-1 overflow-y-auto overscroll-contain p-4 pt-20 [-webkit-overflow-scrolling:touch] md:p-8 md:pt-8">{children}</main>
-
-      <SpotlightSearch />
-    </div>
-    </SpotlightProvider>
+      </SpotlightProvider>
     </SidebarDensityProvider>
   );
 }
