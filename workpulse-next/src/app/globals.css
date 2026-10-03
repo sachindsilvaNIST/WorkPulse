@@ -315,6 +315,45 @@
   }
 }
 
+/* Fixed light/dark palettes for the Settings theme previews, independent of the active theme. */
+.theme-preview-light {
+  --wallpaper-base: #e8ecf3;
+  --glass-bg: rgb(255 255 255 / 0.7);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow-sm: 0 6px 20px rgba(30, 41, 59, 0.08);
+  --text-primary: #1d1d1f;
+  --text-secondary: #5f5f66;
+  --fill-1: rgba(118, 118, 128, 0.12);
+  background-color: var(--wallpaper-base);
+  background-image: var(--wallpaper);
+}
+.theme-preview-dark {
+  --wallpaper-base: #0d0f15;
+  --glass-bg: rgb(36 38 48 / 0.7);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --glass-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
+  --fill-1: rgba(118, 118, 128, 0.24);
+  background-color: var(--wallpaper-base);
+  background-image: var(--wallpaper);
+}
+.theme-preview-light,
+.theme-preview-dark {
+  --wallpaper: radial-gradient(ellipse 55% 45% at 10% 6%, rgba(118, 168, 255, 0.6), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 92% 14%, rgba(255, 182, 138, 0.55), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 68% 98%, rgba(176, 146, 255, 0.45), transparent 70%);
+}
+.preview-wallpaper {
+  background-color: #2860e6;
+  background-image:
+    radial-gradient(ellipse 60% 55% at 15% 15%, rgba(10, 132, 255, 0.95), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 90% 20%, rgba(255, 149, 0, 0.9), transparent 70%),
+    radial-gradient(ellipse 60% 60% at 60% 100%, rgba(191, 90, 242, 0.85), transparent 70%);
+}
+
 /* Apple/iOS-style activity indicator — bars fade in sequence around the circle. */
 @keyframes apple-spinner-fade {
   0% {

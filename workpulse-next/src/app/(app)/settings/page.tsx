@@ -13,15 +13,15 @@ import {
   Download,
   Laptop,
   LogOut,
-  Monitor,
-  Moon,
   Search,
   Smartphone,
-  Sun,
   Upload,
   X,
 } from "lucide-react";
 import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
+import { GlassPanel } from "@/components/ui/glass-panel";
+import { Slider } from "@/components/ui/slider";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useGlassIntensity } from "@/lib/glass-intensity-context";
 import { ShieldGlyph, EnvelopeGlyph, PeopleGlyph } from "@/components/ui/nav-glyphs";
 import {
@@ -85,6 +85,20 @@ const SETTINGS_NAV: SettingsNavEntry[] = [
   { id: "danger-zone", label: "Danger Zone", description: "Permanently delete your account", icon: WarningGlyph, color: "#FF6459", color2: "#D70015", group: "Account" },
 ];
 
+const FONT_SIZE_PX: Record<string, number> = { Small: 14, Medium: 16, Large: 18 };
+
+function ThemePreviewInner() {
+  return (
+    <span className="flex size-full gap-1.5">
+      <span className="glass-sm h-full w-[22%] rounded-[6px]" />
+      <span className="flex flex-1 flex-col gap-1.5">
+        <span className="glass-sm h-1/2 w-full rounded-[6px]" />
+        <span className="glass-sm h-1/2 w-full rounded-[6px]" />
+      </span>
+    </span>
+  );
+}
+
 function SectionIcon({ icon, color, color2 }: { icon: Icon; color: string; color2: string }) {
   return <IconBadge icon={icon} color={color} color2={color2} flat size="size-9" iconSize="size-5" />;
 }
@@ -131,7 +145,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { accent, setAccent } = useAccent();
   const { glassIntensity, setGlassIntensity } = useGlassIntensity();
   const { displayName, logout, updateDisplayName } = useAuth();
@@ -617,161 +631,206 @@ export default function SettingsPage() {
           <p className="mb-3 text-xs text-muted-foreground md:hidden">{activeEntry.description}</p>
         )}
         {activeSection === "appearance" && (
-        <Card style={{ backgroundColor: "color-mix(in srgb, #8B5CF6 6%, var(--card))" }}>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <SectionIcon icon={PaletteGlyph} color="#BF5AF2" color2="#8B5CF6" />
-              <h2 className="flex-1 font-semibold">Appearance</h2>
-              {!openRow && (
-                <Button variant="outline" size="sm" onClick={handleResetAppearance}>
-                  Reset to Defaults
-                </Button>
-              )}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <SectionIcon icon={PaletteGlyph} color="#BF5AF2" color2="#8B5CF6" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[17px] font-[650] tracking-[-0.01em]">Appearance</h2>
+              <p className="text-sm text-text-secondary">Personalize how WorkPulse looks on this device</p>
             </div>
+            <Button variant="glass" size="sm" onClick={handleResetAppearance}>
+              Reset to defaults
+            </Button>
+          </div>
 
-            {!openRow && (
-              <div className="flex flex-col divide-y divide-border">
-                <RowLink label="Theme" description="Light, dark, or match your system setting" onClick={() => setOpenRow("theme")} />
-                <RowLink label="Accent Color" description="Applies to selected rows, buttons, and links across the app" onClick={() => setOpenRow("accent")} />
-                <RowLink label="Liquid Glass Intensity" description="How transparent the sidebar, cards, and toolbars are" onClick={() => setOpenRow("glass")} />
-                {settings && <RowLink label="Font Size" description="Adjust text size across the app" onClick={() => setOpenRow("font-size")} />}
-                <RowLink label="Sidebar Size" description="How compact the nav sidebar and its icons are" onClick={() => setOpenRow("sidebar-size")} />
-                {settings && <RowLink label="Date Format" description="Applies to dates shown in Attendance" onClick={() => setOpenRow("date-format")} />}
-              </div>
-            )}
-
-            {openRow === "theme" && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Theme" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Light, dark, or match your system setting</p>
+          <div className="flex flex-wrap gap-4">
+            <GlassPanel className="flex flex-[3_1_520px] flex-col px-5 py-2">
+              {/* Theme */}
+              <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
+                <div>
+                  <p className="text-[15px] font-semibold">Theme</p>
+                  <p className="text-[13px] text-text-secondary">Light, dark, or match your system setting</p>
+                </div>
                 {mounted && (
-                  <div className="flex flex-wrap gap-1">
-                    <Button variant={theme === "light" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("light")}>
-                      <Sun className="size-3.5" /> Light
-                    </Button>
-                    <Button variant={theme === "dark" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("dark")}>
-                      <Moon className="size-3.5" /> Dark
-                    </Button>
-                    <Button variant={theme === "system" ? "default" : "outline"} size="sm" onClick={() => handleThemeChange("system")}>
-                      <Monitor className="size-3.5" /> System
-                    </Button>
+                  <div role="radiogroup" aria-label="Theme" className="flex flex-wrap gap-4">
+                    {(
+                      [
+                        { value: "light", label: "Light" },
+                        { value: "dark", label: "Dark" },
+                        { value: "system", label: "System" },
+                      ] as const
+                    ).map((opt) => {
+                      const selected = theme === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => handleThemeChange(opt.value)}
+                          className="flex cursor-pointer flex-col items-center gap-2 outline-none focus-visible:shadow-focus-ring"
+                        >
+                          <span
+                            className={`relative block h-[78px] w-[120px] overflow-hidden rounded-thumb p-2 ${
+                              selected ? "outline outline-2 outline-offset-[3px] outline-primary" : "outline outline-2 outline-offset-[3px] outline-separator"
+                            }`}
+                          >
+                            {opt.value === "system" ? (
+                              <>
+                                <span className="absolute inset-y-0 left-0 w-1/2 theme-preview-light"><ThemePreviewInner /></span>
+                                <span className="absolute inset-y-0 right-0 w-1/2 theme-preview-dark"><ThemePreviewInner /></span>
+                              </>
+                            ) : (
+                              <span className={`absolute inset-0 ${opt.value === "dark" ? "theme-preview-dark" : "theme-preview-light"}`}>
+                                <ThemePreviewInner />
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-[13px] font-medium">{opt.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            )}
 
-            {openRow === "accent" && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Accent Color" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Applies to selected rows, buttons, and links across the app</p>
-                <div className="flex flex-wrap gap-2">
+              {/* Accent color */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-separator py-[18px]">
+                <div>
+                  <p className="text-[15px] font-semibold">Accent color</p>
+                  <p className="text-[13px] text-text-secondary">
+                    {ACCENT_PRESETS[accent].label} · applies to selected rows, buttons, and links
+                  </p>
+                </div>
+                <div role="radiogroup" aria-label="Accent color" className="flex flex-wrap gap-1">
                   {(Object.keys(ACCENT_PRESETS) as AccentId[]).map((id) => {
                     const preset = ACCENT_PRESETS[id];
-                    const active = accent === id;
+                    const selected = accent === id;
                     return (
                       <button
                         key={id}
                         type="button"
-                        onClick={() => handleAccentChange(id)}
+                        role="radio"
+                        aria-checked={selected}
+                        aria-label={preset.label}
                         title={preset.label}
-                        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-[var(--card)] transition-transform hover:scale-110"
-                        style={{ backgroundColor: preset.light, ["--tw-ring-color" as string]: active ? preset.light : "transparent" }}
+                        onClick={() => handleAccentChange(id)}
+                        className="flex size-11 cursor-pointer items-center justify-center rounded-pill outline-none focus-visible:shadow-focus-ring"
                       >
-                        {active && <Check className="size-3.5 text-white" strokeWidth={3} />}
+                        <span
+                          className={`block size-[26px] rounded-pill transition-shadow duration-[160ms] ease-glass ${
+                            selected ? "outline outline-2 outline-offset-2 outline-text-primary" : ""
+                          }`}
+                          style={{ backgroundColor: resolvedTheme === "dark" ? preset.dark : preset.light }}
+                        />
                       </button>
                     );
                   })}
                 </div>
               </div>
-            )}
 
-            {openRow === "glass" && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Liquid Glass Intensity" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">How transparent the sidebar, cards, and toolbars are</p>
-                <div
-                  className="glass-card flex h-16 items-center justify-center rounded-xl border border-white/10 text-xs font-medium text-muted-foreground"
-                >
-                  Preview
+              {/* Text size */}
+              {settings && (
+                <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[15px] font-semibold">Text size</p>
+                      <p className="text-[13px] text-text-secondary">Scales all text across the app</p>
+                    </div>
+                    <p className="text-[15px] font-semibold tabular-nums">{FONT_SIZE_PX[settings.fontSizePreset] ?? 16} px</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-text-secondary" aria-hidden>A</span>
+                    <Slider
+                      label="Text size"
+                      min={0}
+                      max={FONT_SIZES.length - 1}
+                      step={1}
+                      value={Math.max(0, FONT_SIZES.indexOf(settings.fontSizePreset))}
+                      onChange={(i) => handleFontSizeChange(FONT_SIZES[i])}
+                    />
+                    <span className="text-xl text-text-secondary" aria-hidden>A</span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
+              )}
+
+              {/* Liquid Glass */}
+              <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[15px] font-semibold">Liquid Glass</p>
+                    <p className="text-[13px] text-text-secondary">Transparency of the sidebar, cards and toolbars across the app</p>
+                  </div>
+                  <span className="rounded-pill bg-fill-2 px-2.5 py-1 text-[13px] font-semibold tabular-nums">{100 - glassIntensity}%</span>
+                </div>
+                <Slider
+                  label="Liquid Glass transparency"
                   value={100 - glassIntensity}
-                  onChange={(e) => handleGlassIntensityPreview(100 - Number(e.target.value))}
-                  onMouseUp={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
-                  onTouchEnd={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
-                  onKeyUp={(e) => handleGlassIntensityCommit(100 - Number(e.currentTarget.value))}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[var(--primary)]"
+                  onChange={(v) => handleGlassIntensityPreview(100 - v)}
+                  onCommit={(v) => handleGlassIntensityCommit(100 - v)}
                 />
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex justify-between text-xs text-text-secondary">
                   <span>Tinted</span>
-                  <span>Medium</span>
                   <span>Clear</span>
                 </div>
               </div>
-            )}
 
-            {openRow === "font-size" && settings && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Font Size" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Adjust text size across the app</p>
-                <div className="flex flex-wrap gap-1">
-                  {FONT_SIZES.map((size) => (
-                    <Button
-                      key={size}
-                      size="sm"
-                      variant={settings.fontSizePreset === size ? "default" : "outline"}
-                      onClick={() => handleFontSizeChange(size)}
-                    >
-                      {size}
-                    </Button>
-                  ))}
+              {/* Sidebar size */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-separator py-[18px]">
+                <div>
+                  <p className="text-[15px] font-semibold">Sidebar size</p>
+                  <p className="text-[13px] text-text-secondary">How compact the nav sidebar is</p>
                 </div>
+                <SegmentedControl
+                  label="Sidebar size"
+                  value={sidebarDensity}
+                  onChange={(d) => setSidebarDensity(d)}
+                  options={(Object.keys(SIDEBAR_DENSITY_PRESETS) as SidebarDensity[]).map((d) => ({ value: d, label: SIDEBAR_DENSITY_PRESETS[d].label }))}
+                />
               </div>
-            )}
 
-            {openRow === "sidebar-size" && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Sidebar Size" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">How compact the nav sidebar and its icons are</p>
-                <div className="flex flex-wrap gap-1">
-                  {(Object.keys(SIDEBAR_DENSITY_PRESETS) as SidebarDensity[]).map((d) => (
-                    <Button
-                      key={d}
-                      size="sm"
-                      variant={sidebarDensity === d ? "default" : "outline"}
-                      onClick={() => setSidebarDensity(d)}
-                    >
-                      {SIDEBAR_DENSITY_PRESETS[d].label}
-                    </Button>
-                  ))}
+              {/* Date format */}
+              {settings && (
+                <div className="flex flex-wrap items-center justify-between gap-3 py-[18px]">
+                  <div>
+                    <p className="text-[15px] font-semibold">Date format</p>
+                    <p className="text-[13px] text-text-secondary">Applies to dates shown in Attendance</p>
+                  </div>
+                  <SegmentedControl
+                    label="Date format"
+                    value={settings.dateFormat}
+                    onChange={(fmt) => updatePreference("dateFormat", fmt)}
+                    options={DATE_FORMAT_OPTIONS.map((fmt) => ({ value: fmt, label: fmt }))}
+                  />
                 </div>
-              </div>
-            )}
+              )}
+            </GlassPanel>
 
-            {openRow === "date-format" && settings && (
-              <div className="flex flex-col gap-3">
-                <SubPageBack label="Date Format" onBack={() => setOpenRow(null)} />
-                <p className="text-xs text-muted-foreground">Applies to dates shown in Attendance</p>
-                <div className="flex flex-wrap gap-1">
-                  {DATE_FORMAT_OPTIONS.map((fmt) => (
-                    <Button
-                      key={fmt}
-                      size="sm"
-                      variant={settings.dateFormat === fmt ? "default" : "outline"}
-                      onClick={() => updatePreference("dateFormat", fmt)}
-                    >
-                      {fmt}
-                    </Button>
-                  ))}
+            <div className="flex flex-[2_1_320px] flex-col gap-3">
+              <GlassPanel className="flex flex-col gap-4">
+                <p className="text-[13px] font-semibold text-text-secondary">Preview</p>
+                <div className="preview-wallpaper relative flex h-[230px] items-center justify-center overflow-hidden rounded-inner p-5">
+                  <div className="glass w-full max-w-[260px] rounded-inner p-4">
+                    <p className="text-xs text-text-secondary">Today</p>
+                    <p className="font-bold tabular-nums" style={{ fontSize: `${(FONT_SIZE_PX[settings?.fontSizePreset ?? "Medium"] ?? 16) + 7}px` }}>
+                      7h 42m
+                    </p>
+                    <p className="tabular-nums text-text-primary" style={{ fontSize: `${FONT_SIZE_PX[settings?.fontSizePreset ?? "Medium"] ?? 16}px` }}>
+                      08:25 – 17:30
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm">Clock out</Button>
+                      <Button size="sm" variant="glass">Add note</Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                <p className="text-xs text-text-secondary">
+                  Drag Liquid Glass to change how transparent the sidebar and cards are across the whole app.
+                </p>
+              </GlassPanel>
+            </div>
+          </div>
+        </div>
         )}
 
         {activeSection === "work-hours" && (
