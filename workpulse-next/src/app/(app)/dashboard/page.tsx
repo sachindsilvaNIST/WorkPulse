@@ -486,6 +486,26 @@ export default function DashboardPage() {
       .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
   }, [trips, todayIso]);
 
+  // Clock in/out reuses the entry dialog, prefilled with the current time, so overtime and
+  // validation go through the same path as any other edit — no separate save logic here.
+  function openTodayEntry(kind: "in" | "out") {
+    const nowHm = `${String(nowDate.getHours()).padStart(2, "0")}:${String(nowDate.getMinutes()).padStart(2, "0")}`;
+    const base: AttendanceRecord = todayRecord ?? {
+      date: todayIso,
+      dayType: "WorkDay",
+      loginTime: null,
+      logoutTime: null,
+      overtimeHours: 0,
+      overtimeMinutes: 0,
+      isOvertime: false,
+      isOvertimeDecided: false,
+    };
+    setDialogState({
+      date: todayIso,
+      record: kind === "in" ? { ...base, loginTime: nowHm } : { ...base, logoutTime: nowHm },
+    });
+  }
+
   const todayLabel = nowDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   const stepOptions = useMemo<{ year: number; month: number; label: string }[]>(() => {
@@ -711,8 +731,14 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button disabled title="Coming soon">Clock in</Button>
-                  <Button variant="glass" disabled title="Coming soon">Add note</Button>
+                  {todayState === "done" ? (
+                    <Button variant="glass" onClick={() => openTodayEntry("in")}>Edit today</Button>
+                  ) : todayState === "running" ? (
+                    <Button onClick={() => openTodayEntry("out")}>Clock out</Button>
+                  ) : (
+                    <Button onClick={() => openTodayEntry("in")}>Clock in</Button>
+                  )}
+                  <Button variant="glass" disabled title="Notes aren't part of attendance records yet">Add note</Button>
                 </div>
               </div>
             </GlassPanel>
