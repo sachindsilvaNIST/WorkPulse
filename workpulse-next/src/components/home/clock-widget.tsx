@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 
-/** Apple-style glass clock widget — live time + date, client-only so it never mismatches
- * server-rendered markup (the clock face literally cannot be the same at render time and
- * hydration time). */
+/** Glass clock tile, styled like the rest of the app's stat tiles — live time + date, client-only
+ * so it never mismatches server-rendered markup (the clock face literally cannot be the same at
+ * render time and hydration time). */
 export function ClockWidget() {
   const [now, setNow] = useState<Date | null>(null);
 
@@ -19,19 +19,16 @@ export function ClockWidget() {
   const date = now?.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) ?? "";
 
   return (
-    <div
-      className="relative flex min-h-44 flex-col justify-between overflow-hidden rounded-2xl border border-white/20 p-6 text-white backdrop-blur-2xl backdrop-saturate-200 sm:h-full"
-      style={{
-        background: "linear-gradient(150deg, #3634A3 0%, #5856D6 55%, #1B1464 100%)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -20px 40px -20px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(0,0,0,0.45)",
-      }}
-    >
-      <div className="flex items-start justify-between">
-        <Clock className="size-7 drop-shadow-[var(--glass-shadow-sm)]" strokeWidth={1.75} />
+    <div className="glass flex min-h-[152px] flex-col justify-between gap-3 rounded-tile p-[18px]">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[13px] font-semibold text-text-secondary">Time</p>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-icon bg-primary/15 text-primary">
+          <Clock className="size-[18px]" strokeWidth={1.8} />
+        </span>
       </div>
       <div>
-        <p className="text-4xl font-bold leading-tight tabular-nums drop-shadow-sm">{time}</p>
-        <p className="text-sm text-white/90 drop-shadow-sm">{date}</p>
+        <p className="text-[30px] font-bold leading-none tabular-nums tracking-[-0.03em] text-text-primary">{time}</p>
+        <p className="mt-1 text-sm text-text-secondary">{date}</p>
       </div>
     </div>
   );

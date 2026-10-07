@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bookmark, Clock3, Library, Users, type LucideIcon } from "lucide-react";
 import { getRecentlyViewed, type RecentlyViewedEntry, type RecentlyViewedType } from "@/lib/recently-viewed";
-import { appleIconStyle, APPLE_ICON_GLYPH_STYLE, APPLE_ICON_GLYPH_PROPS } from "@/components/ui/icon-badge";
 
 const TYPE_META: Record<RecentlyViewedType, { icon: LucideIcon; color: string }> = {
   bookmark: { icon: Bookmark, color: "#FFD60A" },
@@ -48,13 +47,13 @@ export function RecentlyViewedWidget() {
             <Link
               key={`${entry.type}-${entry.id}`}
               href={entry.href}
-              className="flex min-w-40 shrink-0 flex-col gap-1.5 rounded-xl border border-border p-3 transition-colors hover:bg-fill-1"
+              className="flex min-w-40 shrink-0 flex-col gap-1.5 rounded-item border border-separator p-3 transition-colors hover:bg-fill-1"
             >
               <span
-                className="flex size-7 items-center justify-center rounded-[22%] text-white"
-                style={appleIconStyle(meta.color)}
+                className="flex size-7 items-center justify-center rounded-icon"
+                style={{ backgroundColor: `color-mix(in srgb, ${meta.color} 15%, transparent)`, color: meta.color }}
               >
-                <Icon className="size-4.5" {...APPLE_ICON_GLYPH_PROPS} style={APPLE_ICON_GLYPH_STYLE} />
+                <Icon className="size-4" strokeWidth={1.8} />
               </span>
               <span className="truncate text-sm font-medium">{entry.label}</span>
               <span className="truncate text-xs text-text-secondary">{entry.description || relativeTime(entry.viewedAt)}</span>

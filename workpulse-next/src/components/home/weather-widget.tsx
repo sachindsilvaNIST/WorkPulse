@@ -5,19 +5,18 @@ import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Cl
 import { Spinner } from "@/components/ui/spinner";
 
 // WMO weather codes (used by Open-Meteo) collapsed into the handful of conditions worth a
-// distinct icon and scene color — https://open-meteo.com/en/docs has the full table, this covers
-// what actually shows up day to day. Colors mirror how Apple's own Weather app changes its
-// background by condition, rather than one flat tint for every forecast.
+// distinct icon and tint color — https://open-meteo.com/en/docs has the full table, this covers
+// what actually shows up day to day.
 function weatherScene(code: number) {
-  if (code === 0) return { Icon: Sun, label: "Clear", from: "#FF9F0A", via: "#0A84FF", to: "#0040DD" };
-  if (code <= 2) return { Icon: CloudSun, label: "Partly Cloudy", from: "#64D2FF", via: "#0A84FF", to: "#3634A3" };
-  if (code === 3) return { Icon: Cloud, label: "Overcast", from: "#98A6C2", via: "#5E6C94", to: "#2C3556" };
-  if (code === 45 || code === 48) return { Icon: CloudFog, label: "Foggy", from: "#B8C4D9", via: "#7C8BA8", to: "#3F4A66" };
-  if (code >= 51 && code <= 57) return { Icon: CloudDrizzle, label: "Drizzle", from: "#5AC8FA", via: "#0A84FF", to: "#1B4B91" };
-  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { Icon: CloudRain, label: "Rain", from: "#4FA8D8", via: "#0864B4", to: "#0A2E52" };
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { Icon: CloudSnow, label: "Snow", from: "#E8F4FF", via: "#8FC5EA", to: "#3E6A93" };
-  if (code >= 95) return { Icon: CloudLightning, label: "Thunderstorm", from: "#8E8CD8", via: "#5856D6", to: "#241F5C" };
-  return { Icon: Cloud, label: "Cloudy", from: "#98A6C2", via: "#5E6C94", to: "#2C3556" };
+  if (code === 0) return { Icon: Sun, label: "Clear", color: "var(--brand-orange)" };
+  if (code <= 2) return { Icon: CloudSun, label: "Partly Cloudy", color: "var(--brand-blue)" };
+  if (code === 3) return { Icon: Cloud, label: "Overcast", color: "var(--text-tertiary)" };
+  if (code === 45 || code === 48) return { Icon: CloudFog, label: "Foggy", color: "var(--text-tertiary)" };
+  if (code >= 51 && code <= 57) return { Icon: CloudDrizzle, label: "Drizzle", color: "var(--brand-blue)" };
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { Icon: CloudRain, label: "Rain", color: "var(--brand-blue)" };
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { Icon: CloudSnow, label: "Snow", color: "var(--brand-blue)" };
+  if (code >= 95) return { Icon: CloudLightning, label: "Thunderstorm", color: "var(--brand-purple)" };
+  return { Icon: Cloud, label: "Cloudy", color: "var(--text-tertiary)" };
 }
 
 interface WeatherData {
@@ -27,10 +26,9 @@ interface WeatherData {
   lowC: number;
 }
 
-/** Apple-style Liquid Glass weather widget — real current conditions from Open-Meteo (free, no
- * API key) for the browser's geolocation, with a scene color that shifts by condition (sunny gold
- * vs. stormy indigo, ...) rather than one flat tint regardless of weather. Degrades gracefully
- * (its own error/permission state) rather than blocking the rest of the dashboard. */
+/** Glass weather tile, styled like the rest of the app's stat tiles — real current conditions from
+ * Open-Meteo (free, no API key) for the browser's geolocation. Degrades gracefully (its own error/
+ * permission state) rather than blocking the rest of the home page. */
 export function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "denied" | "error">("loading");
@@ -69,31 +67,32 @@ export function WeatherWidget() {
   const Icon = scene.Icon;
 
   return (
-    <div
-      className="relative flex min-h-44 flex-col justify-between overflow-hidden rounded-2xl border border-white/20 p-6 text-white backdrop-blur-2xl backdrop-saturate-200 sm:h-full"
-      style={{
-        background: `linear-gradient(150deg, ${scene.from} 0%, ${scene.via} 55%, ${scene.to} 100%)`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -20px 40px -20px rgba(0,0,0,0.25), 0 12px 32px -12px rgba(0,0,0,0.4)",
-      }}
-    >
-      <div className="flex items-start justify-between">
-        <span className="flex items-center gap-1 text-xs font-medium text-white/90 drop-shadow-sm">
+    <div className="glass flex min-h-[152px] flex-col justify-between gap-3 rounded-tile p-[18px]">
+      <div className="flex items-start justify-between gap-2">
+        <span className="flex items-center gap-1 text-[13px] font-semibold text-text-secondary">
           <MapPin className="size-3" /> Your location
         </span>
-        {status === "ready" && <Icon className="size-7 drop-shadow-[var(--glass-shadow-sm)]" strokeWidth={1.75} />}
+        {status === "ready" && (
+          <span
+            className="flex size-10 shrink-0 items-center justify-center rounded-icon"
+            style={{ backgroundColor: `color-mix(in srgb, ${scene.color} 15%, transparent)`, color: scene.color }}
+          >
+            <Icon className="size-[18px]" strokeWidth={1.8} />
+          </span>
+        )}
       </div>
 
       {status === "loading" && (
-        <div className="flex flex-1 items-center justify-center">
-          <Spinner size={22} className="text-white/90" />
+        <div className="flex flex-1 items-center justify-center py-2">
+          <Spinner size={20} className="text-text-secondary" />
         </div>
       )}
-      {status === "denied" && <p className="text-sm text-white/90">Enable location access for weather</p>}
-      {status === "error" && <p className="text-sm text-white/90">Weather unavailable right now</p>}
+      {status === "denied" && <p className="text-sm text-text-secondary">Enable location access for weather</p>}
+      {status === "error" && <p className="text-sm text-text-secondary">Weather unavailable right now</p>}
       {status === "ready" && weather && (
         <div>
-          <p className="text-4xl font-bold leading-tight drop-shadow-sm">{weather.tempC}°</p>
-          <p className="text-sm text-white/90 drop-shadow-sm">
+          <p className="text-[30px] font-bold leading-none tracking-[-0.03em] text-text-primary">{weather.tempC}°</p>
+          <p className="mt-1 text-sm text-text-secondary">
             {scene.label} · H:{weather.highC}° L:{weather.lowC}°
           </p>
         </div>
