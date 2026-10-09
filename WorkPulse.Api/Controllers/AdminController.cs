@@ -27,7 +27,11 @@ public class AdminController : ControllerBase
     [HttpGet("users")]
     public async Task<ActionResult<List<AdminUserDto>>> GetUsers()
     {
-        var users = await _userManager.Users.ToListAsync();
+        // _userManager.Users comes from AspNetCore.Identity.Mongo (a separate native-driver store
+        // from the EF-Core-backed AppDbContext), so it isn't an EF Core IAsyncQueryProvider — the
+        // EF Core ToListAsync() extension throws at runtime against it. Use the synchronous
+        // ToList(), same as SharesController.SharedWithMe's identical query.
+        var users = _userManager.Users.ToList();
         var result = new List<AdminUserDto>();
 
         foreach (var user in users)
