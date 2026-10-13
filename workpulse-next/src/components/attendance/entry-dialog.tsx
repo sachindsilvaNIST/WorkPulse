@@ -1,30 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import type { AttendanceRecord, DayType, TripCategory } from "@/lib/api/types";
 import { PREFECTURES, COUNTRIES } from "@/lib/trip-data";
 import { DAY_TYPE_OPTIONS, NOTE_ENABLED_DAY_TYPES, TIME_TRACKED_DAY_TYPES } from "@/lib/attendance-day-types";
-
-function calcOvertime(
-  logoutTime: string,
-  standardLogoutTime: string,
-  breakDeductionMinutes: number
-): { isOvertime: boolean; hours: number; minutes: number } {
-  if (!logoutTime) return { isOvertime: false, hours: 0, minutes: 0 };
-  const [h, m] = logoutTime.split(":").map(Number);
-  const totalMin = h * 60 + m;
-  const [sh, sm] = standardLogoutTime.split(":").map(Number);
-  const standardMin = sh * 60 + sm;
-  if (totalMin <= standardMin) return { isOvertime: false, hours: 0, minutes: 0 };
-  const otMin = totalMin - standardMin - breakDeductionMinutes;
-  if (otMin <= 0) return { isOvertime: false, hours: 0, minutes: 0 };
-  return { isOvertime: true, hours: Math.floor(otMin / 60), minutes: otMin % 60 };
-}
+import { computeOvertime } from "@/lib/overtime";
 
 export function AttendanceEntryDialog({
   initial,
@@ -50,21 +34,16 @@ export function AttendanceEntryDialog({
   const [leaveMinutes, setLeaveMinutes] = useState(initial.leaveMinutes ?? 0);
   const [loginTime, setLoginTime] = useState(initial.loginTime ?? standardLoginTime);
   const [logoutTime, setLogoutTime] = useState(initial.logoutTime ?? standardLogoutTime);
-  const [overtimeOn, setOvertimeOn] = useState<boolean>(
-    initial.isOvertimeDecided ? !!initial.isOvertime : false
-  );
   const [tripCategory, setTripCategory] = useState<TripCategory>(initial.tripCategory ?? "Domestic");
   const [tripRegion, setTripRegion] = useState(initial.tripRegion ?? "");
   const [departureDate, setDepartureDate] = useState(initial.date);
   const [returnDate, setReturnDate] = useState(initial.date);
   const [error, setError] = useState("");
 
-  const overtime = calcOvertime(overtimeOn ? logoutTime : "", standardLogoutTime, overtimeBreakDeductionMinutes);
-
-  useEffect(() => {
-    if (!overtimeOn) return;
-    // live-recompute as logoutTime changes; nothing else to do, calc happens on render
-  }, [logoutTime, overtimeOn]);
+  // Automatic: overtime is always derived from the actual login/logout times, not a manual
+  // per-entry decision — see lib/overtime.ts for why (clock times vary day to day; only the
+  // worked duration versus the standard duration means anything).
+  const overtime = computeOvertime(loginTime, logoutTime, standardLoginTime, standardLogoutTime, overtimeBreakDeductionMinutes);
 
   function handleSave() {
     if (!dayType) {
@@ -117,6 +96,8 @@ export function AttendanceEntryDialog({
       overtimeHours: dayType === "WorkDay" ? overtime.hours : 0,
       overtimeMinutes: dayType === "WorkDay" ? overtime.minutes : 0,
       isOvertime: dayType === "WorkDay" ? overtime.isOvertime : false,
+      // Kept for API/schema compatibility — overtime is no longer a manual "decision" (see above),
+      // this just mirrors whether the day is overtime-eligible at all.
       isOvertimeDecided: dayType === "WorkDay",
     };
     onSave([record]);
@@ -224,21 +205,14 @@ export function AttendanceEntryDialog({
                   <Input type="time" value={logoutTime} onChange={(e) => setLogoutTime(e.target.value)} />
                 </div>
               </div>
-              {dayType === "WorkDay" && (
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-text-secondary">Overtime?</label>
-                  <div className="flex items-center gap-2">
-                    <Switch checked={overtimeOn} onCheckedChange={setOvertimeOn} />
-                    <span className="text-sm text-text-secondary">{overtimeOn ? "On" : "Off"}</span>
-                  </div>
-                  {overtimeOn && (
-                    <p className="mt-2 text-xs text-text-secondary">
-                      {overtime.isOvertime
-                        ? `Overtime: ${overtime.hours} Hr ${overtime.minutes} Min`
-                        : "Logout time is within standard hours (no OT)."}
-                    </p>
-                  )}
-                </div>
+              {dayType === "WorkDay" && loginTime && logoutTime && (
+                <p className="text-xs text-text-secondary">
+                  {overtime.isOvertime
+                    ? `Overtime: ${overtime.hours} Hr ${overtime.minutes} Min (computed from the times above)`
+                    : overtime.workedMinutes != null
+                      ? "Within standard hours — no overtime."
+                      : "Logout must be after login to compute overtime."}
+                </p>
               )}
             </>
           )}

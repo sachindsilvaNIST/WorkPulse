@@ -45,6 +45,7 @@ import {
   type SettlementPeriod,
 } from "@/lib/settlement-period";
 import { Spinner } from "@/components/ui/spinner";
+import { computeOvertime, standardDurationMinutes, toMinutes } from "@/lib/overtime";
 
 function emptyMonth(year: number, month: number): MonthlyData {
   return {
@@ -59,12 +60,6 @@ function emptyMonth(year: number, month: number): MonthlyData {
 function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-}
-
-function toMinutes(time?: string | null): number | null {
-  if (!time) return null;
-  const [h, m] = time.slice(0, 5).split(":").map(Number);
-  return h * 60 + m;
 }
 
 function formatHm(totalMinutes: number): string {
@@ -319,8 +314,17 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     if (!data) return null;
     const workDays = data.records.filter((r) => r.dayType === "WorkDay" && r.loginTime).length;
-    const overtimeCount = data.records.filter((r) => r.isOvertime).length;
-    const overtimeMinutes = data.records.filter((r) => r.isOvertime).reduce((sum, r) => sum + r.overtimeHours * 60 + r.overtimeMinutes, 0);
+    // Overtime is always derived live from each record's own times — see lib/overtime.ts — never
+    // trusted as a stored flag, since records created outside the entry dialog (imports, etc.)
+    // never had one computed for them.
+    const standardLoginStr = appSettings?.standardLoginTime?.slice(0, 5) ?? "08:25";
+    const standardLogoutStr = appSettings?.standardLogoutTime?.slice(0, 5) ?? "17:30";
+    const breakDeduction = appSettings?.overtimeBreakDeductionMinutes ?? 20;
+    const overtimeByRecord = data.records
+      .filter((r) => r.dayType === "WorkDay")
+      .map((r) => computeOvertime(r.loginTime, r.logoutTime, standardLoginStr, standardLogoutStr, breakDeduction));
+    const overtimeCount = overtimeByRecord.filter((o) => o.isOvertime).length;
+    const overtimeMinutes = overtimeByRecord.reduce((sum, o) => sum + o.hours * 60 + o.minutes, 0);
     const leaveDays = data.records.filter((r) => LEAVE_DAY_TYPES.includes(r.dayType)).length;
     return {
       workDays,
@@ -328,7 +332,7 @@ export default function DashboardPage() {
       overtimeDisplay: `${Math.floor(overtimeMinutes / 60)}h ${overtimeMinutes % 60}m`,
       leaveDays,
     };
-  }, [data]);
+  }, [data, appSettings]);
 
   const dailyHoursChart = useMemo(() => {
     if (!data) return [];
@@ -453,9 +457,11 @@ export default function DashboardPage() {
   const nowDate = new Date();
   const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
   const todayRecord = data?.records.find((r) => r.date === todayIso);
-  const standardLogin = toMinutes(appSettings?.standardLoginTime) ?? 8 * 60 + 25;
-  const standardLogout = toMinutes(appSettings?.standardLogoutTime) ?? 17 * 60 + 30;
-  const standardMinutes = Math.max(1, standardLogout - standardLogin);
+  const standardLoginStr = appSettings?.standardLoginTime?.slice(0, 5) ?? "08:25";
+  const standardLogoutStr = appSettings?.standardLogoutTime?.slice(0, 5) ?? "17:30";
+  const breakDeductionMinutes = appSettings?.overtimeBreakDeductionMinutes ?? 20;
+  const standardLogout = toMinutes(standardLogoutStr) ?? 17 * 60 + 30;
+  const standardMinutes = standardDurationMinutes(standardLoginStr, standardLogoutStr);
   const todayLogin = toMinutes(todayRecord?.loginTime);
   const todayLogout = toMinutes(todayRecord?.logoutTime);
   const workedMinutes =
@@ -466,8 +472,12 @@ export default function DashboardPage() {
         : Math.max(0, nowMinutes - todayLogin);
   const todayState: "none" | "running" | "done" =
     todayLogin == null ? "none" : todayLogout != null ? "done" : "running";
+  // Clock times vary day to day (A2) — "standard end" is today's own clock-in plus the standard
+  // duration, not a fixed company-wide clock time. Falls back to the configured time before
+  // clocking in, since there's no "today" target yet to anchor it to.
+  const dynamicStandardEnd = todayLogin != null ? todayLogin + standardMinutes : standardLogout;
   const endReference = todayLogout ?? nowMinutes;
-  const deltaToStandardEnd = standardLogout - endReference;
+  const deltaToStandardEnd = dynamicStandardEnd - endReference;
 
   const averageClockIn = useMemo(() => {
     if (!data) return null;
@@ -536,7 +546,11 @@ export default function DashboardPage() {
 
   function statusFor(r: AttendanceRecord): { variant: "success" | "warning" | "neutral" | "info"; label: string; dot?: boolean } {
     if (r.date === todayIso && r.loginTime && !r.logoutTime) return { variant: "info", label: "In progress", dot: true };
-    if (r.isOvertime) return { variant: "warning", label: "Overtime" };
+    const overtime =
+      r.dayType === "WorkDay"
+        ? computeOvertime(r.loginTime, r.logoutTime, standardLoginStr, standardLogoutStr, breakDeductionMinutes)
+        : null;
+    if (overtime?.isOvertime) return { variant: "warning", label: "Overtime" };
     if (r.holidayName) return { variant: "neutral", label: r.holidayName };
     if (r.dayType !== "WorkDay") return { variant: "neutral", label: dayTypeLabel(r.dayType) };
     if (r.loginTime) return { variant: "success", label: "On time" };
@@ -721,7 +735,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-text-secondary">Standard end</p>
-                    <p className="text-[17px] font-semibold tabular-nums">{formatClock(standardLogout)}</p>
+                    <p className="text-[17px] font-semibold tabular-nums">{formatClock(dynamicStandardEnd)}</p>
                   </div>
                   {todayLogin != null && (
                     <div>
@@ -744,7 +758,7 @@ export default function DashboardPage() {
             </GlassPanel>
 
             <div className="grid flex-[3_1_480px] grid-cols-2 gap-4">
-              <StatTile label="Work days" value={stats.workDays} unit={`of ${data.records.length}`} caption={`Period so far · ${holidayCount} holiday${holidayCount === 1 ? "" : "s"}`} />
+              <StatTile label="Work days" value={stats.workDays} unit={`of ${data.records.length} logged`} caption={`${stats.workDays} worked this period · ${holidayCount} day${holidayCount === 1 ? "" : "s"} off`} />
               <StatTile label="Overtime sessions" value={stats.overtimeCount} caption="Sessions past the standard end" />
               <StatTile label="Overtime total" value={stats.overtimeDisplay} caption="Across this period" />
               <StatTile
@@ -796,6 +810,10 @@ export default function DashboardPage() {
                       const inMin = toMinutes(r.loginTime);
                       const outMin = toMinutes(r.logoutTime);
                       const worked = inMin != null && outMin != null ? formatHm(outMin - inMin) : "—";
+                      const rowOvertime =
+                        r.dayType === "WorkDay"
+                          ? computeOvertime(r.loginTime, r.logoutTime, standardLoginStr, standardLogoutStr, breakDeductionMinutes)
+                          : null;
                       const [yy, mm, dd] = r.date.split("-").map(Number);
                       const weekday = new Date(Date.UTC(yy, mm - 1, dd)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
                       return (
@@ -817,7 +835,7 @@ export default function DashboardPage() {
                           <DataTd>{r.loginTime ?? "—"}</DataTd>
                           <DataTd>{r.logoutTime ?? "—"}</DataTd>
                           <DataTd>{worked}</DataTd>
-                          <DataTd>{r.isOvertime ? `${r.overtimeHours}h ${r.overtimeMinutes}m` : "—"}</DataTd>
+                          <DataTd>{rowOvertime?.isOvertime ? `${rowOvertime.hours}h ${rowOvertime.minutes}m` : "—"}</DataTd>
                           <DataTd>
                             <Badge variant={status.variant} dot={status.dot}>
                               {status.label}
