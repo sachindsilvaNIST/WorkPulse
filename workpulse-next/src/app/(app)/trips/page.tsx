@@ -7,6 +7,7 @@ import { Briefcase, Download, FileText, Link2, Plus, Save, Upload, X } from "luc
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -350,7 +351,7 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar title="Business Trips" description="Applications, settlements, receipts and tickets">
         <Button onClick={() => setShowForm((v) => !v)}>
           <Plus className="size-4" /> New Trip
@@ -899,6 +900,6 @@ export default function TripsPage() {
             />
           );
         })()}
-    </div>
+    </PageContainer>
   );
 }

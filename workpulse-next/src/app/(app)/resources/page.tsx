@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -317,8 +318,8 @@ export default function ResourcesPage() {
   }
 
   return (
-    <div
-      className="relative mx-auto max-w-6xl"
+    <PageContainer
+      className="relative"
       onDragEnter={(e) => {
         if (showForm || !e.dataTransfer.types.includes("Files")) return;
         e.preventDefault();
@@ -736,6 +737,6 @@ export default function ResourcesPage() {
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

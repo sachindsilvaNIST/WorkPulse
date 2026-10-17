@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSpotlight } from "@/lib/spotlight-context";
 import { attendanceApi, tripReportsApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { WeatherWidget } from "@/components/home/weather-widget";
 import { ClockWidget } from "@/components/home/clock-widget";
 import { RecentlyViewedWidget } from "@/components/home/recently-viewed-widget";
@@ -141,7 +142,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <div className="mb-6">
         <PageToolbar
           title={`Welcome back${displayName ? `, ${displayName.split(" ")[0]}` : ""}`}
@@ -172,6 +173,6 @@ export default function HomePage() {
       <div className="mt-4">
         <RecentlyViewedWidget />
       </div>
-    </div>
+    </PageContainer>
   );
 }

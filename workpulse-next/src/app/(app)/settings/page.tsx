@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/settings-glyphs";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -554,8 +555,8 @@ export default function SettingsPage() {
     .slice(0, 4);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageToolbar title="Settings" />
+    <PageContainer>
+      <PageToolbar title="Settings" description="Preferences, connections and account" />
 
       {mounted && recentEntries.length > 0 && (
         <div className="mb-6">
@@ -1455,6 +1456,6 @@ export default function SettingsPage() {
           onCancel={() => setConfirmRevokeAll(false)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

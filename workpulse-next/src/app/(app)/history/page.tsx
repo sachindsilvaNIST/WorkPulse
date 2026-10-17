@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { InfoGlyph } from "@/components/ui/settings-glyphs";
 
@@ -28,7 +29,7 @@ const ORIGIN_STORY: { era: string; description: string }[] = [
 
 export default function HistoryPage() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <PageContainer narrow>
       <PageToolbar
         title="Where WorkPulse Started"
         description="From a desktop attendance tracker to this web app"
@@ -51,6 +52,6 @@ export default function HistoryPage() {
           ← Back to About
         </Link>
       </p>
-    </div>
+    </PageContainer>
   );
 }

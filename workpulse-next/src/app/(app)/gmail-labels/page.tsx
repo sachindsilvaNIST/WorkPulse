@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { gmailApi, ApiError } from "@/lib/api/client";
@@ -283,7 +284,7 @@ export default function GmailLabelsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <PageContainer>
       <PageToolbar title="Gmail Labels" description="Pattern-search and manage your Gmail label tree">
         {status?.connected && (
           <Button variant="outline" onClick={() => void loadLabels()} disabled={loading}>
@@ -393,6 +394,6 @@ export default function GmailLabelsPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

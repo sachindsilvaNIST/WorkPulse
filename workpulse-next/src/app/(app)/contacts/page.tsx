@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
@@ -220,7 +221,7 @@ export default function ContactsPage() {
   }, [contextMenu]);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar title="Contact Book" description="Search contacts, departments and email directory">
         <Button onClick={() => (showForm ? setShowForm(false) : openNew())}>
           <Plus className="size-4" /> Add Contact
@@ -498,6 +499,6 @@ export default function ContactsPage() {
           onCancel={() => setConfirmDeleteDetail(false)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -209,7 +210,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <PageContainer>
       <PageToolbar title="Admin" description="Manage user accounts and access">
         <Button onClick={() => (showForm ? setShowForm(false) : openNew())}>
           <Plus className="size-4" /> Add User
@@ -470,6 +471,6 @@ export default function AdminPage() {
           </div>,
           document.body
         )}
-    </div>
+    </PageContainer>
   );
 }

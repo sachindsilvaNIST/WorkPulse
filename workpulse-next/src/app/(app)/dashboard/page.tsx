@@ -19,6 +19,7 @@ import {
 import { ChevronLeft, ChevronRight, Download, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
@@ -558,7 +559,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar
         title="Attendance"
         description={
@@ -974,6 +975,6 @@ export default function DashboardPage() {
           onCancel={() => setConfirmDeleteDate(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

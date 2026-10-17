@@ -23,6 +23,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DetailRow } from "@/components/ui/detail-row";
@@ -294,7 +295,7 @@ export default function BookmarksPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar title="Bookmark Library" description="Find any saved link by name, synonym, or category">
         <div className="flex flex-wrap gap-2">
           <Button variant={selectMode ? "default" : "outline"} onClick={toggleSelectMode}>
@@ -642,6 +643,6 @@ export default function BookmarksPage() {
           onCancel={() => setConfirmDeleteSelectedOpen(false)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Briefcase, FileText, Library, Receipt, Ribbon, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { shareApi } from "@/lib/api/client";
@@ -29,7 +30,7 @@ export default function SharedWithMePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <PageContainer>
       <PageToolbar title="Shared with Me" description="Items other people have shared with you" />
 
       {items === null && (
@@ -66,6 +67,6 @@ export default function SharedWithMePage() {
           );
         })}
       </div>
-    </div>
+    </PageContainer>
   );
 }

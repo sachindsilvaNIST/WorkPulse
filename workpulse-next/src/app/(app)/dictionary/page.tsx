@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
@@ -54,7 +55,7 @@ export default function DictionaryPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar title="JP Dictionary" description="Store and search Japanese words and phrases">
         <Button onClick={() => setShowForm((v) => !v)}>
           <Plus className="size-4" /> Add Entry
@@ -113,6 +114,6 @@ export default function DictionaryPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }

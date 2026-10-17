@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { InfoGlyph } from "@/components/ui/settings-glyphs";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { APP_VERSION, APP_ENV, GIT_SHA } from "@/lib/version";
 import { CHANGELOG } from "@/lib/changelog";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 // version is running shouldn't require a detour through Settings first.
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <PageContainer narrow>
       <PageToolbar
         title="About"
         description="Version info and what's changed recently"
@@ -67,6 +68,6 @@ export default function AboutPage() {
           ))}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

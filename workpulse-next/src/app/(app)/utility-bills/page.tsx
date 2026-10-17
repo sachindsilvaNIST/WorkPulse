@@ -27,6 +27,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { UtilityBillsGlyph } from "@/components/ui/nav-glyphs";
 import { PageToolbar } from "@/components/shell/page-toolbar";
+import { PageContainer } from "@/components/shell/page-container";
 import { Spinner } from "@/components/ui/spinner";
 import { utilityBillsApi, downloadBlob, ApiError } from "@/lib/api/client";
 import type {
@@ -502,7 +503,7 @@ export default function UtilityBillsPage() {
   const isWater = form.draft.provider === "TokyoWater";
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <PageContainer>
       <PageToolbar
         title="Utility Bills"
         description="Tokyo Gas and Tokyo Water — what you owe, what's paid, and how usage trends"
@@ -888,7 +889,7 @@ export default function UtilityBillsPage() {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }
 
