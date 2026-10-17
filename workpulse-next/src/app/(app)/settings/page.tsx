@@ -22,6 +22,7 @@ import { useAccent, ACCENT_PRESETS, type AccentId } from "@/lib/accent-context";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Slider } from "@/components/ui/slider";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGlassIntensity } from "@/lib/glass-intensity-context";
 import { ShieldGlyph, EnvelopeGlyph, PeopleGlyph } from "@/components/ui/nav-glyphs";
 import {
@@ -264,13 +265,26 @@ export default function SettingsPage() {
   }
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [settingsError, setSettingsError] = useState(false);
   const [saved, setSaved] = useState(false);
 
   // Font size, theme, and accent color are already applied app-wide by the (app) layout's own
   // sync effect (runs once per login, before any page including this one mounts) — this fetch is
-  // just to populate the controls below with the current values, not to re-apply them.
+  // just to populate the controls below with the current values, not to re-apply them. Named (not
+  // inline) so the error banner's Retry button can re-run it — previously a failed fetch left
+  // `settings` null forever with zero feedback, silently hiding every `{settings && ...}` row
+  // below (Text size, Date format) with no indication anything had gone wrong (S4).
+  function loadSettings() {
+    settingsApi.get()
+      .then((s) => {
+        setSettings(s);
+        setSettingsError(false);
+      })
+      .catch(() => setSettingsError(true));
+  }
+
   useEffect(() => {
-    settingsApi.get().then(setSettings);
+    loadSettings();
   }, []);
 
   async function handleSaveSettings() {
@@ -643,6 +657,18 @@ export default function SettingsPage() {
             </Button>
           </div>
 
+          {settingsError && (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+              <AlertTriangle className="size-4 shrink-0 text-destructive" />
+              <p className="flex-1 text-sm text-destructive">
+                Couldn&apos;t load your saved preferences — Text size and Date format can&apos;t be shown until this succeeds.
+              </p>
+              <Button variant="outline" size="sm" onClick={loadSettings}>
+                Retry
+              </Button>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-4">
             <GlassPanel className="flex flex-[3_1_520px] flex-col px-5 py-2">
               {/* Theme */}
@@ -730,7 +756,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Text size */}
-              {settings && (
+              {settings ? (
                 <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -752,7 +778,12 @@ export default function SettingsPage() {
                     <span className="text-xl text-text-secondary" aria-hidden>A</span>
                   </div>
                 </div>
-              )}
+              ) : !settingsError ? (
+                <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-6 w-full" />
+                </div>
+              ) : null}
 
               {/* Liquid Glass */}
               <div className="flex flex-col gap-3 border-b border-separator py-[18px]">
@@ -790,7 +821,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Date format */}
-              {settings && (
+              {settings ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 py-[18px]">
                   <div>
                     <p className="text-[15px] font-semibold">Date format</p>
@@ -803,7 +834,12 @@ export default function SettingsPage() {
                     options={DATE_FORMAT_OPTIONS.map((fmt) => ({ value: fmt, label: fmt }))}
                   />
                 </div>
-              )}
+              ) : !settingsError ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 py-[18px]">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-8 w-40" />
+                </div>
+              ) : null}
             </GlassPanel>
 
             <div className="flex flex-[2_1_320px] flex-col gap-3">
