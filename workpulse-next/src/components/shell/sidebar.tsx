@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronsRight, LogOut, Search, Settings, ShieldCheck } from "lucide-react";
@@ -22,6 +22,15 @@ const ADMIN_NAV_ITEM: NavItem = {
   color: "#FF6459",
   description: "Manage user accounts and access",
 };
+
+/** First + last initial ("Sachin Dsilva" → "SD"), never a single truncated character (G6). Falls
+ * back to one initial only when there's genuinely just one name to draw from. */
+function avatarInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
 function BrandMark() {
   return (
@@ -69,9 +78,12 @@ function NavRow({
   );
 }
 
-function SectionLabel({ children }: { children: string }) {
+function SectionLabel({ children, action }: { children: string; action?: ReactNode }) {
   return (
-    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-text-tertiary">{children}</p>
+    <div className="flex items-center justify-between px-2.5 pb-1 pt-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-text-tertiary">{children}</p>
+      {action}
+    </div>
   );
 }
 
@@ -84,7 +96,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const visible = NAV_ITEMS.filter((item) => !item.disabled);
   const workspaceItems = visible.filter((item) => !MANAGE_HREFS.has(item.href));
   const manageItems = visible.filter((item) => MANAGE_HREFS.has(item.href));
-  const initial = (displayName || "?").trim().charAt(0).toUpperCase();
+  const initials = avatarInitials(displayName || "?");
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -118,6 +130,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         collapsed ? preset.collapsedWidth : preset.width
       )}
     >
+      {/* Brand row is icon + two-line text only now (G5) — the bell and collapse toggle used to
+          share this row too, which is what made "NIST Workspace" truncate at the default sidebar
+          width. Bell moved into the profile card's icon row below; collapse toggle moved to the
+          "Workspace" section label row (expanded) or next to Search (collapsed). */}
       <div className={cn("flex items-center gap-2.5 px-1.5 py-1", collapsed && "flex-col")}>
         <BrandMark />
         {!collapsed && (
@@ -126,23 +142,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="truncate text-xs text-text-secondary">NIST Workspace</p>
           </div>
         )}
-        <div className={cn("flex items-center", collapsed && "flex-col")}>
-          <NotificationBell align="left" />
-          <IconButton
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={toggleCollapsed}
-            className="size-9"
-          >
-            {collapsed ? <ChevronsRight /> : <ChevronsLeft />}
-          </IconButton>
-        </div>
       </div>
 
       {collapsed ? (
-        <IconButton aria-label="Search" title="Search (⌘K)" onClick={() => openSpotlight(true)} className="mx-auto">
-          <Search />
-        </IconButton>
+        <div className="flex flex-col items-center gap-1.5">
+          <IconButton aria-label="Search" title="Search (⌘K)" onClick={() => openSpotlight(true)}>
+            <Search />
+          </IconButton>
+          <IconButton aria-label="Expand sidebar" title="Expand sidebar" onClick={toggleCollapsed} className="size-9">
+            <ChevronsRight />
+          </IconButton>
+        </div>
       ) : (
         <button
           type="button"
@@ -158,7 +168,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       )}
 
       <nav aria-label="Main" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain">
-        {!collapsed && <SectionLabel>Workspace</SectionLabel>}
+        {!collapsed && (
+          <SectionLabel
+            action={
+              <IconButton aria-label="Collapse sidebar" title="Collapse sidebar" onClick={toggleCollapsed} className="size-9 [&_svg]:size-4">
+                <ChevronsLeft />
+              </IconButton>
+            }
+          >
+            Workspace
+          </SectionLabel>
+        )}
         {workspaceItems.map((item) => (
           <NavRow key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} onNavigate={onNavigate} />
         ))}
@@ -176,36 +196,50 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
 
+      {/* Two rows now (G6): avatar + name get the row to themselves so the name only ellipsizes
+          past the available width instead of being squeezed down to one character by three
+          icon buttons sharing its row; those icons (bell, settings, sign-out) moved to their own
+          row underneath. Avatar uses token colours (bg-fill-2), not a hard-coded hex. */}
       <div
         className={cn(
-          "mt-auto flex items-center gap-2.5 rounded-[18px] border border-glass-border bg-white/50 p-2.5 dark:bg-white/[0.06]",
-          collapsed && "flex-col p-2"
+          "mt-auto flex flex-col gap-2 rounded-[18px] border border-glass-border bg-white/50 p-2.5 dark:bg-white/[0.06]",
+          collapsed && "items-center"
         )}
       >
-        <div
-          aria-hidden
-          className="flex size-[34px] shrink-0 items-center justify-center rounded-pill bg-[#2C2C30] text-[13px] font-semibold text-white"
-        >
-          {initial}
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-text-primary">{displayName}</p>
-            <p className="truncate text-xs text-text-secondary">WorkPulse Account</p>
+        <div className={cn("flex items-center gap-2.5", collapsed && "flex-col")}>
+          <div
+            aria-hidden
+            className="flex size-[34px] shrink-0 items-center justify-center rounded-pill bg-fill-2 text-[13px] font-semibold text-text-primary"
+          >
+            {initials}
           </div>
-        )}
-        <Link
-          href="/settings"
-          onClick={onNavigate}
-          aria-label="Settings"
-          title="Settings"
-          className="flex size-11 items-center justify-center rounded-pill text-text-body transition-colors hover:bg-fill-1 outline-none focus-visible:shadow-focus-ring"
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-semibold text-text-primary">{displayName}</p>
+              <p className="truncate text-xs text-text-secondary">WorkPulse Account</p>
+            </div>
+          )}
+        </div>
+        <div
+          className={cn(
+            "flex items-center gap-1",
+            collapsed ? "flex-col" : "justify-between border-t border-separator pt-2"
+          )}
         >
-          <Settings className="size-[17px]" aria-hidden />
-        </Link>
-        <IconButton aria-label="Log out" title="Log out" onClick={() => logout()} className={cn(collapsed && "size-9")}>
-          <LogOut />
-        </IconButton>
+          <NotificationBell align="left" />
+          <Link
+            href="/settings"
+            onClick={onNavigate}
+            aria-label="Settings"
+            title="Settings"
+            className="flex size-9 items-center justify-center rounded-pill text-text-body transition-colors hover:bg-fill-1 outline-none focus-visible:shadow-focus-ring"
+          >
+            <Settings className="size-[16px]" aria-hidden />
+          </Link>
+          <IconButton aria-label="Log out" title="Log out" onClick={() => logout()} className="size-9">
+            <LogOut />
+          </IconButton>
+        </div>
       </div>
     </aside>
   );
