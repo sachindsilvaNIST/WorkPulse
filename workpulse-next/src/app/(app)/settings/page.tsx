@@ -617,18 +617,19 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => selectSection(entry.id)}
                           className={cn(
-                            "flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors",
-                            active ? "text-white" : "hover:bg-fill-1"
+                            "flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none transition-colors focus-visible:shadow-focus-ring",
+                            // Same neutral raised-pill active style as the main sidebar (G8) —
+                            // the solid accent fill this used before was the app's only other
+                            // "active" treatment, and :focus-visible (not :focus) so a mouse
+                            // click doesn't leave a ring stuck on (G7).
+                            active ? "bg-fill-raised font-semibold text-text-primary shadow-[var(--fill-raised-shadow)]" : "hover:bg-fill-1"
                           )}
-                          style={active ? { backgroundColor: "var(--primary)" } : undefined}
                         >
                           <IconBadge icon={entry.icon} color={entry.color} color2={entry.color2} flat size="size-6" iconSize="size-3.5" />
                           <span className="min-w-0">
                             <span className="block truncate text-[13px] font-medium">{entry.label}</span>
                             {trimmedNavQuery && (
-                              <span className={cn("block truncate text-[11px]", active ? "text-white/80" : "text-text-secondary")}>
-                                {entry.description}
-                              </span>
+                              <span className="block truncate text-[11px] text-text-secondary">{entry.description}</span>
                             )}
                           </span>
                         </button>
