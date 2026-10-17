@@ -8,6 +8,19 @@ export interface ChangelogEntry {
 // ships something worth telling a user about (skip pure refactors/internal fixes).
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.1",
+    date: "2026-10-17",
+    highlights: [
+      "Fixed unreadable text on the primary button in some accent/theme combinations",
+      "Fixed the page header breaking out of shape once a page is scrolled",
+      "Attendance: overtime and the \"standard end\" time are now computed from each day's own worked duration instead of fixed clock times, since start/end times vary day to day",
+      "Attendance: clearer wording for the \"work days\" summary card",
+      "Fixed Admin \"Failed to load users\"",
+      "Settings: show an error with a Retry button if your preferences fail to load, instead of silently hiding Text size and Date format",
+      "Hid Daily Reports (not in use for now) from the sidebar, Home, and search",
+    ],
+  },
+  {
     version: "2.1.0",
     date: "2026-10-03",
     highlights: [
