@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Briefcase, FileText, Library, Receipt, Ribbon, Users } from "lucide-react";
+import { Briefcase, FileText, Library, Receipt, Ribbon, Share2, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { PageContainer } from "@/components/shell/page-container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { shareApi } from "@/lib/api/client";
@@ -39,7 +40,11 @@ export default function SharedWithMePage() {
         </div>
       )}
       {items !== null && items.length === 0 && (
-        <p className="text-sm text-text-secondary">Nothing&apos;s been shared with you yet.</p>
+        <EmptyState
+          icon={Share2}
+          title="Nothing shared with you yet"
+          description="When someone shares a trip, report, contact, bookmark or resource with you, it appears here."
+        />
       )}
 
       <div className="flex flex-col gap-2">

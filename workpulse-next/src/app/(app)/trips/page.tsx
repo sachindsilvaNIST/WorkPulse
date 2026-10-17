@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { PageContainer } from "@/components/shell/page-container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -404,10 +405,25 @@ export default function TripsPage() {
         </Card>
       )}
 
+      {/* T1: the list+detail layout (and its own "Select a trip" placeholder) only appears once
+          at least one trip exists — with none, a single EmptyState replaces both instead of
+          showing "No trips yet." next to a large "Select a trip…" panel at the same time. */}
+      {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
+      {!loading && trips.length === 0 && (
+        <EmptyState
+          icon={Briefcase}
+          title="No trips yet"
+          description="Start a trip to track its application, settlement and documents."
+          action={
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="size-4" /> New trip
+            </Button>
+          }
+        />
+      )}
+      {!loading && trips.length > 0 && (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.6fr]">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
-          {!loading && trips.length === 0 && <p className="text-sm text-text-secondary">No trips yet.</p>}
           {trips.map((t) => (
             <div key={t.id}>
               <Card
@@ -844,6 +860,7 @@ export default function TripsPage() {
           )}
         </Card>
       </div>
+      )}
 
       <ResourcePickerDialog
         open={linkingDocId !== null}

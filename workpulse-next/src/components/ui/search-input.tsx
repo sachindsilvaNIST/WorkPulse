@@ -14,6 +14,7 @@ export function SearchInput({
   className,
   inputClassName,
   small = false,
+  disabled = false,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -23,6 +24,9 @@ export function SearchInput({
   inputClassName?: string;
   /** Matches the slightly smaller icon size used on the Attendance/Dashboard search bar. */
   small?: boolean;
+  /** There's nothing to search yet (the list itself is empty, not just filtered to nothing) — a
+   * live search field with no possible results reads as broken rather than helpful. */
+  disabled?: boolean;
 }) {
   return (
     <div className={cn("relative", className)}>
@@ -31,6 +35,7 @@ export function SearchInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
+        disabled={disabled}
         className={cn(small ? "pl-8" : "pl-9", value && (small ? "pr-7" : "pr-9"), inputClassName)}
       />
       {value && (

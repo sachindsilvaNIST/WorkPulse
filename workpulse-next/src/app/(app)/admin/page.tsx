@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   Ban,
   CheckCircle2,
   KeyRound,
@@ -18,6 +19,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { PageContainer } from "@/components/shell/page-container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +76,7 @@ export default function AdminPage() {
 
   function loadUsers() {
     setLoading(true);
+    setPageError(null);
     adminApi
       .getUsers()
       .then(setUsers)
@@ -212,12 +215,10 @@ export default function AdminPage() {
   return (
     <PageContainer>
       <PageToolbar title="Admin" description="Manage user accounts and access">
-        <Button onClick={() => (showForm ? setShowForm(false) : openNew())}>
+        <Button disabled={!!pageError} onClick={() => (showForm ? setShowForm(false) : openNew())}>
           <Plus className="size-4" /> Add User
         </Button>
       </PageToolbar>
-
-      {pageError && <p className="mb-4 text-sm text-destructive">{pageError}</p>}
 
       {showForm && (
         <Card className="mb-6">
@@ -275,14 +276,32 @@ export default function AdminPage() {
       )}
 
       {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
-      {!loading && users.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
-          <Users className="size-10 opacity-40" />
-          <p>No user accounts found.</p>
-        </div>
+      {/* Error and empty states are mutually exclusive (G9/M2) — a failed load never falls
+          through to "No user accounts found.", which read as if the account list were really
+          empty rather than that the request failed. */}
+      {!loading && pageError && (
+        <EmptyState
+          variant="error"
+          icon={AlertTriangle}
+          title="Couldn't load users"
+          description={pageError}
+          action={<Button variant="outline" onClick={loadUsers}>Retry</Button>}
+        />
+      )}
+      {!loading && !pageError && users.length === 0 && (
+        <EmptyState
+          icon={Users}
+          title="No user accounts yet"
+          description="Add a user to grant them access to WorkPulse."
+          action={
+            <Button onClick={openNew}>
+              <Plus className="size-4" /> Add user
+            </Button>
+          }
+        />
       )}
 
-      {!loading && users.length > 0 && (
+      {!loading && !pageError && users.length > 0 && (
         <Card>
           <CardContent className="overflow-x-auto p-0">
             <table className="w-full text-sm">

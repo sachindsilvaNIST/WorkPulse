@@ -14,6 +14,7 @@ import { FormModal } from "@/components/ui/form-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIconButton } from "@/components/ui/delete-icon-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ShareButton } from "@/components/ui/share-button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DetailRow } from "@/components/ui/detail-row";
@@ -228,7 +229,13 @@ export default function ContactsPage() {
         </Button>
       </PageToolbar>
 
-      <SearchInput placeholder="Search…" value={search} onValueChange={setSearch} className="mb-4 max-w-md" />
+      <SearchInput
+        placeholder="Search…"
+        value={search}
+        onValueChange={setSearch}
+        disabled={!loading && contacts.length === 0}
+        className="mb-4 max-w-md"
+      />
 
       {departments.length > 1 && (
         <div className="mb-6 flex flex-wrap gap-2">
@@ -339,7 +346,21 @@ export default function ContactsPage() {
       </FormModal>
 
       {loading && <div className="flex items-center gap-2 text-sm text-text-secondary"><Spinner size={16} /> Loading…</div>}
-      {!loading && filtered.length === 0 && (
+      {!loading && contacts.length === 0 && (
+        <EmptyState
+          icon={Users}
+          title="No contacts yet"
+          description="Save a contact to search it later by name, department or email."
+          action={
+            <Button onClick={openNew}>
+              <Plus className="size-4" /> Add contact
+            </Button>
+          }
+        />
+      )}
+      {/* "found" wording only applies once a search/filter is actually narrowing a non-empty list
+          (C1/G9) — an empty list on its own gets the "yet" + CTA state above instead. */}
+      {!loading && contacts.length > 0 && filtered.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center text-text-secondary">
           <Users className="size-10 opacity-40" />
           <p>No contacts found.</p>
