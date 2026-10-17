@@ -21,19 +21,22 @@ export const ACCENT_PRESETS: Record<AccentId, { label: string; light: string; da
 
 const STORAGE_KEY = "workpulse.accentColor";
 
-function relativeLuminance(hex: string): number {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const channel = (v: number) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
-}
-
-function contrastRatio(a: string, b: string): number {
-  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-}
+/** Fixed per-preset foreground (G1) — not computed at runtime. Raw WCAG contrast ratio doesn't
+ * track human perception for saturated hues: for our default Blue in dark mode (#007aff), white
+ * measures 4.02:1 and near-black measures 4.19:1 against it — a 4% difference that made a
+ * "pick whichever ratio is higher" rule choose near-black, which reads far worse in practice than
+ * white does despite the marginally lower number. These values were chosen by computing real
+ * contrast ratios for all 12 (preset × theme) colors and preferring white unless near-black wins
+ * by a clear margin (either white fails 4.5:1 while near-black passes, or near-black's ratio is
+ * at least ~15% higher) — see the accent-context contrast audit in project notes for the numbers. */
+const ACCENT_FOREGROUND: Record<AccentId, { light: string; dark: string }> = {
+  blue: { light: "#ffffff", dark: "#ffffff" },
+  purple: { light: "#ffffff", dark: "#1d1d1f" },
+  teal: { light: "#1d1d1f", dark: "#1d1d1f" },
+  orange: { light: "#1d1d1f", dark: "#1d1d1f" },
+  rose: { light: "#1d1d1f", dark: "#1d1d1f" },
+  green: { light: "#ffffff", dark: "#1d1d1f" },
+};
 
 const AccentContext = createContext<{ accent: AccentId; setAccent: (a: AccentId) => void } | null>(null);
 
@@ -58,8 +61,9 @@ export function AccentProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const preset = ACCENT_PRESETS[accent];
-    const color = resolvedTheme === "dark" ? preset.dark : preset.light;
-    const foreground = contrastRatio(color, "#ffffff") >= contrastRatio(color, "#1d1d1f") ? "#ffffff" : "#1d1d1f";
+    const isDark = resolvedTheme === "dark";
+    const color = isDark ? preset.dark : preset.light;
+    const foreground = isDark ? ACCENT_FOREGROUND[accent].dark : ACCENT_FOREGROUND[accent].light;
     document.documentElement.style.setProperty("--accent", color);
     document.documentElement.style.setProperty("--accent-foreground", foreground);
   }, [accent, resolvedTheme]);

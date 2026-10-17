@@ -6,7 +6,7 @@ import { ArrowUpRight, Search } from "lucide-react";
 import { NAV_ITEMS, resolveNavColor, type NavItem } from "@/lib/nav-items";
 import { useAuth } from "@/lib/auth-context";
 import { useSpotlight } from "@/lib/spotlight-context";
-import { attendanceApi, dailyReportsApi, tripReportsApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
+import { attendanceApi, tripReportsApi, quickLinksApi, contactsApi, gmailApi, resourcesApi } from "@/lib/api/client";
 import { PageToolbar } from "@/components/shell/page-toolbar";
 import { WeatherWidget } from "@/components/home/weather-widget";
 import { ClockWidget } from "@/components/home/clock-widget";
@@ -42,13 +42,6 @@ async function fetchWidgetStats(): Promise<Record<string, WidgetStat>> {
       const data = await attendanceApi.getMonth(current.year, current.month);
       const logged = data.records.length;
       stats["/dashboard"] = { primary: `${logged} ${logged === 1 ? "day" : "days"}`, secondary: `Logged in ${current.label}` };
-    }),
-
-    dailyReportsApi.getAll().then((reports) => {
-      const hasToday = reports.some((r) => r.reportDate === todayStr);
-      stats["/reports/daily"] = hasToday
-        ? { primary: "Logged ✓", secondary: "Today's report is filled in" }
-        : { primary: "Not yet", secondary: "Today's report isn't written" };
     }),
 
     tripReportsApi.getAll().then((trips) => {

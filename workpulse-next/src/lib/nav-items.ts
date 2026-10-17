@@ -71,6 +71,7 @@ export const NAV_ITEMS: NavItem[] = [
     color2: "#BF5AF2",
     flat: true,
     description: "Summarize what you worked on each day",
+    disabled: true,
   },
   {
     href: "/reports/weekly",
