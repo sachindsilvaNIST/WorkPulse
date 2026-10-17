@@ -13,11 +13,10 @@ import {
   contactsApi,
   tripReportsApi,
   reimbursementApi,
-  dailyReportsApi,
   weeklyReportsApi,
   downloadBlob,
 } from "@/lib/api/client";
-import type { Resource, QuickLink, ContactRecord, TripReport, TripDocumentWithTrip, DailyReport, WeeklyReport } from "@/lib/api/types";
+import type { Resource, QuickLink, ContactRecord, TripReport, TripDocumentWithTrip, WeeklyReport } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { liquidGlassIconStyle, APPLE_ICON_GLYPH_STYLE } from "@/components/ui/icon-badge";
 
@@ -41,7 +40,6 @@ const QUICK_ACTIONS: { label: string; description: string; icon: ElementType; co
   { label: "New Resource", description: "Save a link, file, or note", icon: Library, color: "#40C8E0", href: "/resources?new=1" },
   { label: "Add Contact", description: "Save a new contact", icon: Users, color: "#30D158", href: "/contacts?new=1" },
   { label: "New Trip", description: "Start a new Business Trip", icon: Briefcase, color: "#5E5CE6", href: "/trips?new=1" },
-  { label: "New Daily Report", description: "Write today's Daily Report", icon: FileText, color: "#FF375F", href: "/reports/daily?new=1" },
   { label: "New Weekly Report", description: "Write this week's report", icon: FileText, color: "#FF375F", href: "/reports/weekly?new=1" },
 ];
 
@@ -57,10 +55,12 @@ const WEB_SHORTCUTS: { label: string; description: string; icon: ElementType; co
 
 /** App-wide quick search — Cmd/Ctrl+K from anywhere, or the search bar on Home. Searches nav
  * sections plus Resources, Bookmarks, Contacts, Business Trips, Reimbursement documents, and
- * Daily/Weekly Reports by keyword, so "taiwan" jumps straight to whatever actually matches
+ * Weekly Reports by keyword, so "taiwan" jumps straight to whatever actually matches
  * (a bookmark, a trip, a report, ...) instead of making you go find the right section first. Also
  * surfaces a handful of "add new" quick actions so starting an entry doesn't require navigating to
- * the section first. */
+ * the section first.
+ * Daily Reports is deliberately excluded here too (not just from the sidebar/Home) — it's no
+ * longer fetched at all, matching the "disable its connection to the database" request. */
 export function SpotlightSearch() {
   const { open, setOpen } = useSpotlight();
   const router = useRouter();
@@ -71,7 +71,6 @@ export function SpotlightSearch() {
   const [contacts, setContacts] = useState<ContactRecord[] | null>(null);
   const [trips, setTrips] = useState<TripReport[] | null>(null);
   const [reimbursementDocs, setReimbursementDocs] = useState<TripDocumentWithTrip[] | null>(null);
-  const [dailyReports, setDailyReports] = useState<DailyReport[] | null>(null);
   const [weeklyReports, setWeeklyReports] = useState<WeeklyReport[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -102,9 +101,8 @@ export function SpotlightSearch() {
     if (contacts === null) contactsApi.getAll().then((d) => setContacts(d.contacts)).catch(() => setContacts([]));
     if (trips === null) tripReportsApi.getAll().then(setTrips).catch(() => setTrips([]));
     if (reimbursementDocs === null) reimbursementApi.getAllDocuments().then(setReimbursementDocs).catch(() => setReimbursementDocs([]));
-    if (dailyReports === null) dailyReportsApi.getAll().then(setDailyReports).catch(() => setDailyReports([]));
     if (weeklyReports === null) weeklyReportsApi.getAll().then(setWeeklyReports).catch(() => setWeeklyReports([]));
-  }, [open, resources, bookmarks, contacts, trips, reimbursementDocs, dailyReports, weeklyReports]);
+  }, [open, resources, bookmarks, contacts, trips, reimbursementDocs, weeklyReports]);
 
   const results = useMemo<SpotlightResult[]>(() => {
     const q = query.trim().toLowerCase();
@@ -236,21 +234,6 @@ export function SpotlightSearch() {
           }))
       : [];
 
-    const dailyReportResults: SpotlightResult[] = matchText
-      ? (dailyReports ?? [])
-          .filter((r) => `${r.title} ${stripHtml(r.body)}`.toLowerCase().includes(matchText))
-          .slice(0, 5)
-          .map((r) => ({
-            id: `daily-report-${r.id}`,
-            group: "Daily Reports",
-            label: r.title || "Untitled",
-            description: r.reportDate,
-            icon: FileText,
-            color: "#FF375F",
-            action: () => router.push(`/reports/daily?open=${r.id}`),
-          }))
-      : [];
-
     const weeklyReportResults: SpotlightResult[] = matchText
       ? (weeklyReports ?? [])
           .filter((r) => `${r.title} ${stripHtml(r.body)}`.toLowerCase().includes(matchText))
@@ -275,10 +258,9 @@ export function SpotlightSearch() {
       ...contactResults,
       ...tripResults,
       ...reimbursementResults,
-      ...dailyReportResults,
       ...weeklyReportResults,
     ];
-  }, [query, resources, bookmarks, contacts, trips, reimbursementDocs, dailyReports, weeklyReports, router]);
+  }, [query, resources, bookmarks, contacts, trips, reimbursementDocs, weeklyReports, router]);
 
   const groups = Array.from(new Set(results.map((r) => r.group)));
 
