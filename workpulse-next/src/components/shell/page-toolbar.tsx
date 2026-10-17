@@ -50,18 +50,25 @@ export function PageToolbar({
     <div
       ref={toolbarRef}
       className={cn(
-        "sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-tile border border-transparent px-4 py-3 transition-[background-color,box-shadow,border-color] duration-[240ms] ease-glass",
-        solid && "toolbar-solid"
+        "sticky top-2 z-30 mb-6 gap-3 rounded-tile border border-transparent transition-[background-color,box-shadow,border-color,padding] duration-[240ms] ease-glass",
+        // Scrolled (G2): a fixed-height, single-row bar — never multi-line, never taller than its
+        // own content — instead of the resting state's wrapping multi-row layout, which could grow
+        // tall enough (e.g. a toolbar with many actions) to visually collide with content above it.
+        solid
+          ? "flex h-14 flex-nowrap items-center overflow-x-auto px-4 py-0 toolbar-solid"
+          : "flex flex-wrap items-center px-4 py-3"
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 shrink-0 items-center gap-3">
         {icon}
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description && <p className="mt-0.5 text-sm text-text-secondary">{description}</p>}
+          <h1 className={cn("font-semibold tracking-tight transition-[font-size] duration-[240ms] ease-glass", solid ? "text-[17px]" : "text-2xl")}>
+            {title}
+          </h1>
+          {description && !solid && <p className="mt-0.5 text-sm text-text-secondary">{description}</p>}
         </div>
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && <div className="ml-auto flex shrink-0 items-center gap-2">{children}</div>}
     </div>
   );
 }
